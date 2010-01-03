@@ -1,0 +1,109 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONFIG DIALOGEX 0, 0, 100, 173
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTERMOUSE | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Waveform Seekbar - Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    COMBOBOX        IDC_FRONTEND,12,18,78,30,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "No border",IDC_NOBORDER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,156,48,10
+    LTEXT           "",IDC_COLOR_BACKGROUND,72,54,18,14,SS_NOTIFY | SS_SUNKEN
+    LTEXT           "",IDC_COLOR_FOREGROUND,72,72,18,14,SS_NOTIFY | SS_SUNKEN
+    LTEXT           "",IDC_COLOR_HIGHLIGHT,72,90,18,14,SS_NOTIFY | SS_SUNKEN
+    LTEXT           "",IDC_COLOR_SELECTION,72,108,18,14,SS_NOTIFY | SS_SUNKEN
+    CONTROL         "Background",IDC_USE_BACKGROUND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,54,53,14
+    CONTROL         "Foreground",IDC_USE_FOREGROUND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,72,53,14
+    CONTROL         "Highlight",IDC_USE_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,90,53,14
+    CONTROL         "Selection",IDC_USE_SELECTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,108,53,14
+    GROUPBOX        "Colors",IDC_STATIC,6,42,90,84
+    GROUPBOX        "Misc.",IDC_STATIC,6,132,90,36
+    GROUPBOX        "Frontend",IDC_STATIC,6,6,90,30
+    CONTROL         "Shade played",IDC_SHADEPLAYED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,144,59,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 93
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 166
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

@@ -1,0 +1,18 @@
+Cache:
+More visible update progress for user-initiated scans.
+Error handling/recovery in cache loading.
+
+Seekbar:
+Replaygain use.
+Time indicators.
+Alternate display for streams.
+Show selected song when nothing is playing.
+
+Direct2D:
+Make high-DPI look less horrible.
+
+Direct3D:
+Several effects.
+Error handling in effects.
+Load textures from annotations.
+Fallback no-op effect in resource.
