@@ -19,6 +19,13 @@
 using boost::scoped_ptr;
 using boost::shared_ptr;
 
+#pragma warning(push)
+#pragma warning(disable: 4244)
+#include <boost/iostreams/filtering_stream.hpp>
+#pragma warning(pop)
+#include <boost/range/iterator_range.hpp>
+namespace io = boost::iostreams;
+
 #include <algorithm>
 using std::min;
 using std::max;

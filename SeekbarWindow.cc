@@ -2,9 +2,6 @@
 #include "SeekbarWindow.h"
 #include "Direct3D.h"
 #include "Direct2D.h"
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/range/iterator_range.hpp>
-namespace bio = boost::iostreams;
 
 namespace wave
 {
@@ -496,7 +493,7 @@ namespace wave
 		scoped_ptr<uCallStackTracker> t;
 		out.clear();
 		t.reset(new uCallStackTracker("ostream"));
-		bio::filtering_ostream os(std::back_inserter(out));
+		io::filtering_ostream os(std::back_inserter(out));
 		t.reset(new uCallStackTracker("oarchive"));
 		boost::archive::xml_oarchive ar(os);
 		t.reset(new uCallStackTracker("save"));
@@ -507,7 +504,7 @@ namespace wave
 	{
 		TRACK_CALL(load_settings);
 		scoped_ptr<uCallStackTracker> t(new uCallStackTracker("istream"));
-		bio::filtering_istream is(boost::make_iterator_range(in));
+		io::filtering_istream is(boost::make_iterator_range(in));
 		t.reset(new uCallStackTracker("iarchive"));
 		boost::archive::xml_iarchive ar(is);
 		t.reset(new uCallStackTracker("load"));
