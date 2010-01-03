@@ -1,7 +1,7 @@
 #pragma once
 #pragma warning(disable: 4005)
 #define D3D_DEBUG_INFO
-#define _WIN32_WINNT 0x0600
+#define _WIN32_WINNT 0x0501
 
 #define NOMINMAX
 #define BOOST_ASIO_NO_WIN32_LEAN_AND_MEAN

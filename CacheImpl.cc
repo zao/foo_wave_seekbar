@@ -338,12 +338,17 @@ namespace wave
 	{
 		char const* loc = (char const*)sqlite3_value_text(argv[0]);
 		abort_callback_dummy cb;
-		bool exists = filesystem::g_exists(loc, cb);
+		try {
+			bool exists = filesystem::g_exists(loc, cb);
 
-		if (exists)
-			sqlite3_result_int(ctx, exists);
-		else
-			sqlite3_result_null(ctx);
+			if (exists)
+			{
+				sqlite3_result_int(ctx, exists);
+				return;
+			}
+		}
+		catch (exception_io&) {}
+		sqlite3_result_null(ctx);
 	}
 
 	void backing_store::remove_dead()
