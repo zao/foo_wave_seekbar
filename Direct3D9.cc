@@ -335,6 +335,7 @@ namespace wave
 		update_effect_cursor();
 		update_replaygain();
 		update_orientation();
+		update_shade_played();
 		device_lost = false;
 	}
 }
