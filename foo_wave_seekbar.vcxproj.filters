@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Cache">
+      <UniqueIdentifier>{6436b24c-2c31-4c97-a1b0-c9ff21f12da1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Seekbar">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Seekbar\Boobs">
+      <UniqueIdentifier>{4eb10f29-93dd-4756-8dfc-2644e25eee01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Seekbar\Effect Files">
+      <UniqueIdentifier>{aa8818cd-dde9-4a36-a7b9-d15e3940375e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Seekbar\Frontends">
+      <UniqueIdentifier>{54dd4e5f-190f-4cea-99d0-7bda68e7834e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CacheImpl.cc">
+      <Filter>Cache</Filter>
+    </ClCompile>
+    <ClCompile Include="CacheImpl.ProcessFile.cc">
+      <Filter>Cache</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct2D1.cc">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D10.cc">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D9.cc">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClCompile>
+    <ClCompile Include="MainCache.cc">
+      <Filter>Cache</Filter>
+    </ClCompile>
+    <ClCompile Include="MainSeekbar.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="MenuCommands.cc">
+      <Filter>Cache</Filter>
+    </ClCompile>
+    <ClCompile Include="PchSeekbar.cc" />
+    <ClCompile Include="ProcessingContext.cc">
+      <Filter>Cache</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarCui.cc">
+      <Filter>Seekbar\Boobs</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarDui.cc">
+      <Filter>Seekbar\Boobs</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.ConfigDialog.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlite3.c">
+      <Filter>Cache</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Cache.h">
+      <Filter>Cache</Filter>
+    </ClInclude>
+    <ClInclude Include="CacheImpl.h">
+      <Filter>Cache</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct2D.h">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D.h">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClInclude>
+    <ClInclude Include="PchSeekbar.h" />
+    <ClInclude Include="ProcessingContext.h">
+      <Filter>Cache</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SeekbarCui.h">
+      <Filter>Seekbar\Boobs</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekbarDui.h">
+      <Filter>Seekbar\Boobs</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekbarState.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekbarWindow.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlite3.h">
+      <Filter>Cache</Filter>
+    </ClInclude>
+    <ClInclude Include="VisualFrontend.h">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_wave_seekbar.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="seekbar.fx">
+      <Filter>Seekbar\Effect Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
