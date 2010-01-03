@@ -1,6 +1,6 @@
 #include "PchSeekbar.h"
 #include "SeekbarDui.h"
-#include "../foo_wave_cache/Cache.h"
+#include "Cache.h"
 #include "Direct3D.h"
 #include <strstream>
 

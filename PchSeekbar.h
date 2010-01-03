@@ -5,12 +5,19 @@
 
 #define NOMINMAX
 #define BOOST_ASIO_NO_WIN32_LEAN_AND_MEAN
+#include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+using boost::scoped_ptr;
+using boost::shared_ptr;
 
 #include <algorithm>
 using std::min;
@@ -55,3 +62,5 @@ using boost::uint32_t;
 
 #include <boost/optional.hpp>
 using boost::optional;
+
+#include "sqlite3.h"

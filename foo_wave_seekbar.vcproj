@@ -5,10 +5,6 @@
 	Name="foo_wave_seekbar"
 	ProjectGUID="{DEA61D87-28CC-4D1E-A026-73EECE6A0B7D}"
 	RootNamespace="foo_wave_seekbar"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -180,7 +176,7 @@
 	</References>
 	<Files>
 		<Filter
-			Name="Source Files"
+			Name="Seekbar"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
@@ -276,33 +272,93 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Effect Files"
+				>
+				<File
+					RelativePath=".\seekbar.fx"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+							Description="Deploying &quot;$(InputFileName)&quot;..."
+							CommandLine="mkdir D:\apps\foobar2000devel\effects 2&gt;NUL&#x0D;&#x0A;copy $(InputPath) D:\apps\foobar2000devel\effects\&#x0D;&#x0A;"
+							Outputs="D:\apps\foobar2000devel\effects\$(InputFileName)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+							Description="Deploying &quot;$(InputFileName)&quot;..."
+							CommandLine="mkdir D:\apps\foobar2000devel\effects 2&gt;NUL&#x0D;&#x0A;copy $(InputPath) D:\apps\foobar2000devel\effects\&#x0D;&#x0A;"
+							Outputs="D:\apps\foobar2000devel\effects\$(InputFileName)"
+						/>
+					</FileConfiguration>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
-			Name="Effect Files"
+			Name="Cache"
 			>
 			<File
-				RelativePath=".\seekbar.fx"
+				RelativePath=".\Cache.h"
+				>
+			</File>
+			<File
+				RelativePath=".\CacheImpl.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\CacheImpl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\CacheImpl.ProcessFile.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\MainCache.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\MenuCommands.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\ProcessingContext.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\ProcessingContext.h"
+				>
+			</File>
+			<File
+				RelativePath=".\sqlite3.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
-						Description="Deploying &quot;$(InputFileName)&quot;..."
-						CommandLine="mkdir D:\apps\foobar2000devel\effects 2&gt;NUL&#x0D;&#x0A;copy $(InputPath) D:\apps\foobar2000devel\effects\&#x0D;&#x0A;"
-						Outputs="D:\apps\foobar2000devel\effects\$(InputFileName)"
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
-						Description="Deploying &quot;$(InputFileName)&quot;..."
-						CommandLine="mkdir D:\apps\foobar2000devel\effects 2&gt;NUL&#x0D;&#x0A;copy $(InputPath) D:\apps\foobar2000devel\effects\&#x0D;&#x0A;"
-						Outputs="D:\apps\foobar2000devel\effects\$(InputFileName)"
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\sqlite3.h"
+				>
 			</File>
 		</Filter>
 		<File

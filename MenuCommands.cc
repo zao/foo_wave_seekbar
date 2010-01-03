@@ -1,4 +1,5 @@
-#include "PchCache.h"
+#include "PchSeekbar.h"
+#include "Cache.h"
 
 struct cache_commands : mainmenu_commands
 {
@@ -35,7 +36,7 @@ struct cache_commands : mainmenu_commands
 	virtual GUID get_parent() { return mainmenu_groups::library; }
 	virtual void execute(t_uint32 index, service_ptr_t<service_base> callback)
 	{
-		static_api_ptr_t<cache> c;
+		static_api_ptr_t<wave::cache> c;
 		switch (index)
 		{
 			case 0:

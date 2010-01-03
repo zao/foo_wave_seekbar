@@ -1,5 +1,5 @@
 #pragma once
-#include "../foo_wave_cache/Cache.h"
+#include "Cache.h"
 
 namespace wave
 {
