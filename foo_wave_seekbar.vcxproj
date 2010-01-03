@@ -62,7 +62,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10d.lib;d3d9.lib;d3dx9d.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>d3d9.dll;d3dx9_42.dll;dxgi.dll;d3d10.dll;d3dx10d_42.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>d3d9.dll;d3dx9d_42.dll;dxgi.dll;d3d10.dll;d3dx10d_42.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
