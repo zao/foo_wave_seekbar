@@ -188,7 +188,11 @@ namespace wave
 			CComPtr<ID3DXBuffer> errors;
 			hr = D3DXCreateEffectFromFileA(dev, fx_file.get_ptr() + 7, 0, 0, 0, 0, &fx, &errors);
 			if (FAILED(hr))
-				console::formatter() << "Seekbar: Direct3D: " << pfc::string8((char*)errors->GetBufferPointer(), errors->GetBufferSize());
+			{
+				console::formatter() << "Seekbar: Direct3D: " << DXGetErrorStringA(hr) << "(" << hr << ") " << DXGetErrorDescriptionA(hr);
+				if (errors)
+					console::formatter() << "Seekbar: Direct3D: " << pfc::string8((char*)errors->GetBufferPointer(), errors->GetBufferSize());
+			}
 		}
 
 		if (!fx)
