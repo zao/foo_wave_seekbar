@@ -11,11 +11,13 @@ namespace wave
 		CComboBox cb = GetDlgItem(IDC_FRONTEND);
 		std::wstring d3d = L"Direct3D 9.0c";
 		std::wstring d2d = L"Direct2D 1.0";
+		std::wstring gdi = L"GDI+";
 		
 		if (has_direct3d9())
 			cb.SetItemData(cb.AddString(d3d.c_str()), config::frontend_direct3d9);
 		if (has_direct2d1())
 			cb.SetItemData(cb.AddString(d2d.c_str()), config::frontend_direct2d1);
+		cb.SetItemData(cb.AddString(gdi.c_str()), config::frontend_gdi);
 		
 		switch (sw.settings.active_frontend_kind)
 		{
@@ -24,6 +26,9 @@ namespace wave
 				break;
 			case config::frontend_direct2d1:
 				cb.SelectString(0, d2d.c_str());
+				break;
+			case config::frontend_gdi:
+				cb.SelectString(0, gdi.c_str());
 				break;
 		}
 

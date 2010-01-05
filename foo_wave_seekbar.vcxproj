@@ -61,7 +61,7 @@
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10d.lib;d3d9.lib;d3dx9d.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;dxerr.lib;dxgi.lib;d3d10.lib;d3dx10d.lib;d3d9.lib;d3dx9d.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>d3d9.dll;d3dx9d_42.dll;dxgi.dll;d3d10.dll;d3dx10d_42.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -83,7 +83,7 @@
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>d3d9.dll;d3dx9_42.dll;dxgi.dll;d3d10.dll;d3dx10_42.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -93,6 +93,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GdiFallback.cc" />
     <ClCompile Include="MainSeekbar.cc" />
     <ClCompile Include="PchSeekbar.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -118,6 +119,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GdiFallback.h" />
     <ClInclude Include="PchSeekbar.h" />
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />

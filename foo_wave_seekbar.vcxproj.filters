@@ -34,6 +34,9 @@
     <ClCompile Include="Direct3D9.cc">
       <Filter>Seekbar\Frontends</Filter>
     </ClCompile>
+    <ClCompile Include="GdiFallback.cc">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClCompile>
     <ClCompile Include="MainCache.cc">
       <Filter>Cache</Filter>
     </ClCompile>
@@ -74,6 +77,9 @@
       <Filter>Seekbar\Frontends</Filter>
     </ClInclude>
     <ClInclude Include="Direct3D.h">
+      <Filter>Seekbar\Frontends</Filter>
+    </ClInclude>
+    <ClInclude Include="GdiFallback.h">
       <Filter>Seekbar\Frontends</Filter>
     </ClInclude>
     <ClInclude Include="PchSeekbar.h" />

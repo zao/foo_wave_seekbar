@@ -22,7 +22,8 @@ namespace wave
 		{
 			frontend_direct3d9,
 			frontend_direct3d10,
-			frontend_direct2d1
+			frontend_direct2d1,
+			frontend_gdi
 		};
 	}
 
