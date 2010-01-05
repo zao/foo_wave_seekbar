@@ -6,6 +6,8 @@
 
 namespace wave
 {
+	bool has_direct2d1();
+
 	struct direct2d1_frontend : visual_frontend
 	{
 		direct2d1_frontend(HWND wnd, CSize size, visual_frontend_callback& callback);

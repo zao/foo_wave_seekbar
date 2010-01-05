@@ -4,6 +4,13 @@
 
 namespace wave
 {
+	bool has_direct2d1()
+	{
+		HMODULE lib = LoadLibrary(L"d2d1");
+		FreeLibrary(lib);
+		return !!lib;
+	}
+
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, CSize size, visual_frontend_callback& callback)
 		: cache_pump_work(new boost::asio::io_service::work(cache_pump)), cache_jobs(0), callback(callback)
 	{

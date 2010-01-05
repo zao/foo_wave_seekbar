@@ -190,6 +190,8 @@ namespace wave
 		}
 	}
 
+#define EXCEPT_MODULE_NOT_FOUND __except(GetExceptionCode() == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND) : EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+
 	void seekbar_window::on_wm_paint(HDC dc)
 	{
 		GetClientRect(client_rect);
@@ -227,10 +229,16 @@ namespace wave
 	#endif
 				case config::frontend_direct3d9:
 					console::info("Seekbar: taking Direct3D9 path.");
+					if (!has_direct3d9())
+						throw std::runtime_error("DirectX redistributable not found. Run the DirectX August 2009 web setup or later.");
+										
 					frontend.reset(new direct3d9_frontend(*this, client_rect.Size(), *frontend_callback));
 					break;
 				case config::frontend_direct2d1:
 					console::info("Seekbar: taking Direct2D1 path.");
+					if (!has_direct2d1())
+						throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
+
 					frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *frontend_callback));
 					break;
 				}
@@ -259,6 +267,8 @@ namespace wave
 
 		ValidateRect(0);
 	}
+
+#undef EXCEPT_MODULE_NOT_FOUND
 
 	void seekbar_window::on_wm_size(UINT wparam, CSize size)
 	{

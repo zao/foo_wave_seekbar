@@ -3,20 +3,20 @@
 
 namespace wave
 {
-	bool has_direct2d1() {
-		HMODULE lib = LoadLibrary(L"d2d1");
-		FreeLibrary(lib);
-		return !!lib;
-	}
+	bool has_direct3d9();
+	bool has_direct2d1();
 
 	LRESULT seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM lparam)
 	{
 		CComboBox cb = GetDlgItem(IDC_FRONTEND);
 		std::wstring d3d = L"Direct3D 9.0c";
 		std::wstring d2d = L"Direct2D 1.0";
-		cb.SetItemData(cb.AddString(d3d.c_str()), config::frontend_direct3d9);
+		
+		if (has_direct3d9())
+			cb.SetItemData(cb.AddString(d3d.c_str()), config::frontend_direct3d9);
 		if (has_direct2d1())
 			cb.SetItemData(cb.AddString(d2d.c_str()), config::frontend_direct2d1);
+		
 		switch (sw.settings.active_frontend_kind)
 		{
 			case config::frontend_direct3d9:
