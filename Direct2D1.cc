@@ -18,8 +18,8 @@ namespace wave
 			: opts(opts)
 		{}
 
-		ID2D1Factory* operator () ()
-		{			
+		ID2D1Factory* operator () () const
+		{
 			ID2D1Factory* p = 0;
 			D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &p);
 			return p;
