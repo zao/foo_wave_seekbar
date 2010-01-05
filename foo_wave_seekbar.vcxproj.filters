@@ -93,6 +93,9 @@
     <ClInclude Include="SeekbarWindow.h">
       <Filter>Seekbar</Filter>
     </ClInclude>
+    <ClInclude Include="SehHelper.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
     <ClInclude Include="sqlite3.h">
       <Filter>Cache</Filter>
     </ClInclude>

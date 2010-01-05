@@ -70,4 +70,6 @@ using boost::uint32_t;
 #include <boost/optional.hpp>
 using boost::optional;
 
+#include <delayimp.h>
+
 #include "sqlite3.h"

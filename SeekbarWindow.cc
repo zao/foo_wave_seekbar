@@ -260,6 +260,8 @@ namespace wave
 		ValidateRect(0);
 	}
 
+#undef EXCEPT_MODULE_NOT_FOUND
+
 	void seekbar_window::on_wm_size(UINT wparam, CSize size)
 	{
 		if (size.cx < 1 || size.cy < 1)

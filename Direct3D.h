@@ -3,6 +3,8 @@
 
 namespace wave
 {
+	bool has_direct3d9();
+
 	struct direct3d9_frontend : visual_frontend
 	{
 		direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback);

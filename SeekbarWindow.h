@@ -7,7 +7,6 @@ DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU);
 
 namespace wave
 {
-
 	struct frontend_callback_impl : visual_frontend_callback, visual_frontend_callback_setter {
 		// Getters
 		virtual double get_track_length() const { return track_length; }
