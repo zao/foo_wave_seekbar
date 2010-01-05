@@ -1,5 +1,6 @@
 #include "PchSeekbar.h"
 #include "Direct2D.h"
+#include "SehHelper.h"
 #include <boost/math/special_functions.hpp>
 
 namespace wave
@@ -11,13 +12,32 @@ namespace wave
 		return !!lib;
 	}
 
+	struct create_d2d1_factory_func
+	{
+		create_d2d1_factory_func(D2D1_FACTORY_OPTIONS const& opts)
+			: opts(opts)
+		{}
+
+		ID2D1Factory* operator () ()
+		{			
+			ID2D1Factory* p = 0;
+			D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &p);
+			return p;
+		}
+
+		D2D1_FACTORY_OPTIONS const& opts;
+	};
+
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, CSize size, visual_frontend_callback& callback)
 		: cache_pump_work(new boost::asio::io_service::work(cache_pump)), cache_jobs(0), callback(callback)
 	{
 		cache_pump_thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, &cache_pump)));
 
 		D2D1_FACTORY_OPTIONS opts = { D2D1_DEBUG_LEVEL_INFORMATION };
-		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &factory);
+		factory.Attach(try_module_call(create_d2d1_factory_func(opts)));
+		if (!factory)
+			throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
+
 		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &cache_factory);
 		factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(size.cx, size.cy)), &rt);
 

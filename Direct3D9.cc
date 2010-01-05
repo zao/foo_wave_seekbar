@@ -1,6 +1,7 @@
 #include "PchSeekbar.h"
 #include "Direct3D.h"
 #include "SeekbarState.h"
+#include "SehHelper.h"
 
 static void reduce_by_two(pfc::list_base_t<float>& data, UINT n)
 {
@@ -243,10 +244,37 @@ namespace wave
 		return !!d3d9_lib && !!d3d9x_lib;
 	}
 
+	struct create_d3d9_func
+	{
+		IDirect3D9* operator() () const
+		{
+			IDirect3D9* p = Direct3DCreate9(D3D_SDK_VERSION);
+			return p;
+		}
+	};
+
+	struct test_d3dx9_func
+	{
+		bool operator() () const
+		{
+			D3DXMATRIX m;
+			D3DXMatrixTranslation(&m, 0, 0, 0);
+			return true;
+		}
+	};
+
 	direct3d9_frontend::direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback)
 		: mip_count(4), callback(callback), floating_point_texture(true)
 	{
 		HRESULT hr = S_OK;
+
+		d3d.Attach(try_module_call(create_d3d9_func()));
+		bool has_d3dx = try_module_call(test_d3dx9_func());
+
+		if (!d3d || !has_d3dx)
+		{
+			throw std::runtime_error("DirectX redistributable not found. Run the DirectX August 2009 web setup or later.");
+		}
 
 		ZeroMemory(&pp, sizeof(pp));
 		pp.BackBufferWidth = client_size.cx;
@@ -264,7 +292,6 @@ namespace wave
 		pp.FullScreen_RefreshRateInHz = 0;
 		pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 
-		d3d.Attach(Direct3DCreate9(D3D_SDK_VERSION));
 		DWORD msaa_quality = 0;
 		for (INT x = D3DMULTISAMPLE_16_SAMPLES; x >= 0; --x)
 		{
