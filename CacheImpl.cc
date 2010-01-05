@@ -39,9 +39,12 @@ namespace wave
 		if (store)
 		{
 			store->get_jobs(jobs);
-			BOOST_FOREACH(job j, jobs)
+			for each (job j in jobs)
 			{
-				io.post(boost::bind(&cache_impl::enqueue_waveform, this, j.loc, j.user));
+				io.post([this, j]()
+				{
+					enqueue_waveform(j.loc, j.user); }
+				);
 			}
 		}
 		else
@@ -62,15 +65,16 @@ namespace wave
 
 		open_store();
 		if (store)
+		{
 			store->put_jobs(job_flush_queue);
+		}
 
 		store.reset();
 	}
 
 	void cache_impl::open_store()
 	{
-		if (store)
-			return;
+		if (store) return;
 		cache_filename = core_api::get_profile_path();
 		cache_filename += "\\wavecache.db";
 		cache_filename = cache_filename.subString(7);		
@@ -80,12 +84,20 @@ namespace wave
 	void cache_impl::delayed_init()
 	{
 		shared_ptr<boost::barrier> load_barrier(new boost::barrier(2));
-		io.post(boost::bind(&cache_impl::load_data, this, load_barrier));
+		io.post([this, load_barrier]()
+		{
+			load_data(load_barrier);
+		});
 		size_t n_cores = boost::thread::hardware_concurrency();
 		for (size_t i = 0; i < std::min(3u, n_cores); ++i) {
-			work_threads.create_thread(with_idle_priority(boost::bind(&boost::asio::io_service::run, &io)));
+			work_threads.create_thread(with_idle_priority([this]()
+			{
+				this->io.run();
+			}));
 			if (!i)
+			{
 				load_barrier->wait();
+			}
 		}
 		initialized = true;
 	}
@@ -99,7 +111,9 @@ namespace wave
 		}
 
 		if (store)
+		{
 			return store->get(out, file);
+		}
 		return false;
 	}
 
@@ -115,19 +129,32 @@ namespace wave
 		{
 			important_queue.push(loc);
 		}
-		io.post(boost::bind(&cache_impl::process_file, this, loc, user_requested));
+		io.post([this, loc, user_requested]()
+		{
+			process_file(loc, user_requested);
+		});
 	}
 
 	void cache_impl::remove_dead_waveforms()
 	{
 		if (store)
-			io.post(boost::bind(&backing_store::remove_dead, store));
+		{
+			io.post([this]()
+			{
+				store->remove_dead();
+			});
+		}
 	}
 
 	void cache_impl::compact_storage()
 	{
 		if (store)
-			io.post(boost::bind(&backing_store::compact, store));
+		{
+			io.post([this]()
+			{
+				store->compact();
+			});
+		}
 	}
 
 	void cache_initquit::on_init()
