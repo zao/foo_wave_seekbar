@@ -180,7 +180,7 @@ namespace wave
 			(profile_directory + "\\effects\\seekbar.fx")
 			(program_directory + "\\effects\\seekbar.fx");
 
-		BOOST_FOREACH(pfc::string fx_file, fx_files)
+		for each (pfc::string fx_file in fx_files)
 		{
 			if (fx)
 				break;
@@ -314,13 +314,18 @@ namespace wave
 				throw std::exception("Direct3D9: could not create device.");
 		}
 
-		hr = dev->CreateTexture(2048, 1, mip_count, 0, D3DFMT_A16B16G16R16F, D3DPOOL_MANAGED, &tex, 0);
+		auto create_data_texture = [this](D3DFORMAT fmt) { return dev->CreateTexture(2048, 1, mip_count, 0, D3DFMT_A16B16G16R16F, D3DPOOL_MANAGED, &tex, 0); };
+		hr = create_data_texture(D3DFMT_A16B16G16R16F);
 		if (!SUCCEEDED(hr))
 		{
 			floating_point_texture = false;
-			hr = dev->CreateTexture(2048, 1, mip_count, 0, D3DFMT_A2R10G10B10, D3DPOOL_MANAGED, &tex, 0);
+			hr = create_data_texture(D3DFMT_A2R10G10B10);
 			if (!SUCCEEDED(hr))
-				throw std::exception("Direct3D9: could not create texture.");
+			{
+				hr = create_data_texture(D3DFMT_A8R8G8B8);
+				if (!SUCCEEDED(hr))
+					throw std::exception("Direct3D9: could not create texture.");
+			}
 		}
 
 		create_vertex_resources();
