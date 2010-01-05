@@ -3,12 +3,15 @@ More visible update progress for user-initiated scans.
 Summary of failure.
 Error handling/recovery in cache loading.
 Compress data?
+Change database location.
+Store data in tracks / folder.
 
 Seekbar:
 Replaygain use.
 Time indicators.
 Alternate display for streams.
 Show selected song when nothing is playing.
+Play selected song on location when clicking inside.
 Time tooltip when seeking.
 Seek on wheel.
 Zoom?
