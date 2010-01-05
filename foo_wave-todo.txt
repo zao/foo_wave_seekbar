@@ -11,6 +11,8 @@ Alternate display for streams.
 Show selected song when nothing is playing.
 Time tooltip when seeking.
 Seek on wheel.
+Zoom?
+Hollow toggle.
 
 Direct2D:
 Make high-DPI look less horrible.
