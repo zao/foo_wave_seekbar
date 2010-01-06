@@ -2,6 +2,7 @@
 #include "SeekbarWindow.h"
 #include "Direct3D.h"
 #include "Direct2D.h"
+#include "GdiFallback.h"
 
 namespace wave
 {
@@ -43,8 +44,9 @@ namespace wave
 	static const UINT_PTR REPAINT_TIMER_ID = 0x4242;
 	seekbar_window::seekbar_window()
 		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
-		, repaint_timer_id(0), frontend(0), initializing_graphics(false), seek_in_progress(false), possible_next_enqueued(false)
-		, placeholder_waveform(make_placeholder_waveform()), frontend_callback(new frontend_callback_impl)
+		, placeholder_waveform(make_placeholder_waveform()), frontend_callback(new frontend_callback_impl), initializing_graphics(false)
+		, seek_in_progress(false), possible_next_enqueued(false), repaint_timer_id(0)
+		
 	{
 		frontend_callback->set_waveform(placeholder_waveform);
 	}
@@ -217,6 +219,8 @@ namespace wave
 						);
 				}
 				frontend_callback->set_shade_played(settings.shade_played);
+				
+				DWORD present_interval = 10;
 				switch (settings.active_frontend_kind)
 				{
 	#if 0
@@ -233,18 +237,26 @@ namespace wave
 					console::info("Seekbar: taking Direct2D1 path.");
 					frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *frontend_callback));
 					break;
+				case config::frontend_gdi:
+					console::info("Seekbar: taking GDI+ path.");
+					frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *frontend_callback));
+					present_interval = 50;
+					break;
 				}
 				console::info("Seekbar: Frontend initialized.");
 				initializing_graphics = true;
 
 				if (frontend)
-					repaint_timer_id = SetTimer(REPAINT_TIMER_ID, 10);
+				{
+					repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
+				}
 			}
 			catch (std::exception& e)
 			{
 				//TODO: Show fall-back help frontend
 				initializing_graphics = true;
 				console::complain("Seekbar: frontend creation failed", e);
+				settings.active_frontend_kind = config::frontend_gdi;
 			}
 		}
 

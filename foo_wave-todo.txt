@@ -16,6 +16,7 @@ Time tooltip when seeking.
 Seek on wheel.
 Zoom?
 Hollow toggle.
+WM_CAPTURECHANGED
 
 Direct2D:
 Make high-DPI look less horrible.

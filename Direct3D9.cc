@@ -232,18 +232,6 @@ namespace wave
 		fx.Release();
 	}
 
-	bool has_direct3d9() {
-		HMODULE d3d9_lib = LoadLibrary(L"d3d9");
-		FreeLibrary(d3d9_lib);
-#ifdef _DEBUG
-		HMODULE d3d9x_lib = LoadLibrary(L"d3dx9d_42");
-#else
-		HMODULE d3d9x_lib = LoadLibrary(L"d3dx9_42");
-#endif
-		FreeLibrary(d3d9x_lib);
-		return !!d3d9_lib && !!d3d9x_lib;
-	}
-
 	struct create_d3d9_func
 	{
 		IDirect3D9* operator() () const
@@ -262,6 +250,11 @@ namespace wave
 			return true;
 		}
 	};
+
+	bool has_direct3d9() {
+		bool has_d3dx = try_module_call(test_d3dx9_func());
+		return has_d3dx;
+	}
 
 	direct3d9_frontend::direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback)
 		: mip_count(4), callback(callback), floating_point_texture(true)
