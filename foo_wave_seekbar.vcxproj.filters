@@ -79,10 +79,16 @@
     <ClInclude Include="Direct3D.h">
       <Filter>Seekbar\Frontends</Filter>
     </ClInclude>
+    <ClInclude Include="FrontendCallbackImpl.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
     <ClInclude Include="GdiFallback.h">
       <Filter>Seekbar\Frontends</Filter>
     </ClInclude>
     <ClInclude Include="PchSeekbar.h" />
+    <ClInclude Include="PersistentSettings.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
     <ClInclude Include="ProcessingContext.h">
       <Filter>Cache</Filter>
     </ClInclude>

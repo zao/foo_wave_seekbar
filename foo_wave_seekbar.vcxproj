@@ -119,8 +119,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="GdiFallback.h" />
     <ClInclude Include="PchSeekbar.h" />
+    <ClInclude Include="PersistentSettings.h" />
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />
     <ClInclude Include="Direct2D.h" />
