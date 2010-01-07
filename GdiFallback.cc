@@ -3,8 +3,13 @@
 
 namespace wave
 {
-	gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd, CSize size, visual_frontend_callback& callback)
-		: wnd(wnd), size(size), callback(callback)
+	inline Gdiplus::Color color_to_Color(color const& c)
+	{
+		return Gdiplus::Color((BYTE)(c.a * 255), (BYTE)(c.r * 255), (BYTE)(c.g * 255), (BYTE)(c.b * 255));
+	}
+
+	gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_callback& callback)
+		: wnd(wnd), callback(callback)
 	{
 		Gdiplus::GdiplusStartupInput gpsi;
 		Gdiplus::GdiplusStartup(&gdiplus_token, &gpsi, 0);
@@ -26,32 +31,49 @@ namespace wave
 		PAINTSTRUCT ps = {};
 		if (CDCHandle dc = wnd.BeginPaint(&ps))
 		{
-			//Gdiplus::Bitmap bmp(callback.get_size().cx, callback.get_size().cy);
-			//scoped_ptr<Gdiplus::Graphics> g(Gdiplus::Graphics::FromImage(&bmp));
+			CSize size = callback.get_size();
+			if (callback.get_orientation() == config::orientation_vertical)
+				std::swap(size.cx, size.cy);
+
 			Gdiplus::Graphics gdc(dc);
 			Gdiplus::Graphics* g = &gdc;
+
+			auto draw_bar = [&](Gdiplus::Point p1, Gdiplus::Point p2)
+			{
+				g->DrawLine(pen_selection.get(), orientate(p1), orientate(p2));
+			};
 
 			if (cached_bitmap)
 			{
 				g->DrawCachedBitmap(cached_bitmap.get(), 0, 0);
 			}
+			
+			auto pos = callback.get_playback_position();
+			auto len = callback.get_track_length();
+			
+			if (callback.get_shade_played())
+			{
+				color c = callback.get_color(config::color_highlight);
+				c.a = 0.3f;
+				Gdiplus::SolidBrush shade(color_to_Color(c));
+				Gdiplus::Point p = orientate(Gdiplus::Point((int)(pos * size.cx / len), size.cy));
+				g->FillRectangle(&shade, 0, 0, p.X, p.Y);
+			}
+
 			if (callback.is_cursor_visible())
 			{
-				auto pos = callback.get_playback_position();
-				auto len = callback.get_track_length();
-
-				g->DrawLine(pen_selection.get(),
+				draw_bar(
 					Gdiplus::Point((int)(pos * size.cx / len), 0),
 					Gdiplus::Point((int)(pos * size.cx / len), size.cy));
+
 				if (callback.is_seeking())
 				{
-					pos = callback.get_seek_position();
-					g->DrawLine(pen_selection.get(),
+					auto pos = callback.get_seek_position();
+					draw_bar(
 						Gdiplus::Point((int)(pos * size.cx / len), 0),
 						Gdiplus::Point((int)(pos * size.cx / len), size.cy));
 				}
 			}
-			//Gdiplus::Graphics(dc).DrawImage(&bmp, 0, 0);
 		}
 		wnd.EndPaint(&ps);
 	}
@@ -62,20 +84,19 @@ namespace wave
 	void gdi_fallback_frontend::on_state_changed(state s)
 	{
 #if 0
-		if (s & state_size)
-			update_size();
-		if (s & state_color)
-			update_effect_colors();
 		if (s & state_position)
 			update_effect_cursor();
 		if (s & state_replaygain)
 			update_replaygain();
 #endif
-		if (s & (state_data | state_size))
+		if (s & state_color)
+		{
+			release_objects();
+			create_objects();
+		}
+		if (s & (state_data | state_size | state_orientation | state_color))
 			update_data();
 #if 0
-		if (s & state_orientation)
-			update_orientation();
 		if (s & state_shade_played)
 			update_shade_played();
 #endif
@@ -86,12 +107,12 @@ namespace wave
 		auto pen_from_color = [&](config::color color, scoped_ptr<Gdiplus::Pen>& out)
 		{
 			auto c = callback.get_color(color);
-			out.reset(new Gdiplus::Pen(Gdiplus::Color((BYTE)(c.a * 255), (BYTE)(c.r * 255), (BYTE)(c.g * 255), (BYTE)(c.b * 255))));
+			out.reset(new Gdiplus::Pen(color_to_Color(c)));
 		};
 		auto solid_brush_from_color = [&](config::color color, scoped_ptr<Gdiplus::SolidBrush>& out)
 		{
 			auto c = callback.get_color(color);
-			out.reset(new Gdiplus::SolidBrush(Gdiplus::Color((BYTE)(c.a * 255), (BYTE)(c.r * 255), (BYTE)(c.g * 255), (BYTE)(c.b * 255))));
+			out.reset(new Gdiplus::SolidBrush(color_to_Color(c)));
 		};
 		pen_from_color(config::color_foreground, pen_foreground);
 		pen_from_color(config::color_highlight, pen_highlight);
@@ -112,9 +133,12 @@ namespace wave
 	{
 		CSize size = callback.get_size();
 		Gdiplus::Bitmap bmp(size.cx, size.cy);
-		scoped_ptr<Gdiplus::Graphics> buf(Gdiplus::Graphics::FromImage(&bmp));
-
 		Gdiplus::Rect r(0, 0, size.cx, size.cy);
+
+		if (callback.get_orientation() == config::orientation_vertical)
+			std::swap(size.cx, size.cy);
+
+		scoped_ptr<Gdiplus::Graphics> buf(Gdiplus::Graphics::FromImage(&bmp));
 		buf->FillRectangle(brush_background.get(), r);
 
 		service_ptr_t<waveform> w;
@@ -129,11 +153,18 @@ namespace wave
 				size_t ix = std::min(2047ul, x * 2048ul / size.cx);
 				Gdiplus::Point p1(x, (int)(size.cy * (0.5 - avg_min[ix] * 0.5)));
 				Gdiplus::Point p2(x, (int)(size.cy * (0.5 - avg_max[ix] * 0.5)));
-				buf->DrawLine(pen_foreground.get(), p1, p2);
+				buf->DrawLine(pen_foreground.get(), orientate(p1), orientate(p2));
 			}
 		}
 
 		Gdiplus::Graphics g(wnd.GetDC());
 		cached_bitmap.reset(new Gdiplus::CachedBitmap(&bmp, &g));
+	}
+
+	Gdiplus::Point gdi_fallback_frontend::orientate(Gdiplus::Point p)
+	{
+		if (callback.get_orientation() == config::orientation_vertical)
+			return Gdiplus::Point(p.Y, p.X);
+		return p;
 	}
 }

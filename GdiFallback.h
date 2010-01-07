@@ -6,7 +6,7 @@ namespace wave
 {
 	struct gdi_fallback_frontend : visual_frontend
 	{
-		gdi_fallback_frontend(HWND wnd, CSize size, visual_frontend_callback& callback);
+		gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_callback& callback);
 		~gdi_fallback_frontend();
 
 		void clear();
@@ -19,8 +19,9 @@ namespace wave
 		void release_objects();
 		void update_data();
 
+		Gdiplus::Point orientate(Gdiplus::Point);
+
 		CWindow wnd;
-		CSize size;
 
 		ULONG_PTR gdiplus_token;
 		scoped_ptr<Gdiplus::Pen> pen_foreground, pen_highlight, pen_selection;
