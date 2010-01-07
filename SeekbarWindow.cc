@@ -52,26 +52,20 @@ namespace wave
 	}
 
 	seekbar_window::~seekbar_window()
-	{
-		clean_up();
-	}
-
-	void seekbar_window::clean_up()
-	{
-		HWND wnd = *this;
-		if (wnd && repaint_timer_id)
-			KillTimer(repaint_timer_id);
-		repaint_timer_id = 0;
-
-		frontend.reset();
-		if (wnd)
-			DestroyWindow();
-	}
+	{}
 
 	void seekbar_window::repaint()
 	{
 		if ((HWND)*this)
 			Invalidate();
+	}
+
+	void seekbar_window::on_wm_destroy()
+	{
+		if (repaint_timer_id)
+			KillTimer(repaint_timer_id);
+		repaint_timer_id = 0;
+		frontend.reset();
 	}
 
 	LRESULT seekbar_window::on_wm_erasebkgnd(HDC dc)
@@ -123,7 +117,7 @@ namespace wave
 		}
 	};
 
-	void seekbar_window::toggle_orientation(frontend_callback_impl& cb, seekbar_window::persistent_settings& s)
+	void seekbar_window::toggle_orientation(frontend_callback_impl& cb, persistent_settings& s)
 	{
 		config::orientation o = config::orientation_horizontal;
 		if (cb.get_orientation() == o)
@@ -271,8 +265,6 @@ namespace wave
 
 		ValidateRect(0);
 	}
-
-#undef EXCEPT_MODULE_NOT_FOUND
 
 	void seekbar_window::on_wm_size(UINT wparam, CSize size)
 	{
