@@ -14,4 +14,4 @@ static service_factory_t<ui_element_impl<wave::seekbar_dui>> g_asdf_d3d9;
 static uie::window_factory<wave::seekbar_uie> g_sadf_d3d9;
 
 
-DECLARE_COMPONENT_VERSION("Waveform seekbar", "0.1.5", "Zao")
+DECLARE_COMPONENT_VERSION("Waveform seekbar", "0.1.6", "Zao")
