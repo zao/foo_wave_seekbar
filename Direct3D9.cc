@@ -307,7 +307,11 @@ namespace wave
 				throw std::exception("Direct3D9: could not create device.");
 		}
 
-		auto create_data_texture = [this](D3DFORMAT fmt) { return dev->CreateTexture(2048, 1, mip_count, 0, D3DFMT_A16B16G16R16F, D3DPOOL_MANAGED, &tex, 0); };
+		auto create_data_texture = [this](D3DFORMAT fmt)
+		{
+			return dev->CreateTexture(2048, 1, mip_count, 0, fmt, D3DPOOL_MANAGED, &tex, 0);
+		};
+
 		hr = create_data_texture(D3DFMT_A16B16G16R16F);
 		if (!SUCCEEDED(hr))
 		{
