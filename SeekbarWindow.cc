@@ -232,7 +232,7 @@ namespace wave
 					frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *frontend_callback));
 					break;
 				case config::frontend_gdi:
-					console::info("Seekbar: taking GDI+ path.");
+					console::info("Seekbar: taking GDI path.");
 					frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *frontend_callback));
 					present_interval = 50;
 					break;
