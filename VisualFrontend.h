@@ -48,10 +48,16 @@ namespace wave
 	inline COLORREF color_to_xbgr(color c)
 	{
 		return RGB(
-			(BYTE)(c.r * 255),
-		    (BYTE)(c.g * 255),
-		    (BYTE)(c.b * 255)
-		);
+			(BYTE)(c.a * c.r * 255),
+			(BYTE)(c.a * c.g * 255),
+			(BYTE)(c.a * c.b * 255)
+			);
+	}
+
+	inline COLORREF color_to_abgr(color c)
+	{
+		color pc(c.r * c.a, c.g * c.a, c.b * c.a, c.a);
+		return color_to_xbgr(pc) | (((BYTE)(c.a * 255)) << 24);
 	}
 
 	struct visual_frontend
