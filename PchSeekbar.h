@@ -73,3 +73,7 @@ using boost::optional;
 #include <delayimp.h>
 
 #include "sqlite3.h"
+
+#undef SelectBitmap
+#undef SelectBrush
+#undef SelectPen

@@ -3,16 +3,9 @@
 
 namespace wave
 {
-	inline Gdiplus::Color color_to_Color(color const& c)
-	{
-		return Gdiplus::Color((BYTE)(c.a * 255), (BYTE)(c.r * 255), (BYTE)(c.g * 255), (BYTE)(c.b * 255));
-	}
-
 	gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_callback& callback)
 		: wnd(wnd), callback(callback)
 	{
-		Gdiplus::GdiplusStartupInput gpsi;
-		Gdiplus::GdiplusStartup(&gdiplus_token, &gpsi, 0);
 		create_objects();
 		on_state_changed((state)~0);
 	}
@@ -20,7 +13,6 @@ namespace wave
 	gdi_fallback_frontend::~gdi_fallback_frontend()
 	{
 		release_objects();
-		Gdiplus::GdiplusShutdown(gdiplus_token);
 	}
 
 	void gdi_fallback_frontend::clear()
@@ -28,26 +20,21 @@ namespace wave
 
 	void gdi_fallback_frontend::draw()
 	{
-		PAINTSTRUCT ps = {};
-		if (CDCHandle dc = wnd.BeginPaint(&ps))
+		if (CPaintDC dc = wnd)
 		{
-			CSize size = callback.get_size();
+			CSize size = callback.get_size(), true_size = size;
+			back_dc->BitBlt(0, 0, size.cx, size.cy, *wave_dc, 0, 0, SRCCOPY);
+
 			if (callback.get_orientation() == config::orientation_vertical)
 				std::swap(size.cx, size.cy);
 
-			Gdiplus::Graphics gdc(dc);
-			Gdiplus::Graphics* g = &gdc;
-
-			auto draw_bar = [&](Gdiplus::Point p1, Gdiplus::Point p2)
+			auto draw_bar = [&](CPoint p1, CPoint p2)
 			{
-				g->DrawLine(pen_selection.get(), orientate(p1), orientate(p2));
+				back_dc->SelectPen(*pen_selection);
+				back_dc->MoveTo(p1);
+				back_dc->LineTo(p2);
 			};
 
-			if (cached_bitmap)
-			{
-				g->DrawCachedBitmap(cached_bitmap.get(), 0, 0);
-			}
-			
 			auto pos = callback.get_playback_position();
 			auto len = callback.get_track_length();
 			
@@ -55,27 +42,28 @@ namespace wave
 			{
 				color c = callback.get_color(config::color_highlight);
 				c.a = 0.3f;
-				Gdiplus::SolidBrush shade(color_to_Color(c));
-				Gdiplus::Point p = orientate(Gdiplus::Point((int)(pos * size.cx / len), size.cy));
-				g->FillRectangle(&shade, 0, 0, p.X, p.Y);
+				CPoint p = orientate(CPoint((int)(pos * size.cx / len), size.cy));
+				BLENDFUNCTION bf = { AC_SRC_OVER, 0, 0x40, 0 };
+				if (p.x * p.y)
+					back_dc->AlphaBlend(0, 0, p.x, p.y, *shade_dc, 0, 0, 1, 1, bf);
 			}
 
 			if (callback.is_cursor_visible())
 			{
 				draw_bar(
-					Gdiplus::Point((int)(pos * size.cx / len), 0),
-					Gdiplus::Point((int)(pos * size.cx / len), size.cy));
+					CPoint((int)(pos * size.cx / len), 0),
+					CPoint((int)(pos * size.cx / len), size.cy));
 
 				if (callback.is_seeking())
 				{
 					auto pos = callback.get_seek_position();
 					draw_bar(
-						Gdiplus::Point((int)(pos * size.cx / len), 0),
-						Gdiplus::Point((int)(pos * size.cx / len), size.cy));
+						CPoint((int)(pos * size.cx / len), 0),
+						CPoint((int)(pos * size.cx / len), size.cy));
 				}
 			}
+			dc.BitBlt(0, 0, true_size.cx, true_size.cy, *back_dc, 0, 0, SRCCOPY);
 		}
-		wnd.EndPaint(&ps);
 	}
 
 	void gdi_fallback_frontend::present()
@@ -104,25 +92,34 @@ namespace wave
 
 	void gdi_fallback_frontend::create_objects()
 	{
-		auto pen_from_color = [&](config::color color, scoped_ptr<Gdiplus::Pen>& out)
+		auto pen_from_color = [&](config::color color, scoped_ptr<CPen>& out)
 		{
 			auto c = callback.get_color(color);
-			out.reset(new Gdiplus::Pen(color_to_Color(c)));
+			out.reset(new CPen);
+			out->CreatePen(PS_SOLID, 0, color_to_xbgr(c));
 		};
-		auto solid_brush_from_color = [&](config::color color, scoped_ptr<Gdiplus::SolidBrush>& out)
+		auto solid_brush_from_color = [&](config::color color, scoped_ptr<CBrush>& out)
 		{
 			auto c = callback.get_color(color);
-			out.reset(new Gdiplus::SolidBrush(color_to_Color(c)));
+			out.reset(new CBrush);
+			out->CreateSolidBrush(color_to_xbgr(c));
 		};
 		pen_from_color(config::color_foreground, pen_foreground);
 		pen_from_color(config::color_highlight, pen_highlight);
 		pen_from_color(config::color_selection, pen_selection);
 		solid_brush_from_color(config::color_background, brush_background);
+		
+		if (!shade_dc)
+		{
+			CClientDC dc(wnd);
+			shade_dc.reset(new mem_dc(dc, CSize(1, 1)));
+		}
+		color c = callback.get_color(config::color_highlight);
+		shade_dc->SetPixel(0, 0, color_to_xbgr(c));
 	}
 
 	void gdi_fallback_frontend::release_objects()
 	{
-		cached_bitmap.reset();
 		pen_foreground.reset();
 		pen_highlight.reset();
 		pen_selection.reset();
@@ -132,14 +129,17 @@ namespace wave
 	void gdi_fallback_frontend::update_data()
 	{
 		CSize size = callback.get_size();
-		Gdiplus::Bitmap bmp(size.cx, size.cy);
-		Gdiplus::Rect r(0, 0, size.cx, size.cy);
+
+		{
+			CClientDC win_dc(wnd);
+			back_dc.reset(new mem_dc(win_dc, size));
+			wave_dc.reset(new mem_dc(win_dc, size));
+		}
+
+		wave_dc->FillRect(CRect(0, 0, size.cx, size.cy), *brush_background);
 
 		if (callback.get_orientation() == config::orientation_vertical)
 			std::swap(size.cx, size.cy);
-
-		scoped_ptr<Gdiplus::Graphics> buf(Gdiplus::Graphics::FromImage(&bmp));
-		buf->FillRectangle(brush_background.get(), r);
 
 		service_ptr_t<waveform> w;
 		if (callback.get_waveform(w))
@@ -148,23 +148,22 @@ namespace wave
 			w->get_field("minimum", avg_min);
 			w->get_field("maximum", avg_max);
 			w->get_field("rms", avg_rms);
+			wave_dc->SelectPen(*pen_foreground);
 			for (size_t x = 0; x < (size_t)size.cx; ++x)
 			{
 				size_t ix = std::min(2047ul, x * 2048ul / size.cx);
-				Gdiplus::Point p1(x, (int)(size.cy * (0.5 - avg_min[ix] * 0.5)));
-				Gdiplus::Point p2(x, (int)(size.cy * (0.5 - avg_max[ix] * 0.5)));
-				buf->DrawLine(pen_foreground.get(), orientate(p1), orientate(p2));
+				CPoint p1(x, (int)(size.cy * (0.5 - avg_min[ix] * 0.5)));
+				CPoint p2(x, (int)(size.cy * (0.5 - avg_max[ix] * 0.5)));
+				wave_dc->MoveTo(orientate(p1));
+				wave_dc->LineTo(orientate(p2));
 			}
 		}
-
-		Gdiplus::Graphics g(wnd.GetDC());
-		cached_bitmap.reset(new Gdiplus::CachedBitmap(&bmp, &g));
 	}
 
-	Gdiplus::Point gdi_fallback_frontend::orientate(Gdiplus::Point p)
+	CPoint gdi_fallback_frontend::orientate(CPoint p)
 	{
 		if (callback.get_orientation() == config::orientation_vertical)
-			return Gdiplus::Point(p.Y, p.X);
+			return CPoint(p.y, p.x);
 		return p;
 	}
 }
