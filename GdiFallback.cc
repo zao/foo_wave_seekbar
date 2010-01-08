@@ -126,6 +126,15 @@ namespace wave
 		brush_background.reset();
 	}
 
+	D3DXVECTOR4* saturate(D3DXVECTOR4* in)
+	{
+		in->x = std::max(0.0f, std::min(1.0f, in->x));
+		in->y = std::max(0.0f, std::min(1.0f, in->y));
+		in->z = std::max(0.0f, std::min(1.0f, in->z));
+		in->w = std::max(0.0f, std::min(1.0f, in->w));
+		return in;
+	}
+
 	void gdi_fallback_frontend::update_data()
 	{
 		CSize size = callback.get_size();
@@ -149,13 +158,47 @@ namespace wave
 			w->get_field("maximum", avg_max);
 			w->get_field("rms", avg_rms);
 			wave_dc->SelectPen(*pen_foreground);
+
+			color bg = callback.get_color(config::color_background);
+			color txt = callback.get_color(config::color_foreground);
+			D3DXVECTOR4 backgroundColor(bg.r, bg.g, bg.b, bg.a);
+			D3DXVECTOR4 textColor(txt.r, txt.g, txt.b, txt.a);
+			D3DXVECTOR2 tc;
+
+			float dx = 1.0f / (float)size.cx;
+			float dy = 1.0f / (float)size.cy;
 			for (size_t x = 0; x < (size_t)size.cx; ++x)
 			{
+				tc.x = (float)x / (float)size.cx;
+				size_t ix = x * 2048ul / size.cx;
+				D3DXVECTOR4 sample(avg_min[ix], avg_max[ix], avg_rms[ix], 1);
+#if 1
+				for (size_t y = 0; y < (size_t)size.cy; ++y)
+				{
+					D3DXVECTOR4 c;
+					tc.y = 2.0f * (float)y / (float)size.cy - 1.0f;
+					float below = tc.y - sample.x;
+					float above = tc.y - sample.y;
+					float factor = std::min(fabs(below), fabs(above));
+					bool outside = (below < 0 || above > 0);
+					bool inside_rms = fabs(tc.y) <= sample.z;
+
+					if (outside)
+						c = backgroundColor;
+					else
+						D3DXVec4Lerp(&c, &backgroundColor, &textColor, 7.0f * factor);
+					
+					saturate(&c);
+					color cc(c.x, c.y, c.z, c.w);
+					wave_dc->SetPixelV(x, y, color_to_xbgr(cc));
+				}
+#else
 				size_t ix = std::min(2047ul, x * 2048ul / size.cx);
 				CPoint p1(x, (int)(size.cy * (0.5 - avg_min[ix] * 0.5)));
 				CPoint p2(x, (int)(size.cy * (0.5 - avg_max[ix] * 0.5)));
 				wave_dc->MoveTo(orientate(p1));
 				wave_dc->LineTo(orientate(p2));
+#endif
 			}
 		}
 	}
