@@ -15,3 +15,4 @@ static uie::window_factory<wave::seekbar_uie> g_sadf_d3d9;
 
 
 DECLARE_COMPONENT_VERSION("Waveform seekbar", "0.1.6", "Zao")
+VALIDATE_COMPONENT_FILENAME("foo_wave_seekbar.dll")
