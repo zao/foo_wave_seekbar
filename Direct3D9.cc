@@ -245,8 +245,7 @@ namespace wave
 	{
 		bool operator() () const
 		{
-			D3DXMATRIX m;
-			D3DXMatrixTranslation(&m, 0, 0, 0);
+			D3DXGetDriverLevel(0);
 			return true;
 		}
 	};
