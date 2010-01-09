@@ -45,7 +45,7 @@ namespace wave
 
 	struct waveform_impl : waveform
 	{
-		virtual bool get_field(pfc::string const& what, pfc::list_base_t<float>& out);
+		virtual bool get_field(pfc::string const& what, pfc::list_base_t<float>& out) override;
 		pfc::list_t<float> minimum, maximum, rms;
 	};
 
@@ -54,18 +54,17 @@ namespace wave
 		cache_impl();
 		~cache_impl();
 
-		bool get_waveform(const playable_location& file, service_ptr_t<waveform>& out);
-		void enqueue_waveform(const playable_location& file, bool user_requested = false);
-		void remove_dead_waveforms();
-		void compact_storage();
+		void get_waveform(shared_ptr<get_request>) override;
+		void remove_dead_waveforms() override;
+		void compact_storage() override;
 
-		void flush();
+		void flush() override;
 
 	private:
 		void open_store();
 		void load_data(shared_ptr<boost::barrier>);
 		void delayed_init();
-		void process_file(playable_location_impl loc, bool user_requested);
+		service_ptr_t<waveform> process_file(playable_location_impl loc, bool user_requested);
 
 		boost::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;

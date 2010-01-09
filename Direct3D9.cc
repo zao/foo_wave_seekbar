@@ -326,7 +326,6 @@ namespace wave
 
 		create_vertex_resources();
 		create_default_resources();
-		on_state_changed((state)~0);
 	}
 
 	void direct3d9_frontend::clear()

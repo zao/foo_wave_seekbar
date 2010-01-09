@@ -45,7 +45,7 @@ namespace wave
 	seekbar_window::seekbar_window()
 		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 		, placeholder_waveform(make_placeholder_waveform()), frontend_callback(new frontend_callback_impl), initializing_graphics(false)
-		, seek_in_progress(false), possible_next_enqueued(false), repaint_timer_id(0)
+		, seek_in_progress(false), possible_next_enqueued(false), auto_get_serial(0), repaint_timer_id(0)
 		
 	{
 		frontend_callback->set_waveform(placeholder_waveform);
@@ -240,6 +240,10 @@ namespace wave
 				console::info("Seekbar: Frontend initialized.");
 				initializing_graphics = true;
 
+				try_get_data();
+
+				frontend->on_state_changed((visual_frontend::state)~0);
+
 				if (frontend)
 				{
 					repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
@@ -253,8 +257,6 @@ namespace wave
 				settings.active_frontend_kind = config::frontend_gdi;
 			}
 		}
-
-		try_get_data();
 
 		if (frontend)
 		{
@@ -300,6 +302,18 @@ namespace wave
 	static const GUID order_shuffle_albums = { 0x499e0b08, 0xc887, 0x48c1, { 0x9c, 0xca, 0x27, 0x37, 0x7c, 0x8b, 0xfd, 0x30 } };
 	static const GUID order_shuffle_folders = { 0x83c37600, 0xd725, 0x4727, { 0xb5, 0x3c, 0xbd, 0xef, 0xfe, 0x5f, 0x8d, 0xc7 } };
 
+	void enqueue(playable_location const& location)
+	{
+		shared_ptr<get_request> request(new get_request);
+
+		request->location.copy(location);
+		request->user_requested = false;
+		request->completion_handler = [](shared_ptr<get_response>) {};
+
+		static_api_ptr_t<cache> c;
+		c->get_waveform(request);
+	}
+
 	void seekbar_window::test_playback_order(t_size playback_order_index)
 	{
 		if (!core_api::are_services_available())
@@ -316,8 +330,7 @@ namespace wave
 				metadb_handle_ptr next = pm->playlist_get_item_handle(playlist, (index + 1) % count);
 				try
 				{
-					static_api_ptr_t<cache> c;
-					c->enqueue_waveform(next->get_location());
+					enqueue(next->get_location());
 					possible_next_enqueued = true;
 				}
 				catch (exception_service_not_found&)
@@ -356,27 +369,13 @@ namespace wave
 		set_cursor_position(0.0f);
 		set_cursor_visibility(true);
 		frontend_callback->set_playable_location(ptr->get_location());
-		state.data_is_current = false;
 
 		if (frontend)
 			frontend->on_state_changed(visual_frontend::state(visual_frontend::state_replaygain | visual_frontend::state_position | visual_frontend::state_track));
 
-		try
-		{
-			static_api_ptr_t<cache> c;
-			playable_location_impl loc;
-			frontend_callback->get_playable_location(loc);
-			c->enqueue_waveform(loc);
-		}
-		catch (exception_service_not_found&)
-		{}
-		catch (exception_service_duplicated&)
-		{}
-
 		possible_next_enqueued = false;
 
-		if (!try_get_data())
-			state.last_attempt_time = 0.0;
+		try_get_data();
 		repaint();
 	}
 
@@ -392,7 +391,6 @@ namespace wave
 	{
 		set_cursor_position((float)t);
 		set_cursor_visibility(true);
-		state.last_attempt_time = t;
 		if (frontend)
 			frontend->on_state_changed(visual_frontend::state_position);
 		repaint();
@@ -422,11 +420,7 @@ namespace wave
 			test_playback_order(pm->playback_order_get_active());
 		}
 		set_cursor_visibility(true);
-		if (!state.data_is_current && t - state.last_attempt_time > 2.0)
-		{
-			if (!try_get_data())
-				state.last_attempt_time = t;
-		}
+
 		if (frontend)
 			frontend->on_state_changed(visual_frontend::state_position);
 		repaint();
@@ -461,33 +455,40 @@ namespace wave
 			frontend->on_state_changed(visual_frontend::state_position);
 	}
 
-	bool seekbar_window::try_get_data()
+	void seekbar_window::waveform_completion_handler(shared_ptr<get_response> response, uint32_t serial)
 	{
-		if (state.data_is_current)
-			return true;
+		in_main_thread([this, response, serial]()
+		{
+			if (serial != auto_get_serial) return;
+			frontend_callback->set_waveform(response->waveform);
+			if (this->frontend)
+				this->frontend->on_state_changed(visual_frontend::state_data);
+		});
+	}
+
+	void seekbar_window::try_get_data()
+	{
 		try
 		{
 			if (core_api::are_services_available())
 			{
-				static_api_ptr_t<cache> c;
-				playable_location_impl loc;
-				frontend_callback->get_playable_location(loc);
-				service_ptr_t<waveform> w;
-				if (c->get_waveform(loc, w))
+				shared_ptr<get_request> request(new get_request);
+				request->user_requested = false;
+				frontend_callback->get_playable_location(request->location);
+				uint32_t next_serial = ++auto_get_serial;
+				request->completion_handler = [this, next_serial](shared_ptr<get_response> response)
 				{
-					state.data_is_current = true;
-				}
-				frontend_callback->set_waveform(w);
+					waveform_completion_handler(response, next_serial);
+				};
 
-				if (frontend)
-					frontend->on_state_changed(visual_frontend::state_data);
+				static_api_ptr_t<cache> c;
+				c->get_waveform(request);
 			}
 		}
 		catch (exception_service_not_found&)
 		{}
 		catch (exception_service_duplicated&)
 		{}
-		return state.data_is_current;
 	}
 
 	void seekbar_window::save_settings(persistent_settings const& settings, std::vector<char>& out)
@@ -588,6 +589,5 @@ namespace wave
 	}
 
 	seekbar_state::seekbar_state()
-	: last_attempt_time(-10.0), data_is_current(false)
 	{}
 }

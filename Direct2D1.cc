@@ -42,7 +42,6 @@ namespace wave
 		factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(size.cx, size.cy)), &rt);
 
 		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
-		on_state_changed((state)~0);
 	}
 
 	direct2d1_frontend::~direct2d1_frontend()
