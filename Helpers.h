@@ -13,3 +13,20 @@ auto try_module_call(F f) -> decltype(f())
 	{}
 	return ret;
 }
+
+template <typename F>
+void in_main_thread(F f)
+{
+	struct in_main : main_thread_callback
+	{
+		void callback_run() override
+		{
+			f();
+		}
+
+		in_main(F f) : f(f) {}
+		F f;
+	};
+
+	static_api_ptr_t<main_thread_callback_manager>()->add_callback(new service_impl_t<in_main>(f));
+}

@@ -4,24 +4,7 @@
 #include "resource.h"
 #include "PersistentSettings.h"
 #include "FrontendCallbackImpl.h"
-
-
-template <typename F>
-void in_main_thread(F f)
-{
-	struct in_main : main_thread_callback
-	{
-		void callback_run() override
-		{
-			f();
-		}
-
-		in_main(F f) : f(f) {}
-		F f;
-	};
-
-	static_api_ptr_t<main_thread_callback_manager>()->add_callback(new service_impl_t<in_main>(f));
-}
+#include "Helpers.h"
 
 DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU);
 

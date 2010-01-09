@@ -121,13 +121,13 @@
   <ItemGroup>
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="GdiFallback.h" />
+    <ClInclude Include="Helpers.h" />
     <ClInclude Include="PchSeekbar.h" />
     <ClInclude Include="PersistentSettings.h" />
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />
     <ClInclude Include="Direct2D.h" />
     <ClInclude Include="Direct3D.h" />
-    <ClInclude Include="SehHelper.h" />
     <ClInclude Include="VisualFrontend.h" />
     <ClInclude Include="SeekbarCui.h" />
     <ClInclude Include="SeekbarDui.h" />

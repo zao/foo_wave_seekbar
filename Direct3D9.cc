@@ -1,7 +1,7 @@
 #include "PchSeekbar.h"
 #include "Direct3D.h"
 #include "SeekbarState.h"
-#include "SehHelper.h"
+#include "Helpers.h"
 
 static void reduce_by_two(pfc::list_base_t<float>& data, UINT n)
 {
