@@ -53,8 +53,10 @@ using boost::noncopyable;
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 using boost::scoped_ptr;
 using boost::shared_ptr;
+using boost::weak_ptr;
 
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
@@ -67,9 +69,17 @@ using boost::uint8_t;
 using boost::uint16_t;
 using boost::uint32_t;
 
+#include <boost/enable_shared_from_this.hpp>
 #include <boost/optional.hpp>
+
+using boost::enable_shared_from_this;
 using boost::optional;
+
 
 #include <delayimp.h>
 
 #include "sqlite3.h"
+
+#undef SelectBitmap
+#undef SelectBrush
+#undef SelectPen

@@ -20,7 +20,7 @@ namespace wave
 				rms[i] = 0.0f;
 			}
 		}
-		
+
 		virtual bool get_field(pfc::string const& what, pfc::list_base_t<float>& out)
 		{
 			if (pfc::string::g_equals(what, "minimum"))
@@ -232,7 +232,7 @@ namespace wave
 					frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *frontend_callback));
 					break;
 				case config::frontend_gdi:
-					console::info("Seekbar: taking GDI+ path.");
+					console::info("Seekbar: taking GDI path.");
 					frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *frontend_callback));
 					present_interval = 50;
 					break;
@@ -475,13 +475,10 @@ namespace wave
 				service_ptr_t<waveform> w;
 				if (c->get_waveform(loc, w))
 				{
-					frontend_callback->set_waveform(w);
 					state.data_is_current = true;
 				}
-				else
-				{
-					frontend_callback->set_waveform(placeholder_waveform);
-				}
+				frontend_callback->set_waveform(w);
+
 				if (frontend)
 					frontend->on_state_changed(visual_frontend::state_data);
 			}
