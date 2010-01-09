@@ -41,6 +41,7 @@ namespace wave
 			if (!user_requested && store->has(loc))
 			{
 				console::formatter() << "Wave cache: redundant request for " << loc;
+				store->get(out, loc);
 				return out;
 			}
 		}

@@ -9,6 +9,8 @@ namespace wave {
 		FB2K_MAKE_SERVICE_INTERFACE(waveform, service_base)
 	};
 
+	service_ptr_t<waveform> make_placeholder_waveform();
+
 	struct get_response
 	{
 		service_ptr_t<waveform> waveform;

@@ -120,6 +120,10 @@ namespace wave
 		}
 		else
 		{
+			response->waveform = make_placeholder_waveform();
+			request->completion_handler(response);
+			
+			response.reset(new get_response);
 			if (!request->user_requested)
 			{
 				important_queue.push(request->location);
