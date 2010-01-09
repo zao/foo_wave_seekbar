@@ -29,7 +29,7 @@ namespace wave
 		CComPtr<ID2D1HwndRenderTarget> rt;
 
 		CComPtr<IWICImagingFactory> wic_factory;
-		CComPtr<IWICBitmap> cache_bitmap;
+		CComPtr<ID2D1Bitmap> wave_bitmap;
 		
 		boost::mutex cache_mutex;
 		boost::asio::io_service cache_pump;

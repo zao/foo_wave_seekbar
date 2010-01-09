@@ -1,6 +1,6 @@
 #include "PchSeekbar.h"
 #include "Direct2D.h"
-#include "SehHelper.h"
+#include "Helpers.h"
 #include <boost/math/special_functions.hpp>
 
 namespace wave
@@ -61,7 +61,7 @@ namespace wave
 		bool vertical = callback.get_orientation() == config::orientation_vertical;
 		D2D1_SIZE_F size = rt->GetSize();
 		if (vertical) std::swap(size.width, size.height);
-
+		
 		rt->BeginDraw();
 		rt->Clear(clear_color);
 		float seek_x = (float)(size.width * callback.get_seek_position() / callback.get_track_length());
@@ -70,11 +70,9 @@ namespace wave
 		if (vertical) rt->SetTransform(D2D1::Matrix3x2F(0, 1, 1, 0, 0, 0));
 		{
 			boost::mutex::scoped_lock sl(cache_mutex);
-			if (cache_bitmap)
+			if (wave_bitmap)
 			{
-				CComPtr<ID2D1Bitmap> bm;
-				rt->CreateBitmapFromWicBitmap(cache_bitmap, &bm);
-				rt->DrawBitmap(bm);
+				rt->DrawBitmap(wave_bitmap);
 			}
 		}
 		if (callback.is_seeking())
@@ -213,8 +211,12 @@ namespace wave
 		rt->DrawGeometry(wave_geometry, brushes.foreground_brush);
 		rt->EndDraw();
 
-		boost::mutex::scoped_lock sl(cache_mutex);
-		cache_bitmap = bm;
+		in_main_thread([this, bm]()
+		{
+			boost::mutex::scoped_lock sl(cache_mutex);
+			this->wave_bitmap.Release();
+			this->rt->CreateBitmapFromWicBitmap(bm, &this->wave_bitmap);
+		});
 	}
 
 	template <typename T>
