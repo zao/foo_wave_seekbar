@@ -5,18 +5,32 @@
 namespace wave {
 	struct waveform : service_base
 	{
-		virtual bool get_field(pfc::string const& what, pfc::list_base_t<float>& out) = 0;
+		virtual bool get_field(pfc::string const& what, pfc::list_base_t<float>& out) abstract;
 		FB2K_MAKE_SERVICE_INTERFACE(waveform, service_base)
+	};
+
+	struct get_response
+	{
+		service_ptr_t<waveform> waveform;
+	};
+
+	struct get_request
+	{
+		get_request()
+			: completion_handler([](shared_ptr<get_response>) {})
+		{}
+		playable_location_impl location;
+		bool user_requested;
+		function<void (shared_ptr<get_response>)> completion_handler;
 	};
 
 	struct cache : service_base
 	{
-		virtual bool get_waveform(const playable_location& file, service_ptr_t<waveform>& out) = 0;
-		virtual void enqueue_waveform(const playable_location& file, bool user_requested = false) = 0;
-		virtual void remove_dead_waveforms() = 0;
-		virtual void compact_storage() = 0;
+		virtual void get_waveform(shared_ptr<get_request> request) abstract;
+		virtual void remove_dead_waveforms() abstract;
+		virtual void compact_storage() abstract;
 
-		virtual void flush() = 0;
+		virtual void flush() abstract;
 
 		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(cache)
 	};

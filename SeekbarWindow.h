@@ -5,6 +5,24 @@
 #include "PersistentSettings.h"
 #include "FrontendCallbackImpl.h"
 
+
+template <typename F>
+void in_main_thread(F f)
+{
+	struct in_main : main_thread_callback
+	{
+		void callback_run() override
+		{
+			f();
+		}
+
+		in_main(F f) : f(f) {}
+		F f;
+	};
+
+	static_api_ptr_t<main_thread_callback_manager>()->add_callback(new service_impl_t<in_main>(f));
+}
+
 DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU);
 
 namespace wave
@@ -65,14 +83,18 @@ namespace wave
 		service_ptr_t<waveform> placeholder_waveform;
 
 		scoped_ptr<frontend_callback_impl> frontend_callback;
-		scoped_ptr<struct visual_frontend> frontend;
+		scoped_ptr<visual_frontend> frontend;
 		bool initializing_graphics;
 		bool seek_in_progress;
 		bool possible_next_enqueued;
 		seekbar_state state;
 		color global_colors[config::color_count];
 
-		bool try_get_data();
+		uint32_t auto_get_serial;
+
+		void waveform_completion_handler(shared_ptr<get_response> response, uint32_t serial);
+
+		void try_get_data();
 		void flush_frontend();
 		void repaint();
 
@@ -80,7 +102,6 @@ namespace wave
 		UINT_PTR repaint_timer_id;
 
 	private:
-		void clean_up();
 		void test_playback_order(t_size order);
 
 	public:
@@ -93,7 +114,6 @@ namespace wave
 		void set_frontend(config::frontend kind);
 		void set_orientation(config::orientation);
 		void set_shade_played(bool);
-
 		struct configuration_dialog : ATL::CDialogImpl<configuration_dialog>
 		{
 			enum { IDD = IDD_CONFIG };

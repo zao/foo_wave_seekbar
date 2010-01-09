@@ -1,9 +1,11 @@
 #include "PchSeekbar.h"
 #include "CacheImpl.h"
 
-namespace wave{
-	void cache_impl::process_file(playable_location_impl loc, bool user_requested)
+namespace wave
+{
+	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
+		service_ptr_t<waveform> out;
 		// Check for priority jobs.
 		if (user_requested)
 		{
@@ -26,7 +28,7 @@ namespace wave{
 			regex_match(loc.get_path(), boost::regex("(cdda)://.*", boost::regex::perl | boost::regex::icase)) && !user_requested)
 		{
 			console::formatter() << "Wave cache: skipping location " << loc;
-			return;
+			return out;
 		}
 
 		{
@@ -34,12 +36,12 @@ namespace wave{
 			if (!store || flush_callback.is_aborting())
 			{
 				job_flush_queue.push_back(make_job(loc, user_requested));
-				return;
+				return out;
 			}
 			if (!user_requested && store->has(loc))
 			{
 				console::formatter() << "Wave cache: redundant request for " << loc;
-				return;
+				return out;
 			}
 		}
 
@@ -49,7 +51,7 @@ namespace wave{
 			abort_callback& abort_cb = flush_callback;
 			
 			if (!input_entry::g_is_supported_path(loc.get_path()))
-				return;
+				return out;
 
 			input_entry::g_open_for_decoding(decoder, 0, loc.get_path(), abort_cb);
 
@@ -58,7 +60,7 @@ namespace wave{
 				file_info_impl info;
 				decoder->initialize(subsong, input_flag_simpledecode, abort_cb);
 				if (!decoder->can_seek())
-					return;
+					return out;
 				decoder->get_info(subsong, info, abort_cb);
 
 				t_int64 sampleRate = info.info_get_int("samplerate");
@@ -119,10 +121,13 @@ namespace wave{
 					rms[i] = sqrt(rms[i] / chunkSize);
 				}
 
-				service_ptr_t<waveform_impl> out = new service_impl_t<waveform_impl>;
-				out->minimum.add_items(minimum);
-				out->maximum.add_items(maximum);
-				out->rms.add_items(rms);
+				{
+					service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
+					ret->minimum.add_items(minimum);
+					ret->maximum.add_items(maximum);
+					ret->rms.add_items(rms);
+					out = ret;
+				}
 
 				console::formatter() << "Wave cache: finished analysis of " << loc;
 				boost::mutex::scoped_lock sl(cache_mutex);
@@ -131,6 +136,7 @@ namespace wave{
 					store->put(out, loc);
 				else
 					console::formatter() << "Wave cache: could not open backend database, losing new data for " << loc;
+				return out;
 			}
 		}
 		catch (foobar2000_io::exception_aborted&)
@@ -145,5 +151,6 @@ namespace wave{
 		{
 			console::formatter() << "Wave cache: generic IO exception on file " << loc;
 		}
+		return out;
 	}
 }

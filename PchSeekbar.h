@@ -8,6 +8,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/assign.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
@@ -18,6 +19,17 @@
 #include <boost/make_shared.hpp>
 using boost::scoped_ptr;
 using boost::shared_ptr;
+
+using boost::int8_t;
+using boost::int16_t;
+using boost::int32_t;
+using boost::int64_t;
+using boost::uint8_t;
+using boost::uint16_t;
+using boost::uint32_t;
+using boost::uint64_t;
+
+using boost::function;
 
 #pragma warning(push)
 #pragma warning(disable: 4244)

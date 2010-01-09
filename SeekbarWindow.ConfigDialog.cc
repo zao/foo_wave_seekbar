@@ -11,7 +11,7 @@ namespace wave
 		CComboBox cb = GetDlgItem(IDC_FRONTEND);
 		std::wstring d3d = L"Direct3D 9.0c";
 		std::wstring d2d = L"Direct2D 1.0";
-		std::wstring gdi = L"GDI+";
+		std::wstring gdi = L"GDI";
 		
 		if (has_direct3d9())
 			cb.SetItemData(cb.AddString(d3d.c_str()), config::frontend_direct3d9);

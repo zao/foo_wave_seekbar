@@ -41,10 +41,13 @@ namespace wave
 			store->get_jobs(jobs);
 			for each (job j in jobs)
 			{
-				io.post([this, j]()
+				shared_ptr<get_request> request(new get_request);
+				request->location.copy(j.loc);
+				request->user_requested = j.user;
+				io.post([this, request]()
 				{
-					enqueue_waveform(j.loc, j.user); }
-				);
+					get_waveform(request);
+				});
 			}
 		}
 		else
@@ -102,7 +105,7 @@ namespace wave
 		initialized = true;
 	}
 
-	bool cache_impl::get_waveform(const playable_location& file, service_ptr_t<waveform>& out)
+	void cache_impl::get_waveform(shared_ptr<get_request> request)
 	{
 		boost::mutex::scoped_lock sl(cache_mutex);
 		if (!initialized)
@@ -110,29 +113,23 @@ namespace wave
 			delayed_init();
 		}
 
-		if (store)
+		shared_ptr<get_response> response(new get_response);
+		if (store && store->get(response->waveform, request->location))
 		{
-			return store->get(out, file);
+			request->completion_handler(response);
 		}
-		return false;
-	}
-
-	void cache_impl::enqueue_waveform(const playable_location& file, bool user_requested)
-	{
-		playable_location_impl loc(file);
-		boost::mutex::scoped_lock sl(cache_mutex);
-		if (!initialized)
+		else
 		{
-			delayed_init();
+			if (!request->user_requested)
+			{
+				important_queue.push(request->location);
+			}
+			io.post([this, request, response]()
+			{
+				response->waveform = process_file(request->location, request->user_requested);
+				request->completion_handler(response);
+			});
 		}
-		if (!user_requested)
-		{
-			important_queue.push(loc);
-		}
-		io.post([this, loc, user_requested]()
-		{
-			process_file(loc, user_requested);
-		});
 	}
 
 	void cache_impl::remove_dead_waveforms()

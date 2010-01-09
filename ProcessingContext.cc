@@ -21,13 +21,19 @@ namespace wave
 
 	void enqueue(static_api_ptr_t<cache>& cache, const metadb_handle_ptr& p)
 	{
-		cache->enqueue_waveform(p->get_location(), true);
+		shared_ptr<get_request> request(new get_request);
+		request->location.copy(p->get_location());
+		request->user_requested = true;
+		cache->get_waveform(request);
 	}
 
 	void processing_contextmenu_item::context_command(unsigned p_index, metadb_handle_list_cref p_data, const GUID& p_caller)
 	{
 		static_api_ptr_t<cache> infoCache;
-		p_data.enumerate(boost::bind(&enqueue, infoCache, _1));
+		p_data.enumerate([&](metadb_handle_ptr p)
+		{
+			enqueue(infoCache, p);
+		});
 	}
 
 	GUID processing_contextmenu_item::get_item_guid(unsigned p_index)
