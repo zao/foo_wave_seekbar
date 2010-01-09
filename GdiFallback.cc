@@ -31,8 +31,8 @@ namespace wave
 			auto draw_bar = [&](CPoint p1, CPoint p2)
 			{
 				back_dc->SelectPen(*pen_selection);
-				back_dc->MoveTo(p1);
-				back_dc->LineTo(p2);
+				back_dc->MoveTo(orientate(p1));
+				back_dc->LineTo(orientate(p2));
 			};
 
 			auto pos = callback.get_playback_position();
@@ -147,7 +147,8 @@ namespace wave
 
 		wave_dc->FillRect(CRect(0, 0, size.cx, size.cy), *brush_background);
 
-		if (callback.get_orientation() == config::orientation_vertical)
+		bool vertical = callback.get_orientation() == config::orientation_vertical;
+		if (vertical)
 			std::swap(size.cx, size.cy);
 
 		service_ptr_t<waveform> w;
@@ -190,7 +191,8 @@ namespace wave
 					
 					saturate(&c);
 					color cc(c.x, c.y, c.z, c.w);
-					wave_dc->SetPixelV(x, y, color_to_xbgr(cc));
+
+					wave_dc->SetPixelV(vertical ? y : x, vertical ? x : y, color_to_xbgr(cc));
 				}
 #else
 				size_t ix = std::min(2047ul, x * 2048ul / size.cx);
