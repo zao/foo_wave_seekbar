@@ -32,7 +32,7 @@ namespace uie
 
 		virtual void destroy_window()
 		{
-			DestroyWindow();
+			::DestroyWindow(*this);
 			host.release();
 		}
 
