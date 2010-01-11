@@ -89,6 +89,7 @@ namespace wave
 		shared_ptr<boost::barrier> load_barrier(new boost::barrier(2));
 		io.post([this, load_barrier]()
 		{
+			initialized = true;
 			load_data(load_barrier);
 		});
 		size_t n_cores = boost::thread::hardware_concurrency();
@@ -102,7 +103,6 @@ namespace wave
 				load_barrier->wait();
 			}
 		}
-		initialized = true;
 	}
 
 	void cache_impl::get_waveform(shared_ptr<get_request> request)
