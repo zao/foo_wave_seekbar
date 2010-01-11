@@ -230,6 +230,7 @@ namespace wave
 				case config::frontend_direct2d1:
 					console::info("Seekbar: taking Direct2D1 path.");
 					frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *frontend_callback));
+					present_interval = 25;
 					break;
 				case config::frontend_gdi:
 					console::info("Seekbar: taking GDI path.");
