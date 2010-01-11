@@ -54,6 +54,16 @@ float4 bar( float pos, float2 tc, float4 fg, float4 bg, float width, bool show )
 	return c;
 }
 
+float4 faded_bar( float pos, float2 tc, float4 fg, float4 bg, float width, bool show, float vert_from, float vert_to )
+{
+	float dist = abs(pos - tc.x);
+	float fluff = smoothstep(vert_from, vert_to, abs(tc.y));
+	float4 c = show
+		? lerp(fg, bg, max(fluff, smoothstep(0, width, dist)))
+		: bg;
+	return c;
+}
+
 float4 played( float pos, float2 tc, float4 fg, float4 bg, float alpha)
 {
 	float4 c = bg;
