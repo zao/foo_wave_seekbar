@@ -74,7 +74,7 @@ namespace wave
 		boost::asio::io_service io;
 		scoped_ptr<boost::asio::io_service::work> idle_work;
 		boost::thread_group work_threads;
-		bool initialized;
+		long initialized;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
 		std::deque<job> job_flush_queue;

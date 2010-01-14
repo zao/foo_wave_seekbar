@@ -5,7 +5,7 @@
 namespace wave
 {
 	cache_impl::cache_impl()
-		: idle_work(new boost::asio::io_service::work(io)), initialized(false)
+		: idle_work(new boost::asio::io_service::work(io)), initialized(0)
 	{
 	}
 
@@ -89,7 +89,6 @@ namespace wave
 		shared_ptr<boost::barrier> load_barrier(new boost::barrier(2));
 		io.post([this, load_barrier]()
 		{
-			initialized = true;
 			load_data(load_barrier);
 		});
 		size_t n_cores = boost::thread::hardware_concurrency();
@@ -108,7 +107,7 @@ namespace wave
 	void cache_impl::get_waveform(shared_ptr<get_request> request)
 	{
 		boost::mutex::scoped_lock sl(cache_mutex);
-		if (!initialized)
+		if (!InterlockedCompareExchange(&initialized, 1, 1))
 		{
 			delayed_init();
 		}
