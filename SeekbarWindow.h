@@ -76,7 +76,6 @@ namespace wave
 
 		void toggle_orientation(frontend_callback_impl& cb, persistent_settings& s);
 		virtual bool forward_rightclick() { return false; }
-		virtual service_ptr get_self_pointer() = 0;
 
 		service_ptr_t<waveform> placeholder_waveform;
 
