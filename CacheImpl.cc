@@ -107,7 +107,7 @@ namespace wave
 	void cache_impl::get_waveform(shared_ptr<get_request> request)
 	{
 		boost::mutex::scoped_lock sl(cache_mutex);
-		if (!InterlockedCompareExchange(&initialized, 1, 1))
+		if (!InterlockedCompareExchange(&initialized, 1, 0))
 		{
 			delayed_init();
 		}
