@@ -26,6 +26,7 @@ namespace wave
 		CComPtr<IDirect3DDevice9> dev;
 
 		CComPtr<IDirect3DTexture9> tex;
+		std::deque<CComPtr<IDirect3DTexture9>> annotation_textures;
 		CComPtr<ID3DXEffect> fx;
 		CComPtr<IDirect3DVertexBuffer9> vb;
 		CComPtr<IDirect3DVertexDeclaration9> decl;

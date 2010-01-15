@@ -199,6 +199,49 @@ namespace wave
 		if (!fx)
 			throw std::exception("Direct3D9: could not create effects.");
 
+		D3DXHANDLE h = 0;
+		for (int i = 0; h = fx->GetParameter(0, i); ++i)
+		{
+			D3DXPARAMETER_DESC pd = {};
+			fx->GetParameterDesc(h, &pd);
+			if (pd.Type == D3DXPT_TEXTURE2D)
+			{
+				for (UINT ann_idx = 0; ann_idx < pd.Annotations; ++ann_idx)
+				{
+					D3DXHANDLE ann = fx->GetAnnotation(h, ann_idx);
+					D3DXPARAMETER_DESC ann_desc = {};
+					fx->GetParameterDesc(ann, &ann_desc);
+					if (ann_desc.Type == D3DXPT_STRING && ann_desc.Name == std::string("ResourceName"))
+					{
+						char const* resource_name = 0;
+						fx->GetString(ann, &resource_name);
+
+						CComPtr<IDirect3DTexture9> ann_tex;
+						hr = D3DXCreateTextureFromFileA(dev, resource_name, &ann_tex);
+						if (!SUCCEEDED(hr))
+						{
+							pfc::string file = profile_directory + "\\effects\\" + resource_name;
+							hr = D3DXCreateTextureFromFileA(dev, file.get_ptr() + 7, &ann_tex);
+							if (!SUCCEEDED(hr))
+							{
+								pfc::string file = program_directory + "\\effects\\" + resource_name;
+								hr = D3DXCreateTextureFromFileA(dev, file.get_ptr() + 7, &ann_tex);
+								if (!SUCCEEDED(hr))
+								{
+									console::formatter() << "Wave seekbar: Direct3D9: Could not load annotation texture " << resource_name;
+								}
+							}
+						}
+						if (ann_tex)
+						{
+							annotation_textures.push_back(ann_tex);
+							fx->SetTexture(h, ann_tex);
+						}
+					}
+				}
+			}
+		}
+
 		fx->SetTexture(fx->GetParameterBySemantic(0, "WAVEFORMDATA"), tex);
 
 		background_color_var = fx->GetParameterBySemantic(0, "BACKGROUNDCOLOR");
@@ -229,6 +272,7 @@ namespace wave
 		replaygain_var = 0;
 		orientation_var = 0;
 		shade_played_var = 0;
+		annotation_textures.clear();
 		fx.Release();
 	}
 

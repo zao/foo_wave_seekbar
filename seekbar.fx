@@ -1,10 +1,25 @@
 Texture1D tex : WAVEFORMDATA;
-Texture2D seekTex < string filename = "seekbar.png"; >;
+Texture2D bgTex < string ResourceName = "074.jpg"; >;
+Texture2D seekTex < string ResourceName = "seekbar.png"; >;
 
-SamplerState sTex
+sampler sTex = sampler_state
 {
-    Filter = MIN_MAG_MIP_LINEAR;
+	Texture = <tex>;
+	MipFilter = LINEAR;
+	MinFilter = LINEAR;
+	MagFilter = LINEAR;
+	
     AddressU = Clamp;
+};
+
+sampler sTexBg = sampler_state
+{
+	Texture = <bgTex>;	
+	MipFilter = LINEAR;
+	MinFilter = LINEAR;
+	MagFilter = LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
 };
 
 struct VS_IN
@@ -84,9 +99,18 @@ float4 evaluate( float2 tc )
 	bool outside = (below < 0 || above > 0);
 	bool inside_rms = abs(tc.y) <= minmaxrms.b;
 
+#if 1
+	float4 bgColor = backgroundColor;
+#else
+	float a = viewportSize.x / viewportSize.y;
+	float2 aspect = horizontal ? float2(a, 1) : float2(1/a, 1);
+	float2 tcBg = float2(tc.x, -tc.y / 2 + 0.5) * aspect;
+	float4 bgColor = tex2D(sTexBg, tcBg);
+#endif
+
 	float4 wave = outside
-		? backgroundColor
-		: lerp(backgroundColor, textColor, 7.0 * factor);
+		? bgColor
+		: lerp(bgColor, textColor, 7.0 * factor);
 
 	return saturate(wave);
 }
