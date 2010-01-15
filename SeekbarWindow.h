@@ -10,6 +10,20 @@ DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU);
 
 namespace wave
 {
+	struct frontend_data
+	{
+		frontend_data() : auto_get_serial(0) {}
+		void clear()
+		{
+			callback.reset();
+			frontend.reset();
+		}
+		boost::recursive_mutex mutex;
+		scoped_ptr<frontend_callback_impl> callback;
+		scoped_ptr<visual_frontend> frontend;
+		uint32_t auto_get_serial;
+	};
+
 	struct seekbar_window : CWindowImpl<seekbar_window>, play_callback_impl_base, playlist_callback_impl_base, noncopyable
 	{
 		seekbar_window();
@@ -65,17 +79,13 @@ namespace wave
 
 		service_ptr_t<waveform> placeholder_waveform;
 
-		scoped_ptr<frontend_callback_impl> frontend_callback;
-		scoped_ptr<visual_frontend> frontend;
+		shared_ptr<frontend_data> fe;
+
 		bool initializing_graphics;
 		bool seek_in_progress;
 		bool possible_next_enqueued;
 		seekbar_state state;
 		color global_colors[config::color_count];
-
-		uint32_t auto_get_serial;
-
-		void waveform_completion_handler(shared_ptr<get_response> response, uint32_t serial);
 
 		void try_get_data();
 		void flush_frontend();

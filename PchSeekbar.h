@@ -19,6 +19,7 @@
 #include <boost/make_shared.hpp>
 using boost::scoped_ptr;
 using boost::shared_ptr;
+typedef boost::recursive_mutex::scoped_lock scoped_lock;
 
 using boost::int8_t;
 using boost::int16_t;
