@@ -78,7 +78,7 @@ namespace wave
 			std::vector<char> v(p_size);
 			p_reader->read(&v[0], p_size, p_abort);
 			load_settings(settings, v);
-			frontend.reset();
+			fe->frontend.reset();
 		}
 		catch (std::exception&)
 		{}

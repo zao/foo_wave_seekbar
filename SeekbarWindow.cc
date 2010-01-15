@@ -44,15 +44,16 @@ namespace wave
 	static const UINT_PTR REPAINT_TIMER_ID = 0x4242;
 	seekbar_window::seekbar_window()
 		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
-		, placeholder_waveform(make_placeholder_waveform()), frontend_callback(new frontend_callback_impl), initializing_graphics(false)
-		, seek_in_progress(false), possible_next_enqueued(false), auto_get_serial(0), repaint_timer_id(0)
-		
+		, placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
+		, seek_in_progress(false), possible_next_enqueued(false), repaint_timer_id(0)
 	{
-		frontend_callback->set_waveform(placeholder_waveform);
+		fe->callback.reset(new frontend_callback_impl);
+		fe->callback->set_waveform(placeholder_waveform);
 	}
 
 	seekbar_window::~seekbar_window()
-	{}
+	{
+	}
 
 	void seekbar_window::repaint()
 	{
@@ -65,7 +66,9 @@ namespace wave
 		if (repaint_timer_id)
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
-		frontend.reset();
+
+		scoped_lock sl(fe->mutex);
+		fe->clear();
 	}
 
 	LRESULT seekbar_window::on_wm_erasebkgnd(HDC dc)
@@ -75,28 +78,32 @@ namespace wave
 
 	void seekbar_window::on_wm_lbuttondown(UINT wparam, CPoint point)
 	{
+		scoped_lock sl(fe->mutex);
 		seek_in_progress = true;
-		frontend_callback->set_seeking(true);
+		fe->callback->set_seeking(true);
 		set_seek_position(point);
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_position);
+		if (fe->frontend)
+		{
+			fe->frontend->on_state_changed(visual_frontend::state_position);
+		}
 		SetCapture();
 		repaint();
 	}
 
 	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 	{
+		scoped_lock sl(fe->mutex);
 		seek_in_progress = false;
 		ReleaseCapture();
-		if (frontend_callback->is_seeking())
+		if (fe->callback->is_seeking())
 		{
-			frontend_callback->set_seeking(false);
+			fe->callback->set_seeking(false);
 			set_seek_position(point);
-			if (frontend)
-				frontend->on_state_changed(visual_frontend::state_position);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_position);
 			repaint();
 			static_api_ptr_t<playback_control> pc;
-			pc->playback_seek(frontend_callback->get_seek_position());
+			pc->playback_seek(fe->callback->get_seek_position());
 		}
 	}
 
@@ -172,16 +179,19 @@ namespace wave
 	{
 		if (seek_in_progress)
 		{
+			scoped_lock sl(fe->mutex);
 			CRect r;
 			GetWindowRect(r);
 			int const N = 40;
-			bool horizontal = frontend_callback->get_orientation() == config::orientation_horizontal;
+			bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
 
-			frontend_callback->set_seeking(!is_outside(point, r, N, horizontal));
+			fe->callback->set_seeking(!is_outside(point, r, N, horizontal));
 
 			set_seek_position(point);
-			if (frontend)
-				frontend->on_state_changed(visual_frontend::state_position);
+			if (fe->frontend)
+			{
+				fe->frontend->on_state_changed(visual_frontend::state_position);
+			}
 			repaint();
 		}
 	}
@@ -195,8 +205,9 @@ namespace wave
 			return;
 		}
 
-		if (!frontend && !initializing_graphics)
+		if (!fe->frontend && !initializing_graphics)
 		{
+			scoped_lock sl(fe->mutex);
 			try
 			{
 				OSVERSIONINFOEX osv = {};
@@ -207,12 +218,12 @@ namespace wave
 
 				for (size_t i = 0; i < config::color_count; ++i)
 				{
-					frontend_callback->set_color((config::color)i, settings.override_colors[i]
+					fe->callback->set_color((config::color)i, settings.override_colors[i]
 						? settings.colors[i]
 						: global_colors[i]
 						);
 				}
-				frontend_callback->set_shade_played(settings.shade_played);
+				fe->callback->set_shade_played(settings.shade_played);
 				
 				DWORD present_interval = 10;
 				switch (settings.active_frontend_kind)
@@ -225,16 +236,16 @@ namespace wave
 	#endif
 				case config::frontend_direct3d9:
 					console::info("Seekbar: taking Direct3D9 path.");
-					frontend.reset(new direct3d9_frontend(*this, client_rect.Size(), *frontend_callback));
+					fe->frontend.reset(new direct3d9_frontend(*this, client_rect.Size(), *fe->callback));
 					break;
 				case config::frontend_direct2d1:
 					console::info("Seekbar: taking Direct2D1 path.");
-					frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *frontend_callback));
+					fe->frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *fe->callback));
 					present_interval = 25;
 					break;
 				case config::frontend_gdi:
 					console::info("Seekbar: taking GDI path.");
-					frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *frontend_callback));
+					fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
 					present_interval = 50;
 					break;
 				}
@@ -243,9 +254,9 @@ namespace wave
 
 				try_get_data();
 
-				frontend->on_state_changed((visual_frontend::state)~0);
+				fe->frontend->on_state_changed((visual_frontend::state)~0);
 
-				if (frontend)
+				if (fe->frontend)
 				{
 					repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
 				}
@@ -259,11 +270,11 @@ namespace wave
 			}
 		}
 
-		if (frontend)
+		if (fe->frontend)
 		{
-			frontend->clear();
-			frontend->draw();
-			frontend->present();
+			fe->frontend->clear();
+			fe->frontend->draw();
+			fe->frontend->present();
 		}
 
 		ValidateRect(0);
@@ -276,9 +287,11 @@ namespace wave
 		set_orientation(size.cx >= size.cy
 			? config::orientation_horizontal
 			: config::orientation_vertical);
-		frontend_callback->set_size(size);
-		if (frontend)
-			frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
+		
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_size(size);
+		if (fe->frontend)
+			fe->frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
 		repaint();
 	}
 
@@ -286,11 +299,12 @@ namespace wave
 	{
 		if (wparam == REPAINT_TIMER_ID && core_api::are_services_available())
 		{
+			scoped_lock sl(fe->mutex);
 			static_api_ptr_t<playback_control> pc;
 			double t = pc->playback_get_position();
 			set_cursor_position((float)t);
-			if (frontend)
-				frontend->on_state_changed(visual_frontend::state_position);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_position);
 			repaint();
 		}
 	}
@@ -355,26 +369,29 @@ namespace wave
 
 	void seekbar_window::on_playback_new_track(metadb_handle_ptr ptr)
 	{
-		frontend_callback->set_track_length(ptr->get_length());
-		file_info_impl info;
-		ptr->get_info(info);
+		{
+			scoped_lock sl(fe->mutex);
+			fe->callback->set_track_length(ptr->get_length());
+			file_info_impl info;
+			ptr->get_info(info);
 
-		replaygain_info rg = info.get_replaygain();
-#define SET_REPLAYGAIN(Name) frontend_callback->set_replaygain(visual_frontend_callback::replaygain_##Name, rg.m_##Name);
-		SET_REPLAYGAIN(album_gain)
-		SET_REPLAYGAIN(track_gain)
-		SET_REPLAYGAIN(album_peak)
-		SET_REPLAYGAIN(track_peak)
-#undef  SET_REPLAYGAIN
+			replaygain_info rg = info.get_replaygain();
+	#define SET_REPLAYGAIN(Name) fe->callback->set_replaygain(visual_frontend_callback::replaygain_##Name, rg.m_##Name);
+			SET_REPLAYGAIN(album_gain)
+			SET_REPLAYGAIN(track_gain)
+			SET_REPLAYGAIN(album_peak)
+			SET_REPLAYGAIN(track_peak)
+	#undef  SET_REPLAYGAIN
 
-		set_cursor_position(0.0f);
-		set_cursor_visibility(true);
-		frontend_callback->set_playable_location(ptr->get_location());
+			set_cursor_position(0.0f);
+			set_cursor_visibility(true);
+			fe->callback->set_playable_location(ptr->get_location());
 
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state(visual_frontend::state_replaygain | visual_frontend::state_position | visual_frontend::state_track));
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_replaygain | visual_frontend::state_position | visual_frontend::state_track));
 
-		possible_next_enqueued = false;
+			possible_next_enqueued = false;
+		}
 
 		try_get_data();
 		repaint();
@@ -382,18 +399,20 @@ namespace wave
 
 	void seekbar_window::on_playback_stop(playback_control::t_stop_reason)
 	{
+		scoped_lock sl(fe->mutex);
 		set_cursor_visibility(false);
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_position);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
 		repaint();
 	}
 
 	void seekbar_window::on_playback_seek(double t)
 	{
+		scoped_lock sl(fe->mutex);
 		set_cursor_position((float)t);
 		set_cursor_visibility(true);
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_position);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
 		repaint();
 	}
 
@@ -415,6 +434,7 @@ namespace wave
 
 	void seekbar_window::on_playback_time(double t)
 	{
+		scoped_lock sl(fe->mutex);
 		if (t > 1.0 && !possible_next_enqueued)
 		{
 			static_api_ptr_t<playlist_manager> pm;
@@ -422,8 +442,8 @@ namespace wave
 		}
 		set_cursor_visibility(true);
 
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_position);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
 		repaint();
 	}
 
@@ -433,37 +453,43 @@ namespace wave
 
 	void seekbar_window::set_cursor_position(float f)
 	{
-		frontend_callback->set_playback_position(f);
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_position);
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_playback_position(f);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
 	void seekbar_window::set_cursor_visibility(bool b)
 	{
-		frontend_callback->set_cursor_visible(b);
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_position);
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_cursor_visible(b);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
 	void seekbar_window::set_seek_position(CPoint point)
 	{
-		bool horizontal = frontend_callback->get_orientation() == config::orientation_horizontal;
-		frontend_callback->set_seek_position(horizontal
-			? point.x * frontend_callback->get_track_length() / client_rect.Width()
-			: point.y * frontend_callback->get_track_length() / client_rect.Height()
+		scoped_lock sl(fe->mutex);
+		bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
+		fe->callback->set_seek_position(horizontal
+			? point.x * fe->callback->get_track_length() / client_rect.Width()
+			: point.y * fe->callback->get_track_length() / client_rect.Height()
 			);
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_position);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
-	void seekbar_window::waveform_completion_handler(shared_ptr<get_response> response, uint32_t serial)
+	void waveform_completion_handler(shared_ptr<frontend_data> fe, shared_ptr<get_response> response, uint32_t serial)
 	{
-		in_main_thread([this, response, serial]()
+		in_main_thread([fe, response, serial]()
 		{
-			if (serial != auto_get_serial) return;
-			frontend_callback->set_waveform(response->waveform);
-			if (this->frontend)
-				this->frontend->on_state_changed(visual_frontend::state_data);
+			scoped_lock sl(fe->mutex);
+			if (serial != fe->auto_get_serial)
+				return;
+			if (fe->callback)
+				fe->callback->set_waveform(response->waveform);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_data);
 		});
 	}
 
@@ -473,13 +499,15 @@ namespace wave
 		{
 			if (core_api::are_services_available())
 			{
+				scoped_lock sl(fe->mutex);
 				shared_ptr<get_request> request(new get_request);
 				request->user_requested = false;
-				frontend_callback->get_playable_location(request->location);
-				uint32_t next_serial = ++auto_get_serial;
-				request->completion_handler = [this, next_serial](shared_ptr<get_response> response)
+				fe->callback->get_playable_location(request->location);
+				uint32_t next_serial = ++fe->auto_get_serial;
+				shared_ptr<frontend_data> fed = fe;
+				request->completion_handler = [fed, next_serial](shared_ptr<get_response> response)
 				{
-					waveform_completion_handler(response, next_serial);
+					waveform_completion_handler(fed, response, next_serial);
 				};
 
 				static_api_ptr_t<cache> c;
@@ -518,7 +546,8 @@ namespace wave
 
 	void seekbar_window::flush_frontend()
 	{
-		frontend.reset();
+		scoped_lock sl(fe->mutex);
+		fe->frontend.reset();
 		initializing_graphics = false;
 		if (repaint_timer_id)
 			KillTimer(repaint_timer_id);
@@ -545,21 +574,23 @@ namespace wave
 			global_colors[which] = what;
 		if (settings.override_colors[which] == override)
 		{
-			frontend_callback->set_color(which, what);
-			if (frontend)
-				frontend->on_state_changed(visual_frontend::state_color);
+			scoped_lock sl(fe->mutex);
+			fe->callback->set_color(which, what);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_color);
 		}
 	}
 
 	void seekbar_window::set_color_override(config::color which, bool override)
 	{
+		scoped_lock sl(fe->mutex);
 		settings.override_colors[which] = override;
-		frontend_callback->set_color(which, override
+		fe->callback->set_color(which, override
 			? settings.colors[which]
 			: global_colors[which]
 			);
-		if (frontend)
-			frontend->on_state_changed(visual_frontend::state_color);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_color);
 	}
 
 	void seekbar_window::set_frontend(config::frontend kind)
@@ -570,22 +601,24 @@ namespace wave
 
 	void seekbar_window::set_orientation(config::orientation o)
 	{
-		if (frontend_callback->get_orientation() != o)
+		scoped_lock sl(fe->mutex);
+		if (fe->callback->get_orientation() != o)
 		{
-			frontend_callback->set_orientation(o);
-			if (frontend)
-				frontend->on_state_changed(visual_frontend::state_orientation);
+			fe->callback->set_orientation(o);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_orientation);
 		}
 	}
 
 	void seekbar_window::set_shade_played(bool shade)
 	{
+		scoped_lock sl(fe->mutex);
 		settings.shade_played = shade;
-		if (frontend_callback->get_shade_played() != shade)
+		if (fe->callback->get_shade_played() != shade)
 		{
-			frontend_callback->set_shade_played(shade);
-			if (frontend)
-				frontend->on_state_changed(visual_frontend::state_shade_played);
+			fe->callback->set_shade_played(shade);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_shade_played);
 		}
 	}
 
