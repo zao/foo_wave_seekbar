@@ -54,7 +54,8 @@ PS_IN VS( VS_IN input )
 {
 	PS_IN output = (PS_IN)0;
 
-	output.pos = float4(input.pos, 0, 1);
+	float2 half_pixel = float2(1,-1) / viewportSize;
+	output.pos = float4(input.pos - half_pixel, 0, 1);
 	if (horizontal)
 		output.tc = float2((input.pos.x + 1.0) / 2.0, input.pos.y);
 	else
@@ -133,7 +134,7 @@ float4 PS( PS_IN input ) : SV_Target
 	}
 	float seekWidth = 2.5 * dx;
 	float positionWidth = 2.5 * dx;
-	
+
 	float4 c0 = evaluate(input.tc);
 	c0 = bar(cursorPos, input.tc, selectionColor, c0, positionWidth, cursorVisible);
 	c0 = bar(seekPos,   input.tc, selectionColor, c0, seekWidth,     seeking      );
