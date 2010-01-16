@@ -295,8 +295,10 @@ namespace wave
 	};
 
 	bool has_direct3d9() {
+		CComPtr<IDirect3D9> d3d;
+		d3d.Attach(try_module_call(create_d3d9_func()));
 		bool has_d3dx = try_module_call(test_d3dx9_func());
-		return has_d3dx;
+		return d3d && has_d3dx;
 	}
 
 	direct3d9_frontend::direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback)

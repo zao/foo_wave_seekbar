@@ -1,6 +1,4 @@
 Texture1D tex : WAVEFORMDATA;
-Texture2D bgTex < string ResourceName = "074.jpg"; >;
-Texture2D seekTex < string ResourceName = "seekbar.png"; >;
 
 sampler sTex = sampler_state
 {
@@ -12,6 +10,10 @@ sampler sTex = sampler_state
     AddressU = Clamp;
 };
 
+#if 0
+Texture2D bgTex < string ResourceName = "074.jpg"; >;
+Texture2D seekTex < string ResourceName = "seekbar.png"; >;
+
 sampler sTexBg = sampler_state
 {
 	Texture = <bgTex>;	
@@ -21,6 +23,7 @@ sampler sTexBg = sampler_state
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
+#endif
 
 struct VS_IN
 {
