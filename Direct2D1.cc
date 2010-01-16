@@ -12,6 +12,11 @@ namespace wave
 		return !!lib;
 	}
 
+	D2D1_COLOR_F color_to_d2d1_color(color c)
+	{
+		return D2D1::ColorF(c.r, c.g, c.b, c.a);
+	}
+
 	struct create_d2d1_factory_func
 	{
 		create_d2d1_factory_func(D2D1_FACTORY_OPTIONS const& opts)
@@ -27,33 +32,46 @@ namespace wave
 
 		D2D1_FACTORY_OPTIONS const& opts;
 	};
+	
+	D2D1_FACTORY_OPTIONS const opts = { D2D1_DEBUG_LEVEL_INFORMATION };
+
+	image_cache::image_cache()
+		: pump(new boost::asio::io_service), pump_work(new boost::asio::io_service::work(*pump)), jobs(0)
+	{
+		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &factory);
+		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
+	}
+
+	image_cache::~image_cache()
+	{
+		pump_work.reset();
+		pump_thread->join();
+	}
+
+	void image_cache::start()
+	{
+		pump_thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, pump)));
+	}
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, CSize size, visual_frontend_callback& callback)
-		: cache_pump_work(new boost::asio::io_service::work(cache_pump)), cache_jobs(0), callback(callback)
+		: callback(callback)
 	{
-		cache_pump_thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, &cache_pump)));
-
-		D2D1_FACTORY_OPTIONS opts = { D2D1_DEBUG_LEVEL_INFORMATION };
 		factory.Attach(try_module_call(create_d2d1_factory_func(opts)));
 		if (!factory)
 			throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
 
-		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &cache_factory);
+		cache.reset(new image_cache);
 		factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(size.cx, size.cy)), &rt);
-
-		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
+		cache->rt = rt;
+		cache->start();
 	}
 
 	direct2d1_frontend::~direct2d1_frontend()
 	{
-		cache_pump_work.reset();
-		cache_pump_thread->join();
 	}
 
 	void direct2d1_frontend::clear()
 	{
-		color c = callback.get_color(config::color_background);
-		clear_color = D2D1::ColorF(c.r, c.g, c.b, c.a);
 	}
 
 	void direct2d1_frontend::draw()
@@ -63,16 +81,16 @@ namespace wave
 		if (vertical) std::swap(size.width, size.height);
 		
 		rt->BeginDraw();
-		rt->Clear(clear_color);
+		rt->Clear(color_to_d2d1_color(colors.background));
 		float seek_x = (float)(size.width * callback.get_seek_position() / callback.get_track_length());
 		float play_x = (float)(size.width * callback.get_playback_position() / callback.get_track_length());
 		
 		if (vertical) rt->SetTransform(D2D1::Matrix3x2F(0, 1, 1, 0, 0, 0));
 		{
-			boost::mutex::scoped_lock sl(cache_mutex);
-			if (wave_bitmap)
+			boost::mutex::scoped_lock sl(cache->mutex);
+			if (cache->wave_bitmap)
 			{
-				rt->DrawBitmap(wave_bitmap);
+				rt->DrawBitmap(cache->wave_bitmap);
 			}
 		}
 		if (callback.is_seeking())
@@ -104,9 +122,11 @@ namespace wave
 
 	void direct2d1_frontend::trigger_texture_update(service_ptr_t<waveform> wf, CSize size)
 	{
-		boost::mutex::scoped_lock sl(cache_mutex);
-		++cache_jobs;
-		cache_pump.post(boost::bind(&direct2d1_frontend::update_texture_target, this, wf, D2D1::SizeF((float)size.cx, (float)size.cy)));
+		boost::mutex::scoped_lock sl(cache->mutex);
+		++cache->jobs;
+		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf
+			, D2D1::SizeF((float)size.cx, (float)size.cy)
+			, callback.get_orientation() == config::orientation_vertical));
 	}
 
 	void direct2d1_frontend::on_state_changed(state s) {
@@ -125,21 +145,21 @@ namespace wave
 		return p;
 	}
 
-	void direct2d1_frontend::update_texture_target(service_ptr_t<waveform> wf, D2D1_SIZE_F target_size)
+	void image_cache::update_texture_target(service_ptr_t<waveform> wf, D2D1_SIZE_F target_size, bool vertical)
 	{
 		{
-			boost::mutex::scoped_lock sl(cache_mutex);
-			if (--cache_jobs)
+			boost::mutex::scoped_lock sl(mutex);
+			if (--jobs)
 				return;
 		}
 		
-		if (callback.get_orientation() == config::orientation_vertical)
+		if (vertical)
 		{
 			std::swap(target_size.width, target_size.height);
 		}
 
 		FLOAT dpi[2] = {};
-		cache_factory->GetDesktopDpi(&dpi[0], &dpi[1]);
+		factory->GetDesktopDpi(&dpi[0], &dpi[1]);
 		D2D1_SIZE_F size = D2D1::SizeF(target_size.width * 96 / dpi[0], target_size.height * 96 / dpi[1]);
 
 		D2D1::Matrix3x2F scale = D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.2f);
@@ -153,13 +173,13 @@ namespace wave
 		CComPtr<IWICBitmap> bm;
 		wic_factory->CreateBitmap((UINT)target_size.width, (UINT)target_size.height, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnDemand, &bm);
         D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(), dpi[0], dpi[1]);
-        cache_factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
+        factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
 
-		brush_set brushes = create_brush_set(temp_target);
+		brush_set brushes = create_brush_set(temp_target, colors);
 
 		CComPtr<ID2D1PathGeometry> wave_geometry, rms_geometry;
-		cache_factory->CreatePathGeometry(&wave_geometry);
-		cache_factory->CreatePathGeometry(&rms_geometry);
+		factory->CreatePathGeometry(&wave_geometry);
+		factory->CreatePathGeometry(&rms_geometry);
 
 		ID2D1RenderTarget* rt = temp_target;
 
@@ -201,7 +221,7 @@ namespace wave
 		rms_gs->Close();
 
 		rt->BeginDraw();
-		rt->Clear(clear_color);
+		rt->Clear(color_to_d2d1_color(colors.background));
 		D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, boost::math::round(size.height / 2.0f));
 		rt->SetTransform(centered);
 		//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(0.0f, -1.0f))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f, -1.0f))), brushes.text_brush, 0.5);
@@ -211,11 +231,12 @@ namespace wave
 		rt->DrawGeometry(wave_geometry, brushes.foreground_brush);
 		rt->EndDraw();
 
-		in_main_thread([this, bm]()
+		shared_ptr<image_cache> self = shared_from_this();
+		in_main_thread([self, bm]()
 		{
-			boost::mutex::scoped_lock sl(cache_mutex);
-			this->wave_bitmap.Release();
-			this->rt->CreateBitmapFromWicBitmap(bm, &this->wave_bitmap);
+			boost::mutex::scoped_lock sl(self->mutex);
+			self->wave_bitmap.Release();
+			self->rt->CreateBitmapFromWicBitmap(bm, &self->wave_bitmap);
 		});
 	}
 
@@ -238,14 +259,25 @@ namespace wave
 
 	void direct2d1_frontend::regenerate_brushes()
 	{
+		palette p =
+		{
+			callback.get_color(config::color_background),
+			callback.get_color(config::color_foreground),
+			callback.get_color(config::color_highlight),
+			callback.get_color(config::color_selection)
+		};
+		colors = p;
+		boost::mutex::scoped_lock sl(cache->mutex);
+		cache->colors = p;
+
 		CComPtr<ID2D1RenderTarget> rt_base = rt;
-		brushes = create_brush_set(rt_base);
+		brushes = create_brush_set(rt_base, colors);
 	}
 
-	direct2d1_frontend::brush_set direct2d1_frontend::create_brush_set(CComPtr<ID2D1RenderTarget> target)
+	brush_set create_brush_set(CComPtr<ID2D1RenderTarget> target, palette pal)
 	{
 		brush_set set;
-#define RECREATE(Name) { color c = callback.get_color(config::color_##Name);\
+#define RECREATE(Name) { color c = pal.Name;\
 	target->CreateSolidColorBrush(D2D1::ColorF(c.r, c.g, c.b, c.a), D2D1::BrushProperties(), &set.Name##_brush); }
 		RECREATE(background)
 		RECREATE(foreground)
