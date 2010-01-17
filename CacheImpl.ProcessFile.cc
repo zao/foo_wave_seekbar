@@ -24,7 +24,8 @@ namespace wave
 			}
 		}
 
-		if (regex_match(loc.get_path(), boost::regex("(http|mms)://.*", boost::regex::perl | boost::regex::icase)) ||
+		if (regex_match(loc.get_path(), boost::regex("(random):.*", boost::regex::perl | boost::regex::icase)) ||
+			regex_match(loc.get_path(), boost::regex("(http|mms)://.*", boost::regex::perl | boost::regex::icase)) ||
 			regex_match(loc.get_path(), boost::regex("(cdda)://.*", boost::regex::perl | boost::regex::icase)) && !user_requested)
 		{
 			console::formatter() << "Wave cache: skipping location " << loc;
@@ -148,9 +149,13 @@ namespace wave
 		{
 			console::formatter() << "Wave cache: could not open/find " << loc;
 		}
-		catch (foobar2000_io::exception_io&)
+		catch (foobar2000_io::exception_io& ex)
 		{
-			console::formatter() << "Wave cache: generic IO exception on file " << loc;
+			console::formatter() << "Wave cache: generic IO exception (" << ex.what() <<") for " << loc;
+		}
+		catch (std::exception& ex)
+		{
+			console::formatter() << "Wave cache: generic exception (" << ex.what() <<") for " << loc;
 		}
 		return out;
 	}
