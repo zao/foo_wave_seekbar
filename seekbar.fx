@@ -83,11 +83,21 @@ float4 faded_bar( float pos, float2 tc, float4 fg, float4 bg, float width, bool 
 	return c;
 }
 
+// #define BORDER_ON_HIGHLIGHT
+
 float4 played( float pos, float2 tc, float4 fg, float4 bg, float alpha)
 {
 	float4 c = bg;
+	float2 d = 1 / viewportSize;
 	if (pos > tc.x)
-		c = lerp(c, fg, saturate(alpha));
+	{
+	#ifdef BORDER_ON_HIGHLIGHT
+		if (tc.x < d.x || tc.y >= (1 - d.y) || tc.y <= (2 * d.y - 1))
+			c = selectionColor;
+		else
+	#endif
+			c = lerp(c, fg, saturate(alpha));
+	}
 	return c;
 }
 
