@@ -177,7 +177,7 @@ namespace wave
 				for (size_t y = 0; y < (size_t)size.cy; ++y)
 				{
 					D3DXVECTOR4 c;
-					tc.y = 2.0f * (float)y / (float)size.cy - 1.0f;
+					tc.y = 1.0f - 2.0f * (float)y / (float)size.cy;
 					float below = tc.y - sample.x;
 					float above = tc.y - sample.y;
 					float factor = std::min(fabs(below), fabs(above));
