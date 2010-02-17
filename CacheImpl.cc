@@ -167,7 +167,8 @@ namespace wave
 			try
 			{
 				static_api_ptr_t<cache> c;
-				c->flush();
+				if (c.get_ptr())
+					c->flush();
 			}
 			catch (std::exception&)
 			{
