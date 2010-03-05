@@ -172,7 +172,7 @@ namespace wave
 		CComPtr<ID2D1RenderTarget> temp_target;
 		CComPtr<IWICBitmap> bm;
 		wic_factory->CreateBitmap((UINT)target_size.width, (UINT)target_size.height, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnDemand, &bm);
-        D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(), dpi[0], dpi[1]);
+        D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat()); //, dpi[0], dpi[1]);
         factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
 
 		brush_set brushes = create_brush_set(temp_target, colors);
