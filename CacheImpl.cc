@@ -113,7 +113,7 @@ namespace wave
 		}
 
 		shared_ptr<get_response> response(new get_response);
-		if (store && store->get(response->waveform, request->location))
+		if (!request->user_requested && store && store->get(response->waveform, request->location))
 		{
 			request->completion_handler(response);
 		}
