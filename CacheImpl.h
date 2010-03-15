@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Cache.h"
+#include "Waveform.h"
+#include "Job.h"
 
 namespace wave
 {
@@ -12,42 +14,7 @@ namespace wave
 		return cmp < 0;
 	}
 
-	struct job
-	{
-		playable_location_impl loc;
-		bool user;
-	};
-
-	inline job make_job(playable_location_impl loc, bool user)
-	{
-		job ret = { loc, user };
-		return ret;
-	}
-
-	struct backing_store
-	{
-		explicit backing_store(pfc::string const& cache_filename);
-		~backing_store();
-
-		bool has(playable_location const& file);
-		bool get(service_ptr_t<waveform>& out, playable_location const& file);
-		void put(service_ptr_t<waveform> const& in, playable_location const& file);
-		void remove_dead();
-		void compact();
-
-		void get_jobs(std::deque<job>&);
-		void put_jobs(std::deque<job> const&);
-
-	private:
-		shared_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
-		shared_ptr<sqlite3> backing_db;
-	};
-
-	struct waveform_impl : waveform
-	{
-		virtual bool get_field(pfc::string const& what, pfc::list_base_t<float>& out) override;
-		pfc::list_t<float> minimum, maximum, rms;
-	};
+	struct backing_store;
 
 	struct cache_impl : cache
 	{

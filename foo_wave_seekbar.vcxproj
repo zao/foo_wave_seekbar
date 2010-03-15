@@ -95,6 +95,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BackingStore.cpp" />
     <ClCompile Include="GdiFallback.cc" />
     <ClCompile Include="MainSeekbar.cc" />
     <ClCompile Include="PchSeekbar.cc">
@@ -119,11 +120,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="WaveformImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BackingStore.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="GdiFallback.h" />
     <ClInclude Include="Helpers.h" />
+    <ClInclude Include="Job.h" />
     <ClInclude Include="PchSeekbar.h" />
     <ClInclude Include="PersistentSettings.h" />
     <ClInclude Include="SeekbarState.h" />
@@ -138,6 +142,8 @@
     <ClInclude Include="ProcessingContext.h" />
     <ClInclude Include="sqlite3.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Waveform.h" />
+    <ClInclude Include="WaveformImpl.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="seekbar.fx">

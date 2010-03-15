@@ -1,5 +1,7 @@
 #include "PchSeekbar.h"
 #include "CacheImpl.h"
+#include "BackingStore.h"
+#include "WaveformImpl.h"
 
 namespace wave
 {

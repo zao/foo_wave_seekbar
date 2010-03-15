@@ -65,6 +65,12 @@
     <ClCompile Include="sqlite3.c">
       <Filter>Cache</Filter>
     </ClCompile>
+    <ClCompile Include="BackingStore.cpp">
+      <Filter>Cache</Filter>
+    </ClCompile>
+    <ClCompile Include="WaveformImpl.cpp">
+      <Filter>Cache</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h">
@@ -111,6 +117,18 @@
     </ClInclude>
     <ClInclude Include="VisualFrontend.h">
       <Filter>Seekbar\Frontends</Filter>
+    </ClInclude>
+    <ClInclude Include="BackingStore.h">
+      <Filter>Cache</Filter>
+    </ClInclude>
+    <ClInclude Include="Job.h">
+      <Filter>Cache</Filter>
+    </ClInclude>
+    <ClInclude Include="Waveform.h">
+      <Filter>Cache</Filter>
+    </ClInclude>
+    <ClInclude Include="WaveformImpl.h">
+      <Filter>Cache</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
