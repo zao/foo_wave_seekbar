@@ -3,6 +3,68 @@
 
 namespace wave
 {
+	const audio_sample sqrt_half = audio_sample(0.70710678118654752440084436210485);
+	class span
+	{
+		unsigned channels, samples;
+		pfc::list_t<float> min, max, rms; // list of channels
+
+	public:
+		explicit span(unsigned channels)
+			: channels(channels), samples(0)
+		{
+			min.add_items_repeat( 9001.0f, channels);
+			max.add_items_repeat(-9001.0f, channels);
+			rms.add_items_repeat(    0.0f, channels);
+		}
+
+		void add(audio_sample* frame)
+		{
+			for (size_t c = 0; c < channels; ++c)
+			{
+				min[c] = std::min(frame[c], min[c]);
+				max[c] = std::max(frame[c], max[c]);
+				rms[c] += frame[c] * frame[c];
+			}
+			++samples;
+		}
+
+		void resolve(float& min_result, float& max_result, float& rms_result) const
+		{
+			pfc::list_t<float> rms_tmp = rms;
+			for (size_t c = 0; c < channels; ++c)
+			{
+				rms_tmp[c] = sqrt(rms_tmp[c] / samples);
+			}
+			min_result = downmix(min);
+			max_result = downmix(max);
+			rms_result = downmix(rms_tmp);
+		}
+
+	private:
+		float downmix(pfc::list_t<float> const& frame) const
+		{
+			pfc::list_t<float> data = frame;
+			switch (data.get_size())
+			{
+			case 8:
+				data[0] += frame[6] * sqrt_half;
+				data[1] += frame[7] * sqrt_half;
+			case 6:
+				data[0] += frame[2] * sqrt_half + frame[4] * sqrt_half + frame[3];
+				data[1] += frame[2] * sqrt_half + frame[5] * sqrt_half + frame[3];
+			case 2:
+				data[0] += frame[1];
+				data[0] /= 2.0;
+				break;
+			case 4:
+				data[0] += frame[1] + frame[2] + frame[3];
+				data[0] /= 4.0;
+			}
+			return data[0];
+		}
+	};
+
 	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
 		service_ptr_t<waveform> out;
@@ -65,14 +127,14 @@ namespace wave
 					return out;
 				decoder->get_info(subsong, info, abort_cb);
 
-				t_int64 sampleRate = info.info_get_int("samplerate");
-				if (!sampleRate)
+				t_int64 sample_rate = info.info_get_int("samplerate");
+				if (!sample_rate)
 				{
 					double foo;
 					decoder->get_dynamic_info(info, foo);
 				}
-				t_int64 sampleCount = info.info_get_length_samples();
-				t_int64 chunkSize = sampleCount / 2048;
+				t_int64 sample_count = info.info_get_length_samples();
+				t_int64 chunk_size = sample_count / 2048;
 
 				pfc::list_hybrid_t<float, 2048> minimum, maximum, rms;
 				minimum.add_items_repeat(9001.0, 2048);
@@ -81,46 +143,32 @@ namespace wave
 
 				audio_chunk_impl chunk;
 
-				const audio_sample sqrt_half = audio_sample(0.70710678118654752440084436210485);
-				t_int64 sampleIndex = 0;
-				t_int32 outIndex = 0;
+				t_int64 sample_index = 0;
+				t_int32 out_index = 0;
+
+				scoped_ptr<span> current_span;
 				while (decoder->run(chunk, abort_cb))
 				{
+					unsigned channel_count = chunk.get_channels();
+
 					audio_sample* data = chunk.get_data();
-					unsigned channelCount = chunk.get_channels();
 					for (t_size i = 0; i < chunk.get_sample_count(); ++i)
-					{
-						audio_sample* frame = data + i * channelCount;
-						switch (channelCount)
+					{						
+						if (!current_span)
+							current_span.reset(new span(channel_count));
+					
+						audio_sample* frame = data + i * channel_count;
+						current_span->add(frame);
+						
+						if (sample_index++ == chunk_size)
 						{
-						case 8:
-							frame[0] += frame[6] * sqrt_half;
-							frame[1] += frame[7] * sqrt_half;
-						case 6:
-							frame[0] += frame[2] * sqrt_half + frame[4] * sqrt_half + frame[3];
-							frame[1] += frame[2] * sqrt_half + frame[5] * sqrt_half + frame[3];
-						case 2:
-							frame[0] += frame[1];
-							frame[0] /= 2.0;
-							break;
-						case 4:
-							frame[0] += frame[1] + frame[2] + frame[3];
-							frame[0] /= 4.0;
-						}
-						minimum[outIndex] = std::min(minimum[outIndex], frame[0]);
-						maximum[outIndex] = std::max(maximum[outIndex], frame[0]);
-						rms[outIndex] += frame[0] * frame[0];
-						if (sampleIndex++ == chunkSize)
-						{
-							if (outIndex != 2047)
-								++outIndex;
-							sampleIndex = 0;
+							if (out_index != 2047)
+								++out_index;
+							current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
+							current_span.reset();
+							sample_index = 0;
 						}
 					}
-				}
-				for (t_size i = 0; i < 2048; ++i)
-				{
-					rms[i] = sqrt(rms[i] / chunkSize);
 				}
 
 				{
