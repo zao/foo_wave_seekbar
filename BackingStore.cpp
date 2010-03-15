@@ -1,6 +1,8 @@
 #include "PchSeekbar.h"
 #include "BackingStore.h"
 #include "WaveformImpl.h"
+#include <boost/iostreams/device/back_inserter.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
 namespace wave
 {
@@ -55,6 +57,16 @@ namespace wave
 			backing_db.get(),
 			"CREATE TRIGGER resonance_cascade BEFORE DELETE ON file BEGIN DELETE FROM wave WHERE wave.fid = OLD.fid; END",
 			0, 0, 0);
+
+		sqlite3_exec(
+			backing_db.get(),
+			"ALTER TABLE wave ADD channels INT",
+			0, 0, 0);
+
+		sqlite3_exec(
+			backing_db.get(),
+			"ALTER TABLE wave ADD compression INT",
+			0, 0, 0);
 	}
 
 	backing_store::~backing_store()
@@ -80,7 +92,7 @@ namespace wave
 	bool backing_store::get(service_ptr_t<waveform>& out, playable_location const& file)
 	{
 		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
-			"SELECT w.min, w.max, w.rms "
+			"SELECT w.min, w.max, w.rms, w.channels, w.compression "
 			"FROM file AS f NATURAL JOIN wave AS w "
 			"WHERE f.location = ? AND f.subsong = ?");
 
@@ -90,15 +102,47 @@ namespace wave
 		if (SQLITE_ROW != sqlite3_step(stmt.get())) {
 			return false;
 		}
+		
+		boost::optional<int> channels, compression;
 
-#define CLEAR_AND_SET(Member, Col) w->Member.remove_all(); w->Member.add_items_fromptr((float const*)sqlite3_column_blob(stmt.get(), Col), sqlite3_column_bytes(stmt.get(), Col) / sizeof(float))
+		if (sqlite3_column_type(stmt.get(), 3) != SQLITE_NULL)
+			channels = sqlite3_column_int(stmt.get(), 3);
+		if (sqlite3_column_type(stmt.get(), 4) != SQLITE_NULL)
+			compression = sqlite3_column_int(stmt.get(), 4);
+
+		if (compression && *compression > 0 || channels)
+			return false;
 
 		service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
-		CLEAR_AND_SET(minimum, 0);
-		CLEAR_AND_SET(maximum, 1);
-		CLEAR_AND_SET(rms, 2);
+		auto clear_and_set = [&stmt, compression](decltype(w->rms)& list, size_t col)
+		{
+			list.remove_all();
+				
+			float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
+			t_size count = sqlite3_column_bytes(stmt.get(), col) / sizeof(float);
 
-#undef  CLEAR_AND_SET
+			if (compression)
+			{
+				std::vector<float> dst(2048);
+				if (*compression == 0)
+				{
+					io::filtering_ostream out;
+					out.push(io::zlib_decompressor());
+					out.push(io::array_sink((char*)&dst[0], dst.size() * sizeof(float)));
+					out.write((char const*)data, count * sizeof(float));
+				}
+				list.add_items_fromptr(&dst[0], dst.size());
+			}
+			else
+			{
+				list.add_items_fromptr(data, count);
+			}
+
+		};
+
+		clear_and_set(w->minimum, 0);
+		clear_and_set(w->maximum, 1);
+		clear_and_set(w->rms, 2);
 
 		out = w;
 		return true;
@@ -115,18 +159,28 @@ namespace wave
 		sqlite3_step(stmt.get());
 
 		stmt = prepare_statement(
-			"REPLACE INTO wave (fid, min, max, rms) "
-			"SELECT f.fid, ?, ?, ? "
+			"REPLACE INTO wave (fid, min, max, rms, channels, compression) "
+			"SELECT f.fid, ?, ?, ?, NULL, 0 "
 			"FROM file AS f "
 			"WHERE f.location = ? AND f.subsong = ?");
 
-#define BIND_LIST(Member, Idx) pfc::list_t<float> Member; w->get_field(#Member, Member); sqlite3_bind_blob(stmt.get(), Idx, Member.get_ptr(), Member.get_size() * sizeof(float), SQLITE_STATIC)
-
+#		define BIND_LIST(Member, Idx) \
+			pfc::list_t<float> Member; \
+			w->get_field(#Member, Member); \
+			std::vector<char> Member ## _buf; \
+			{ \
+				io::filtering_ostream out( \
+					io::zlib_compressor(9) | \
+					io::back_inserter(Member ## _buf)); \
+				out.write((char*)Member.get_ptr(), Member.get_size() * sizeof(float)); \
+			} \
+			sqlite3_bind_blob(stmt.get(), Idx, &(Member ## _buf)[0], (Member ## _buf).size(), SQLITE_STATIC)
+			
 		BIND_LIST(minimum, 1);
 		BIND_LIST(maximum, 2);
 		BIND_LIST(rms    , 3);
 
-#undef  BIND_LIST
+#		undef  BIND_LIST
 
 		sqlite3_bind_text(stmt.get(), 4, file.get_path(), -1, SQLITE_STATIC);
 		sqlite3_bind_int(stmt.get(), 5, file.get_subsong());
