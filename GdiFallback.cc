@@ -155,9 +155,10 @@ namespace wave
 		if (callback.get_waveform(w))
 		{
 			pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
-			w->get_field("minimum", avg_min);
-			w->get_field("maximum", avg_max);
-			w->get_field("rms", avg_rms);
+			//TODO: multichannel
+			w->get_field("minimum", 0, avg_min);
+			w->get_field("maximum", 0, avg_max);
+			w->get_field("rms", 0, avg_rms);
 			wave_dc->SelectPen(*pen_foreground);
 
 			color bg = callback.get_color(config::color_background);

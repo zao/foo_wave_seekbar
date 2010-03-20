@@ -165,9 +165,10 @@ namespace wave
 		D2D1::Matrix3x2F scale = D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.2f);
 
 		pfc::list_t<float> mini, maxi, rms;
-		wf->get_field("minimum", mini);
-		wf->get_field("maximum", maxi);
-		wf->get_field("rms", rms);
+		//TODO: multichannel
+		wf->get_field("minimum", 0, mini);
+		wf->get_field("maximum", 0, maxi);
+		wf->get_field("rms", 0, rms);
 
 		CComPtr<ID2D1RenderTarget> temp_target;
 		CComPtr<IWICBitmap> bm;
