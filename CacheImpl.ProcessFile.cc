@@ -2,10 +2,18 @@
 #include "CacheImpl.h"
 #include "BackingStore.h"
 #include "WaveformImpl.h"
+#include "Helpers.h"
+
+// {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
+static const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
+// {1D06B944-342D-44FF-9566-AAC520F616C2}
+static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
+
+static advconfig_branch_factory g_seekbar_branch("Waveform Seekbar", guid_seekbar_branch, advconfig_entry::guid_branch_tools, 0.0);
+static advconfig_checkbox_factory g_downmix_in_analysis("Store scanned tracks in mono", guid_downmix_in_analysis, guid_seekbar_branch, 0.0, false);
 
 namespace wave
 {
-	const audio_sample sqrt_half = audio_sample(0.70710678118654752440084436210485);
 	class span
 	{
 		unsigned channels, samples;
@@ -31,41 +39,35 @@ namespace wave
 			++samples;
 		}
 
-		void resolve(float& min_result, float& max_result, float& rms_result) const
+		template <typename List>
+		void resolve(List& min_result, List& max_result, List& rms_result) const
 		{
-			pfc::list_t<float> rms_tmp = rms;
+			min_result = min;
+			max_result = max;
+			rms_result = rms;
 			for (size_t c = 0; c < channels; ++c)
 			{
-				rms_tmp[c] = sqrt(rms_tmp[c] / samples);
+				rms_result[c] = sqrt(rms_result[c] / samples);
 			}
-			min_result = downmix(min);
-			max_result = downmix(max);
-			rms_result = downmix(rms_tmp);
-		}
-
-	private:
-		float downmix(pfc::list_t<float> const& frame) const
-		{
-			pfc::list_t<float> data = frame;
-			switch (data.get_size())
-			{
-			case 8:
-				data[0] += frame[6] * sqrt_half;
-				data[1] += frame[7] * sqrt_half;
-			case 6:
-				data[0] += frame[2] * sqrt_half + frame[4] * sqrt_half + frame[3];
-				data[1] += frame[2] * sqrt_half + frame[5] * sqrt_half + frame[3];
-			case 2:
-				data[0] += frame[1];
-				data[0] /= 2.0;
-				break;
-			case 4:
-				data[0] += frame[1] + frame[2] + frame[3];
-				data[0] /= 4.0;
-			}
-			return data[0];
 		}
 	};
+
+	template <typename C1, typename C2>
+	void transpose(C1& out, C2 const& in)
+	{
+		int in_rows = in.get_size(), in_cols = in[0].get_size();
+		int out_rows = in_cols, out_cols = in_rows;
+
+		out.set_size(out_rows);
+		for (int out_row = 0; out_row < out_rows; ++out_row)
+		{
+			out[out_row].set_size(out_cols);
+			for (int out_col = 0; out_col < out_cols; ++out_col)
+			{
+				out[out_row][out_col] = in[out_col][out_row];
+			}
+		}
+	}
 
 	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
@@ -113,6 +115,7 @@ namespace wave
 
 		try
 		{
+			bool should_downmix = g_downmix_in_analysis.get();
 			service_ptr_t<input_decoder> decoder;
 			abort_callback& abort_cb = flush_callback;
 			
@@ -138,22 +141,26 @@ namespace wave
 				t_int64 sample_count = info.info_get_length_samples();
 				t_int64 chunk_size = sample_count / 2048;
 
-				pfc::list_hybrid_t<float, 2048> minimum, maximum, rms;
-				minimum.add_items_repeat(9001.0, 2048);
-				maximum.add_items_repeat(-9001.0, 2048);
-				rms.add_items_repeat(0.0, 2048);
+				pfc::list_hybrid_t<pfc::list_t<float>, 2048> minimum, maximum, rms;
+				minimum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
+				maximum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
+				rms.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
 
 				audio_chunk_impl chunk;
 
 				t_int64 sample_index = 0;
 				t_int32 out_index = 0;
 
+				t_int64 processed_samples = 0;
+
+				unsigned channel_map = audio_chunk::channel_config_mono;
 				scoped_ptr<span> current_span;
 				while (decoder->run(chunk, abort_cb))
 				{
 					unsigned channel_count = chunk.get_channels();
 
 					audio_sample* data = chunk.get_data();
+					channel_map = chunk.get_channel_config();
 					for (t_size i = 0; i < chunk.get_sample_count(); ++i)
 					{						
 						if (!current_span)
@@ -161,23 +168,53 @@ namespace wave
 					
 						audio_sample* frame = data + i * channel_count;
 						current_span->add(frame);
+						++processed_samples;
 						
-						if (sample_index++ == chunk_size)
+						if (++sample_index == chunk_size)
 						{
-							if (out_index != 2047)
-								++out_index;
+							sample_index = 0;
+							if (out_index == 2047)
+								continue;
 							current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
 							current_span.reset();
-							sample_index = 0;
+							++out_index;
 						}
 					}
 				}
 
+				if (current_span)
+				{
+					current_span->resolve(minimum[2047], maximum[2047], rms[2047]);
+				}
+
 				{
 					service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
-					ret->minimum.add_items(minimum);
-					ret->maximum.add_items(maximum);
-					ret->rms.add_items(rms);
+					if (should_downmix)
+					{
+						auto downmix_one = [](pfc::list_t<float>& l)
+						{
+							l[0] = downmix(l);
+							l.set_size(1);
+						};
+						for (size_t i = 0; i < minimum.get_size(); ++i)
+						{
+							downmix_one(minimum[i]);
+							downmix_one(maximum[i]);
+							downmix_one(rms[i]);
+						}
+						channel_map = audio_chunk::channel_config_mono;
+					}
+
+					pfc::list_t<pfc::list_hybrid_t<float, 2048>> tr_minimum, tr_maximum, tr_rms;
+					transpose(tr_minimum, minimum);
+					transpose(tr_maximum, maximum);
+					transpose(tr_rms, rms);
+
+					ret->minimum.add_items(tr_minimum);
+					ret->maximum.add_items(tr_maximum);
+					ret->rms.add_items(tr_rms);
+					ret->channel_map = channel_map;
+
 					out = ret;
 				}
 

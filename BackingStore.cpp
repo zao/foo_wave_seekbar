@@ -3,6 +3,7 @@
 #include "WaveformImpl.h"
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
+#include "Helpers.h"
 
 namespace wave
 {
@@ -110,20 +111,22 @@ namespace wave
 		if (sqlite3_column_type(stmt.get(), 4) != SQLITE_NULL)
 			compression = sqlite3_column_int(stmt.get(), 4);
 
-		if (compression && *compression > 0 || channels)
+		if (compression && *compression > 0)
 			return false;
 
+		unsigned channel_count = channels ? count_bits_set(*channels) : 1;
+
 		service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
-		auto clear_and_set = [&stmt, compression](decltype(w->rms)& list, size_t col)
+		auto clear_and_set = [&stmt, compression, channel_count](decltype(w->rms)& list, size_t col)
 		{
 			list.remove_all();
-				
+			
 			float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
 			t_size count = sqlite3_column_bytes(stmt.get(), col) / sizeof(float);
 
 			if (compression)
 			{
-				std::vector<float> dst(2048);
+				std::vector<float> dst(2048*channel_count);
 				if (*compression == 0)
 				{
 					io::filtering_ostream out;
@@ -131,18 +134,29 @@ namespace wave
 					out.push(io::array_sink((char*)&dst[0], dst.size() * sizeof(float)));
 					out.write((char const*)data, count * sizeof(float));
 				}
-				list.add_items_fromptr(&dst[0], dst.size());
+				for (unsigned c = 0; c < channel_count; ++c)
+				{
+					pfc::list_hybrid_t<float, 2048> channel;
+					channel.add_items_fromptr(&dst[2048*c], 2048);
+					list.add_item(channel);
+				}
 			}
 			else
 			{
-				list.add_items_fromptr(data, count);
+				for (unsigned c = 0; c < channel_count; ++c)
+				{
+					pfc::list_hybrid_t<float, 2048> channel;
+					channel.add_items_fromptr(data + 2048*c, 2048);
+					list.add_item(channel);
+				}
 			}
-
 		};
 
 		clear_and_set(w->minimum, 0);
 		clear_and_set(w->maximum, 1);
 		clear_and_set(w->rms, 2);
+
+		w->channel_map = channels ? *channels : 0;
 
 		out = w;
 		return true;
@@ -160,21 +174,24 @@ namespace wave
 
 		stmt = prepare_statement(
 			"REPLACE INTO wave (fid, min, max, rms, channels, compression) "
-			"SELECT f.fid, ?, ?, ?, NULL, 0 "
+			"SELECT f.fid, ?, ?, ?, ?, 0 "
 			"FROM file AS f "
 			"WHERE f.location = ? AND f.subsong = ?");
 
 #		define BIND_LIST(Member, Idx) \
-			pfc::list_t<float> Member; \
-			w->get_field(#Member, Member); \
-			std::vector<char> Member ## _buf; \
+			std::vector<char> Member; \
 			{ \
 				io::filtering_ostream out( \
 					io::zlib_compressor(9) | \
-					io::back_inserter(Member ## _buf)); \
-				out.write((char*)Member.get_ptr(), Member.get_size() * sizeof(float)); \
+					io::back_inserter(Member)); \
+				for (size_t c = 0; c < w->get_channel_count(); ++c) \
+				{ \
+					pfc::list_t<float> channel; \
+					w->get_field(#Member, c, channel); \
+					out.write((char*)channel.get_ptr(), channel.get_size() * sizeof(float)); \
+				} \
 			} \
-			sqlite3_bind_blob(stmt.get(), Idx, &(Member ## _buf)[0], (Member ## _buf).size(), SQLITE_STATIC)
+			sqlite3_bind_blob(stmt.get(), Idx, &Member[0], Member.size(), SQLITE_STATIC)
 			
 		BIND_LIST(minimum, 1);
 		BIND_LIST(maximum, 2);
@@ -182,8 +199,10 @@ namespace wave
 
 #		undef  BIND_LIST
 
-		sqlite3_bind_text(stmt.get(), 4, file.get_path(), -1, SQLITE_STATIC);
-		sqlite3_bind_int(stmt.get(), 5, file.get_subsong());
+		sqlite3_bind_int(stmt.get(), 4, w->get_channel_map());
+
+		sqlite3_bind_text(stmt.get(), 5, file.get_path(), -1, SQLITE_STATIC);
+		sqlite3_bind_int(stmt.get(), 6, file.get_subsong());
 
 		while (SQLITE_ROW == sqlite3_step(stmt.get()))
 		{
