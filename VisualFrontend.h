@@ -27,6 +27,27 @@ namespace wave
 			frontend_direct2d1,
 			frontend_gdi
 		};
+		enum display_mode
+		{
+			display_normal,
+			display_positive,
+			display_negative,
+			display_average,
+			display_minimum,
+			display_maximum
+		};
+
+		namespace strings
+		{
+			__declspec(selectany) wchar_t const* frontend[] =
+			{
+				L"Direct3D 9.0c", L"Direct3D 10.0", L"Direct2D 1.0", L"GDI"
+			};
+			__declspec(selectany) wchar_t const* display_mode[] =
+			{
+				L"Normal", L"Only + half", L"Only - half", L"Average of +/-", L"Minimum of +/-", L"Maximum of +/-"
+			};
+		}
 	}
 
 	struct color {
@@ -70,14 +91,16 @@ namespace wave
 		virtual void present() = 0;
 
 		enum state {
-			state_color = 1,
-			state_replaygain = 2,
-			state_position = 4,
-			state_size = 8,
-			state_data = 16,
-			state_track = 32,
-			state_orientation = 64,
-			state_shade_played = 128
+			state_color = 1<<0,
+			state_replaygain = 1<<1,
+			state_position = 1<<2,
+			state_size = 1<<3,
+			state_data = 1<<4,
+			state_track = 1<<5,
+			state_orientation = 1<<6,
+			state_shade_played = 1<<7,
+			state_display_mode = 1<<8,
+			state_downmix_display = 1<<9
 		};
 		virtual void on_state_changed(state s) = 0;
 	};
@@ -100,6 +123,8 @@ namespace wave
 		virtual CSize get_size() const = 0;
 		virtual config::orientation get_orientation() const = 0;
 		virtual bool get_shade_played() const = 0;
+		virtual config::display_mode get_display_mode() const = 0;
+		virtual bool get_downmix_display() const = 0;
 	};
 
 	struct visual_frontend_callback_setter {
@@ -117,6 +142,8 @@ namespace wave
 		virtual void set_size(CSize size) = 0;
 		virtual void set_orientation(config::orientation o) = 0;
 		virtual void set_shade_played(bool b) = 0;
+		virtual void set_display_mode(config::display_mode mode) = 0;
+		virtual void set_downmix_display(bool downmix) = 0;
 	};
 
 	struct visual_frontend_factory

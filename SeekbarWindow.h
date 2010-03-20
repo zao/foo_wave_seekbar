@@ -107,6 +107,9 @@ namespace wave
 		void set_frontend(config::frontend kind);
 		void set_orientation(config::orientation);
 		void set_shade_played(bool);
+		void set_display_mode(config::display_mode);
+		void set_downmix_display(bool);
+
 		struct configuration_dialog : ATL::CDialogImpl<configuration_dialog>
 		{
 			enum { IDD = IDD_CONFIG };
@@ -129,6 +132,8 @@ namespace wave
 				COLOR_USE_HANDLER(IDC_USE_FOREGROUND)
 				COLOR_USE_HANDLER(IDC_USE_HIGHLIGHT)
 				COLOR_USE_HANDLER(IDC_USE_SELECTION)
+				COMMAND_HANDLER_EX(IDC_DISPLAYMODE, CBN_SELCHANGE, on_display_select)
+				COMMAND_HANDLER_EX(IDC_DOWNMIX, BN_CLICKED, on_downmix_click)
 			END_MSG_MAP()
 
 			LRESULT on_wm_init_dialog(CWindow focus, LPARAM lparam);
@@ -139,6 +144,8 @@ namespace wave
 			void on_shade_played_click(UINT code, int id, CWindow control);
 			void on_color_click(UINT code, int id, CWindow control);
 			void on_use_color_click(UINT code, int id, CWindow control);
+			void on_display_select(UINT code, int id, CWindow control);
+			void on_downmix_click(UINT code, int id, CWindow control);
 
 			virtual void OnFinalMessage(HWND);
 

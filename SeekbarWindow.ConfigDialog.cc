@@ -8,30 +8,31 @@ namespace wave
 
 	LRESULT seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM lparam)
 	{
+		// Fill frontend combobox
 		CComboBox cb = GetDlgItem(IDC_FRONTEND);
 		std::wstring d3d = L"Direct3D 9.0c";
 		std::wstring d2d = L"Direct2D 1.0";
 		std::wstring gdi = L"GDI";
 		
-		if (has_direct3d9())
-			cb.SetItemData(cb.AddString(d3d.c_str()), config::frontend_direct3d9);
-		if (has_direct2d1())
-			cb.SetItemData(cb.AddString(d2d.c_str()), config::frontend_direct2d1);
-		cb.SetItemData(cb.AddString(gdi.c_str()), config::frontend_gdi);
-		
-		switch (sw.settings.active_frontend_kind)
+		auto add_frontend_string = [&cb](config::frontend frontend)
 		{
-			case config::frontend_direct3d9:
-				cb.SelectString(0, d3d.c_str());
-				break;
-			case config::frontend_direct2d1:
-				cb.SelectString(0, d2d.c_str());
-				break;
-			case config::frontend_gdi:
-				cb.SelectString(0, gdi.c_str());
-				break;
-		}
+			cb.SetItemData(cb.AddString(config::strings::frontend[frontend]), frontend);
+		};
 
+		if (has_direct3d9())
+			add_frontend_string(config::frontend_direct3d9);
+		if (has_direct2d1())
+			add_frontend_string(config::frontend_direct2d1);
+		add_frontend_string(config::frontend_gdi);
+
+		auto select_frontend_string = [&cb](config::frontend frontend)
+		{
+			cb.SelectString(0, config::strings::frontend[frontend]);
+		};
+
+		select_frontend_string(sw.settings.active_frontend_kind);
+
+		// Initialize colour pickers
 		mk_color_info(config::color_background, IDC_COLOR_BACKGROUND, IDC_USE_BACKGROUND);
 		mk_color_info(config::color_foreground, IDC_COLOR_FOREGROUND, IDC_USE_FOREGROUND);
 		mk_color_info(config::color_highlight, IDC_COLOR_HIGHLIGHT, IDC_USE_HIGHLIGHT);
@@ -44,8 +45,21 @@ namespace wave
 			colors[i].box.EnableWindow(override);
 			colors[i].box.InvalidateRect(0);
 		}
+
+		// Set up misc settings
 		CheckDlgButton(IDC_NOBORDER, !sw.settings.has_border ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(IDC_SHADEPLAYED, sw.settings.shade_played ? BST_CHECKED : BST_UNCHECKED);
+
+		// Set up display properties
+		CComboBox modes = GetDlgItem(IDC_DISPLAYMODE);
+		for (int i = 0; i < sizeof(config::strings::display_mode) / sizeof(wchar_t const*); ++i)
+		{
+			modes.SetItemData(modes.AddString(config::strings::display_mode[i]), (config::display_mode)i);
+		}
+		modes.SelectString(0, config::strings::display_mode[sw.settings.display_mode]);
+
+		// Set up channel listings
+
 		return TRUE;
 	}
 
@@ -148,6 +162,21 @@ namespace wave
 		sw.set_color_override(idx, override);
 		colors[idx].box.EnableWindow(override);
 		colors[idx].box.InvalidateRect(0);
+	}
+
+	void seekbar_window::configuration_dialog::on_display_select(UINT code, int id, CWindow control)
+	{
+		CComboBox cb = control;
+		config::display_mode mode = (config::display_mode)cb.GetItemData(cb.GetCurSel());
+		if (mode != sw.settings.display_mode)
+		{
+			sw.set_display_mode(mode);
+		}
+	}
+
+	void seekbar_window::configuration_dialog::on_downmix_click(UINT code, int id, CWindow control)
+	{
+		sw.set_downmix_display(!!IsDlgButtonChecked(id));
 	}
 
 	seekbar_window::configuration_dialog::configuration_dialog(seekbar_window& sw) 

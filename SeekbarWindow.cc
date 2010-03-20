@@ -21,8 +21,10 @@ namespace wave
 			}
 		}
 
-		virtual bool get_field(pfc::string const& what, pfc::list_base_t<float>& out)
+		virtual bool get_field(pfc::string const& what, unsigned channel, pfc::list_base_t<float>& out)
 		{
+			if (channel > 0)
+				return false;
 			if (pfc::string::g_equals(what, "minimum"))
 				return out = minimum, true;
 			if (pfc::string::g_equals(what, "maximum"))
@@ -31,6 +33,9 @@ namespace wave
 				return out = rms, true;
 			return false;
 		}
+
+		virtual unsigned get_channel_count() const { return 1; }
+		virtual unsigned get_channel_map() const { return audio_chunk::channel_config_mono; }
 
 	private:
 		pfc::list_hybrid_t<float, 2048> minimum, maximum, rms;
@@ -619,6 +624,30 @@ namespace wave
 			fe->callback->set_shade_played(shade);
 			if (fe->frontend)
 				fe->frontend->on_state_changed(visual_frontend::state_shade_played);
+		}
+	}
+
+	void seekbar_window::set_display_mode(config::display_mode mode)
+	{
+		scoped_lock sl(fe->mutex);
+		settings.display_mode = mode;
+		if (fe->callback->get_display_mode() != mode)
+		{
+			fe->callback->set_display_mode(mode);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_display_mode);
+		}
+	}
+
+	void seekbar_window::set_downmix_display(bool downmix)
+	{
+		scoped_lock sl(fe->mutex);
+		settings.downmix_display = downmix;
+		if (fe->callback->get_downmix_display() != downmix)
+		{
+			fe->callback->set_downmix_display(downmix);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_downmix_display);
 		}
 	}
 

@@ -37,6 +37,8 @@ namespace wave
 		virtual CSize get_size() const { return size; }
 		virtual config::orientation get_orientation() const { return orientation; }
 		virtual bool get_shade_played() const { return shade_played; }
+		virtual config::display_mode get_display_mode() const { return display_mode; }
+		virtual bool get_downmix_display() const { return downmix_display; }
 
 		// Setters
 		virtual void set_track_length(double v) { track_length = v; }
@@ -68,6 +70,8 @@ namespace wave
 		virtual void set_size(CSize s) { size = s; }
 		virtual void set_orientation(config::orientation o) { orientation = o; }
 		virtual void set_shade_played(bool b) { shade_played = b; }
+		virtual void set_display_mode(config::display_mode mode) { display_mode = mode; }
+		virtual void set_downmix_display(bool b) { downmix_display = b; }
 
 		double track_length;
 		double playback_position;
@@ -81,6 +85,8 @@ namespace wave
 		CSize size;
 		config::orientation orientation;
 		bool shade_played;
+		config::display_mode display_mode;
+		bool downmix_display;
 
 		frontend_callback_impl()
 			: track_length(1.0), playback_position(0.0), cursor_visible(false), seeking(false)
