@@ -69,6 +69,10 @@ namespace wave
 		}
 	}
 
+	class channel_mismatch_exception : public std::exception
+	{
+	};
+
 	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
 		service_ptr_t<waveform> out;
@@ -154,10 +158,17 @@ namespace wave
 				t_int64 processed_samples = 0;
 
 				unsigned channel_map = audio_chunk::channel_config_mono;
+				boost::optional<unsigned> track_channel_count;
 				scoped_ptr<span> current_span;
+
 				while (decoder->run(chunk, abort_cb))
 				{
 					unsigned channel_count = chunk.get_channels();
+					if (!track_channel_count)
+						track_channel_count = channel_count;
+
+					if (*track_channel_count != channel_count)
+						throw channel_mismatch_exception();
 
 					audio_sample* data = chunk.get_data();
 					channel_map = chunk.get_channel_config();
@@ -239,6 +250,10 @@ namespace wave
 		catch (foobar2000_io::exception_io& ex)
 		{
 			console::formatter() << "Wave cache: generic IO exception (" << ex.what() <<") for " << loc;
+		}
+		catch (channel_mismatch_exception&)
+		{
+			console::formatter() << "Wave cache: track with mismatching channels, bailing out on " << loc;
 		}
 		catch (std::exception& ex)
 		{
