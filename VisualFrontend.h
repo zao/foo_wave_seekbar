@@ -47,6 +47,27 @@ namespace wave
 			{
 				L"Normal", L"Only + half", L"Only - half", L"Average of +/-", L"Minimum of +/-", L"Maximum of +/-"
 			};
+			__declspec(selectany) std::map<int, wchar_t const*> channel_names =
+			boost::assign::map_list_of
+				(audio_chunk::channel_front_left, L"Front left")
+				(audio_chunk::channel_front_right, L"Front right")
+				(audio_chunk::channel_front_center, L"Front center (mono)")
+				(audio_chunk::channel_lfe, L"LFE")
+				(audio_chunk::channel_back_left, L"Rear left")
+				(audio_chunk::channel_back_right, L"Rear right")
+				(audio_chunk::channel_front_center_left, L"Front center left")
+				(audio_chunk::channel_front_center_right, L"Front center right")
+				(audio_chunk::channel_back_center, L"Back center")
+				(audio_chunk::channel_side_left, L"Side left")
+				(audio_chunk::channel_side_right, L"Side right")
+				(audio_chunk::channel_top_center, L"Top center")
+				(audio_chunk::channel_top_front_left, L"Top front left")
+				(audio_chunk::channel_top_front_center, L"Top front center")
+				(audio_chunk::channel_top_front_right, L"Top front right")
+				(audio_chunk::channel_top_back_left, L"Top back left")
+				(audio_chunk::channel_top_back_center, L"Top back center")
+				(audio_chunk::channel_top_back_right, L"Top back right")
+			;
 		}
 	}
 
