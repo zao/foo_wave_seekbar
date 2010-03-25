@@ -22,15 +22,15 @@
 #define IDC_USE_SELECTION               1012
 #define IDC_CHECK1                      1013
 #define IDC_SHADEPLAYED                 1013
-#define IDC_USED_CHANNELS               1016
-#define IDC_UNUSED_CHANNELS             1017
-#define IDC_ADD_CHANNEL                 1018
-#define IDC_REMOVE_CHANNEL              1019
-#define IDC_CHANNEL_UP                  1020
-#define IDC_CHANNEL_DOWN                1021
-#define IDC_WAVEDISPLAY                 1024
+#define IDC_CHANNEL_ADD                 1018
 #define IDC_DISPLAYMODE                 1024
 #define IDC_DOWNMIX                     1025
+#define IDC_CHECK2                      1026
+#define IDC_USED_CHANNELS               1027
+#define IDC_CHANNELS                    1027
+#define IDC_CHANNEL_UP                  1030
+#define IDC_BUTTON2                     1031
+#define IDC_CHANNEL_DOWN                1031
 
 // Next default values for new objects
 // 
@@ -38,7 +38,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1026
+#define _APS_NEXT_CONTROL_VALUE         1031
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
