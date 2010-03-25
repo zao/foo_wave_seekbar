@@ -1,4 +1,6 @@
 #pragma once
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/utility.hpp>
 
 namespace wave
 {
@@ -10,6 +12,14 @@ namespace wave
 		{
 			std::fill_n(colors.begin(), colors.size(), color());
 			std::fill_n(override_colors.begin(), override_colors.size(), false);
+			channel_order = map_list_of
+				(audio_chunk::channel_back_left, true)
+				(audio_chunk::channel_front_left, true)
+				(audio_chunk::channel_front_center, true)
+				(audio_chunk::channel_front_right, true)
+				(audio_chunk::channel_back_right, true)
+				(audio_chunk::channel_lfe, true);
+			insert_remaining_channels();
 		}
 
 		config::frontend active_frontend_kind;
@@ -20,7 +30,8 @@ namespace wave
 		config::display_mode display_mode;
 		bool flip_display;
 		bool downmix_display;
-
+		std::vector<std::pair<int, bool>> channel_order; // int is unnamed channel enum from audio_chunk, contains the channels used
+		
 
 		template <class Archive>
 		void save(Archive& ar, const unsigned int version) const
@@ -33,6 +44,7 @@ namespace wave
 			ar & BOOST_SERIALIZATION_NVP(display_mode);
 			ar & BOOST_SERIALIZATION_NVP(flip_display);
 			ar & BOOST_SERIALIZATION_NVP(downmix_display);
+			ar & BOOST_SERIALIZATION_NVP(channel_order);
 		}
 
 		template <class Archive>
@@ -58,9 +70,47 @@ namespace wave
 				ar & BOOST_SERIALIZATION_NVP(flip_display);
 				ar & BOOST_SERIALIZATION_NVP(downmix_display);
 			}
+			if (version >= 8 && version < 9)
+			{
+				std::vector<int> used_channels;
+				ar & BOOST_SERIALIZATION_NVP(used_channels);
+			}
+			if (version >= 9)
+			{
+				ar & BOOST_SERIALIZATION_NVP(channel_order);
+				insert_remaining_channels();
+			}
 		}
 		BOOST_SERIALIZATION_SPLIT_MEMBER()
+
+		void insert_remaining_channels()
+		{
+			std::set<int> all_channels = list_of
+				(audio_chunk::channel_back_left)
+				(audio_chunk::channel_front_left)
+				(audio_chunk::channel_front_center)
+				(audio_chunk::channel_front_right)
+				(audio_chunk::channel_back_right)
+				(audio_chunk::channel_lfe)
+				(audio_chunk::channel_front_center_left)
+				(audio_chunk::channel_front_center_right)
+				(audio_chunk::channel_back_center)
+				(audio_chunk::channel_side_left)
+				(audio_chunk::channel_side_right)
+				(audio_chunk::channel_top_center)
+				(audio_chunk::channel_top_front_left)
+				(audio_chunk::channel_top_front_center)
+				(audio_chunk::channel_top_front_right)
+				(audio_chunk::channel_top_back_left)
+				(audio_chunk::channel_top_back_center)
+				(audio_chunk::channel_top_back_right);
+			for each(int ch in all_channels)
+			{
+				if (std::find_if(channel_order.begin(), channel_order.end(), [ch](decltype(channel_order[0]) const& a) { return a.first == ch; }) == channel_order.end())
+					channel_order.push_back(std::make_pair(ch, false));
+			}
+		}
 	};
 }
 
-BOOST_CLASS_VERSION(wave::persistent_settings, 7)
+BOOST_CLASS_VERSION(wave::persistent_settings, 9)
