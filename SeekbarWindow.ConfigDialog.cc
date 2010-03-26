@@ -214,7 +214,7 @@ namespace wave
 			{
 				int ch = channels.GetItemData(nm->iItem);
 				//bool checked = !!channels.GetCheckState(nm->iItem);
-				sw.set_channel_enabled(ch, state >> 1);
+				sw.set_channel_enabled(ch, !!(state >> 1));
 			}
 		}
 		return 0;
