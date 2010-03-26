@@ -96,6 +96,7 @@ namespace wave
 
 	private:
 		void test_playback_order(t_size order);
+		void apply_settings();
 
 	public:
 		void on_playback_order_changed(t_size p_new_index);

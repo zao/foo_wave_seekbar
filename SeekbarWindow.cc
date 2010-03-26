@@ -21,9 +21,9 @@ namespace wave
 			}
 		}
 
-		virtual bool get_field(pfc::string const& what, unsigned channel, pfc::list_base_t<float>& out)
+		virtual bool get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out)
 		{
-			if (channel > 0)
+			if (index > 0)
 				return false;
 			if (pfc::string::g_equals(what, "minimum"))
 				return out = minimum, true;
@@ -201,6 +201,27 @@ namespace wave
 		}
 	}
 
+	void seekbar_window::apply_settings()
+	{
+		auto& cb = *fe->callback;
+		for (size_t i = 0; i < config::color_count; ++i)
+		{
+			cb.set_color((config::color)i, settings.override_colors[i]
+				? settings.colors[i]
+				: global_colors[i]
+				);
+		}
+		cb.set_shade_played(settings.shade_played);
+		cb.set_display_mode(settings.display_mode);
+		cb.set_downmix_display(settings.downmix_display);
+		for (size_t i = 0; i < settings.channel_order.size(); ++i)
+		{
+			auto const& p = settings.channel_order[i];
+			cb.set_channel_enabled(p.first, p.second);
+			cb.set_channel_index(p.first, i);
+		}
+	}
+
 	void seekbar_window::on_wm_paint(HDC dc)
 	{
 		GetClientRect(client_rect);
@@ -221,14 +242,7 @@ namespace wave
 				bool vista_least_sp1 = (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0 && osv.wServicePackMajor >= 1);
 				bool seven_and_up = (osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1) || (osv.dwMajorVersion >= 7);
 
-				for (size_t i = 0; i < config::color_count; ++i)
-				{
-					fe->callback->set_color((config::color)i, settings.override_colors[i]
-						? settings.colors[i]
-						: global_colors[i]
-						);
-				}
-				fe->callback->set_shade_played(settings.shade_played);
+				apply_settings();
 				
 				DWORD present_interval = 10;
 				switch (settings.active_frontend_kind)
