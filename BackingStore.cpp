@@ -156,7 +156,7 @@ namespace wave
 		clear_and_set(w->maximum, 1);
 		clear_and_set(w->rms, 2);
 
-		w->channel_map = channels ? *channels : 0;
+		w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
 
 		out = w;
 		return true;
