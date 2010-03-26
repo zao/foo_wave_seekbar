@@ -1,5 +1,6 @@
 #pragma once
 #include "VisualFrontend.h"
+#include <map>
 
 namespace wave
 {
@@ -25,8 +26,10 @@ namespace wave
 		CComPtr<IDirect3D9> d3d;
 		CComPtr<IDirect3DDevice9> dev;
 
-		CComPtr<IDirect3DTexture9> tex;
+		std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
 		std::deque<CComPtr<IDirect3DTexture9>> annotation_textures;
+		std::vector<unsigned> channel_numbers;
+		std::map<unsigned, unsigned> channel_order;
 		CComPtr<ID3DXEffect> fx;
 		CComPtr<IDirect3DVertexBuffer9> vb;
 		CComPtr<IDirect3DVertexDeclaration9> decl;
@@ -44,6 +47,7 @@ namespace wave
 		visual_frontend_callback& callback;
 
 	private:
+		CComPtr<IDirect3DTexture9> create_waveform_texture();
 		void create_vertex_resources();
 		void release_vertex_resources();
 		void create_default_resources();
@@ -53,6 +57,7 @@ namespace wave
 
 		bool device_lost;
 		UINT mip_count;
+		D3DFORMAT texture_format;
 		bool floating_point_texture;
 	};
 

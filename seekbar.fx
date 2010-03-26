@@ -28,6 +28,7 @@ sampler sTexBg = sampler_state
 struct VS_IN
 {
 	float2 pos : POSITION;
+	float2 tc : TEXCOORD0;
 };
 
 struct PS_IN
@@ -57,9 +58,9 @@ PS_IN VS( VS_IN input )
 	float2 half_pixel = float2(1,-1) / viewportSize;
 	output.pos = float4(input.pos - half_pixel, 0, 1);
 	if (horizontal)
-		output.tc = float2((input.pos.x + 1.0) / 2.0, input.pos.y);
+		output.tc = float2((input.tc.x + 1.0) / 2.0, input.tc.y);
 	else
-		output.tc = float2((-input.pos.y + 1.0) / 2.0, input.pos.x);
+		output.tc = float2((-input.tc.y + 1.0) / 2.0, input.tc.x);
 
 	return output;
 }

@@ -32,7 +32,7 @@ namespace wave
 			update_effect_cursor();
 		if (s & state_replaygain)
 			update_replaygain();
-		if (s & state_data)
+		if (s & (state_data | state_channel_order))
 			update_data();
 		if (s & state_orientation)
 			update_orientation();
@@ -63,49 +63,67 @@ namespace wave
 	{
 		HRESULT hr = S_OK;
 		service_ptr_t<waveform> w;
-		if (callback.get_waveform(w)) {
-			pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
-			//TODO: multichannel
-			w->get_field("minimum", 0, avg_min);
-			w->get_field("maximum", 0, avg_max);
-			w->get_field("rms", 0, avg_rms);
-
-			for (UINT mip = 0; mip < mip_count; ++mip)
+		if (callback.get_waveform(w))
+		{
+			channel_order.clear();
+			auto& channels = channel_numbers = expand_flags(w->get_channel_map());
+			for (unsigned idx = 0; idx < w->get_channel_count(); ++idx)
 			{
-				UINT width = 2048 >> mip;
-				D3DLOCKED_RECT lock = {};
-				hr = tex->LockRect(mip, &lock, 0, 0);
-				if (floating_point_texture)
+				unsigned channel = channels[idx];
+				bool enabled = callback.get_channel_enabled(channel);
+				if (!enabled)
+					continue;
+
+				console::printf("Channel %d has index %d", channel, callback.get_channel_index(channel));
+				channel_order[callback.get_channel_index(channel)] = channel;
+
+				if (!channel_textures.count(channel))
+					channel_textures[channel] = create_waveform_texture();
+
+				CComPtr<IDirect3DTexture9> tex = channel_textures[channel];
+				
+				pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
+				w->get_field("minimum", idx, avg_min);
+				w->get_field("maximum", idx, avg_max);
+				w->get_field("rms", idx, avg_rms);
+
+				for (UINT mip = 0; mip < mip_count; ++mip)
 				{
-					D3DXFLOAT16* dst = (D3DXFLOAT16*)lock.pBits;
-					for (size_t i = 0; i < width; ++i)
+					UINT width = 2048 >> mip;
+					D3DLOCKED_RECT lock = {};
+					hr = tex->LockRect(mip, &lock, 0, 0);
+					if (floating_point_texture)
 					{
-						dst[(i << 2) + 0] = avg_min[i];
-						dst[(i << 2) + 1] = avg_max[i];
-						dst[(i << 2) + 2] = avg_rms[i];
-						dst[(i << 2) + 3] = 0.0f;
+						D3DXFLOAT16* dst = (D3DXFLOAT16*)lock.pBits;
+						for (size_t i = 0; i < width; ++i)
+						{
+							dst[(i << 2) + 0] = avg_min[i];
+							dst[(i << 2) + 1] = avg_max[i];
+							dst[(i << 2) + 2] = avg_rms[i];
+							dst[(i << 2) + 3] = 0.0f;
+						}
 					}
-				}
-				else
-				{
-					uint32_t* dst = (uint32_t*)lock.pBits;
-					for (size_t i = 0; i < width; ++i)
+					else
 					{
-						uint32_t i_sgn = 3;
-						uint32_t i_min = (uint32_t)(512.0 * (avg_min[i] + 1.0));
-						uint32_t i_max = (uint32_t)(512.0 * (avg_max[i] + 1.0));
-						uint32_t i_rms = (uint32_t)(512.0 * (avg_rms[i] + 1.0));
-						uint32_t val = ((i_sgn & 0x003) << 30)
-						             + ((i_min & 0x3FF) << 20)
-						             + ((i_max & 0x3FF) << 10)
-						             + ((i_rms & 0x3FF) <<  0);
-						dst[i] = val;
+						uint32_t* dst = (uint32_t*)lock.pBits;
+						for (size_t i = 0; i < width; ++i)
+						{
+							uint32_t i_sgn = 3;
+							uint32_t i_min = (uint32_t)(512.0 * (avg_min[i] + 1.0));
+							uint32_t i_max = (uint32_t)(512.0 * (avg_max[i] + 1.0));
+							uint32_t i_rms = (uint32_t)(512.0 * (avg_rms[i] + 1.0));
+							uint32_t val = ((i_sgn & 0x003) << 30)
+							             + ((i_min & 0x3FF) << 20)
+							             + ((i_max & 0x3FF) << 10)
+							             + ((i_rms & 0x3FF) <<  0);
+							dst[i] = val;
+						}
 					}
+					hr = tex->UnlockRect(mip);
+					reduce_by_two(avg_min, width);
+					reduce_by_two(avg_max, width);
+					reduce_by_two(avg_rms, width);
 				}
-				hr = tex->UnlockRect(mip);
-				reduce_by_two(avg_min, width);
-				reduce_by_two(avg_max, width);
-				reduce_by_two(avg_rms, width);
 			}
 		}
 	}
@@ -133,8 +151,17 @@ namespace wave
 			fx->SetBool(shade_played_var, callback.get_shade_played());
 	}
 
+	CComPtr<IDirect3DTexture9> direct3d9_frontend::create_waveform_texture()
+	{
+		CComPtr<IDirect3DTexture9> tex;
+		dev->CreateTexture(2048, 1, mip_count, 0, texture_format, D3DPOOL_MANAGED, &tex, 0);
+		return tex;
+	}
+
 	void direct3d9_frontend::create_vertex_resources()
 	{
+		HRESULT hr;
+#if 0
 		float buf[] =
 		{
 			-1.0f, -1.0f,
@@ -143,7 +170,6 @@ namespace wave
 			1.0f, 1.0f,
 		};
 
-		HRESULT hr;
 		hr = dev->CreateVertexBuffer(4 * 8, 0, 0, D3DPOOL_MANAGED, &vb, 0);
 		if (!SUCCEEDED(hr))
 			throw std::exception("Direct3D9: could not create vertex buffer.");
@@ -152,13 +178,15 @@ namespace wave
 		hr = vb->Lock(0, 0, (void**)&dst, 0);
 		std::copy(buf, buf + 8, dst);
 		vb->Unlock();
+#endif
 
 		D3DVERTEXELEMENT9 decls[] =
 		{
 			{ 0, 0, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+			{ 0, 8, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
 			D3DDECL_END()
 		};
-		dev->CreateVertexDeclaration(decls, &decl);
+		hr = dev->CreateVertexDeclaration(decls, &decl);
 		if (!SUCCEEDED(hr))
 			throw std::exception("Direct3D9: could not create vertex declaration.");
 	}
@@ -242,8 +270,6 @@ namespace wave
 				}
 			}
 		}
-
-		fx->SetTexture(fx->GetParameterBySemantic(0, "WAVEFORMDATA"), tex);
 
 		background_color_var = fx->GetParameterBySemantic(0, "BACKGROUNDCOLOR");
 		foreground_color_var = fx->GetParameterBySemantic(0, "TEXTCOLOR");
@@ -353,21 +379,20 @@ namespace wave
 				throw std::exception("Direct3D9: could not create device.");
 		}
 
-		auto create_data_texture = [this](D3DFORMAT fmt)
+		auto query_texture_format = [this](D3DFORMAT fmt) -> bool
 		{
-			return dev->CreateTexture(2048, 1, mip_count, 0, fmt, D3DPOOL_MANAGED, &tex, 0);
+			CComPtr<IDirect3DTexture9> tex;
+			HRESULT hr = dev->CreateTexture(2048, 1, mip_count, 0, fmt, D3DPOOL_MANAGED, &tex, 0);
+			return SUCCEEDED(hr);
 		};
-
-		hr = create_data_texture(D3DFMT_A16B16G16R16F);
-		if (!SUCCEEDED(hr))
+		
+		if (!query_texture_format(texture_format = D3DFMT_A16B16G16R16F))
 		{
 			floating_point_texture = false;
-			hr = create_data_texture(D3DFMT_A2R10G10B10);
-			if (!SUCCEEDED(hr))
+			if (!query_texture_format(texture_format = D3DFMT_A2R10G10B10))
 			{
-				hr = create_data_texture(D3DFMT_A8R8G8B8);
-				if (!SUCCEEDED(hr))
-					throw std::exception("Direct3D9: could not create texture.");
+				if (!query_texture_format(texture_format = D3DFMT_A8R8G8B8))
+					throw std::exception("Direct3D9: could not find a suitable texture format.");
 			}
 		}
 
@@ -384,22 +409,62 @@ namespace wave
 
 	void direct3d9_frontend::draw()
 	{
-		HRESULT hr = S_OK;
-		hr = dev->BeginScene();
-		hr = dev->SetStreamSource(0, vb, 0, 8);
-		hr = dev->SetTexture(0, tex);
-		hr = dev->SetVertexDeclaration(decl);
-		UINT passes = 0;
-		fx->Begin(&passes, 0);
-		for (UINT pass = 0; pass < passes; ++pass)
+		D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
+		auto draw_quad = [this, wfd](int idx, int ch, int n)
 		{
-			fx->BeginPass(pass);
-			fx->CommitChanges();
-			hr = dev->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
-			fx->EndPass();
+			D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
+			D3DXVECTOR4 viewport = D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0.0f, 0.0f);
+			sides /= (float)n;
+
+			std::vector<float> buf;
+
+			if (callback.get_orientation() == config::orientation_horizontal)
+			{
+				viewport.y /= (float)n;
+				buf +=
+					// position2f, texcoord2f
+					-1.0f, lerp(-1.0f, 1.0f, sides.x), -1.0f, -1.0f,
+					-1.0f, lerp(-1.0f, 1.0f, sides.y), -1.0f,  1.0f,
+					 1.0f, lerp(-1.0f, 1.0f, sides.x),  1.0f, -1.0f,
+					 1.0f, lerp(-1.0f, 1.0f, sides.y),  1.0f,  1.0f;
+			}
+			else
+			{
+				viewport.x /= (float)n;
+				buf +=
+					lerp(-1.0f, 1.0f, sides.x), -1.0f, -1.0f, -1.0f,
+					lerp(-1.0f, 1.0f, sides.x),  1.0f,  1.0f, -1.0f,
+					lerp(-1.0f, 1.0f, sides.y), -1.0f, -1.0f,  1.0f,
+					lerp(-1.0f, 1.0f, sides.y),  1.0f,  1.0f,  1.0f;
+			}
+
+			fx->SetVector(viewport_size_var, &viewport);
+
+			HRESULT hr = S_OK;
+			hr = dev->BeginScene();
+			fx->SetTexture(wfd, channel_textures[ch]);
+			hr = dev->SetTexture(0, channel_textures[ch]);
+			hr = dev->SetVertexDeclaration(decl);
+
+			UINT passes = 0;
+			fx->Begin(&passes, 0);
+			for (UINT pass = 0; pass < passes; ++pass)
+			{
+				fx->BeginPass(pass);
+				fx->CommitChanges();
+				hr = dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, &buf[0], sizeof(float) * 4);
+				fx->EndPass();
+			}
+			fx->End();
+			hr = dev->EndScene();
+		};
+
+		size_t num = channel_order.size();
+		auto I = channel_order.begin();
+		for (size_t idx = 0; idx < num; ++idx, ++I)
+		{
+			draw_quad(idx, I->second, num);
 		}
-		fx->End();
-		hr = dev->EndScene();
 	}
 
 	void direct3d9_frontend::present()
