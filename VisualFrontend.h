@@ -121,7 +121,8 @@ namespace wave
 			state_orientation = 1<<6,
 			state_shade_played = 1<<7,
 			state_display_mode = 1<<8,
-			state_downmix_display = 1<<9
+			state_downmix_display = 1<<9,
+			state_channel_order = 1<<10
 		};
 		virtual void on_state_changed(state s) = 0;
 	};
@@ -146,6 +147,8 @@ namespace wave
 		virtual bool get_shade_played() const = 0;
 		virtual config::display_mode get_display_mode() const = 0;
 		virtual bool get_downmix_display() const = 0;
+		virtual bool get_channel_enabled(int ch) const = 0;
+		virtual int get_channel_index(int ch) const = 0;
 	};
 
 	struct visual_frontend_callback_setter {
@@ -165,6 +168,8 @@ namespace wave
 		virtual void set_shade_played(bool b) = 0;
 		virtual void set_display_mode(config::display_mode mode) = 0;
 		virtual void set_downmix_display(bool downmix) = 0;
+		virtual void set_channel_enabled(int ch, bool enabled) = 0;
+		virtual void set_channel_index(int ch, int idx) = 0;
 	};
 
 	struct visual_frontend_factory
