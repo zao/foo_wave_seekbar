@@ -5,7 +5,7 @@ namespace wave
 {
 	struct waveform_impl : waveform
 	{
-		virtual bool get_field(pfc::string const& what, unsigned channel, pfc::list_base_t<float>& out) override;
+		virtual bool get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out) override;
 		virtual unsigned get_channel_count() const override;
 		virtual unsigned get_channel_map() const override;
 
