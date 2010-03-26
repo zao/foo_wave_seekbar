@@ -436,10 +436,10 @@ namespace wave
 			{
 				viewport.x /= (float)n;
 				buf +=
-					lerp(-1.0f, 1.0f, sides.x), -1.0f, -1.0f, -1.0f,
-					lerp(-1.0f, 1.0f, sides.x),  1.0f,  1.0f, -1.0f,
-					lerp(-1.0f, 1.0f, sides.y), -1.0f, -1.0f,  1.0f,
-					lerp(-1.0f, 1.0f, sides.y),  1.0f,  1.0f,  1.0f;
+					lerp(1.0f, -1.0f, sides.x), -1.0f, -1.0f, -1.0f,
+					lerp(1.0f, -1.0f, sides.y), -1.0f,  1.0f, -1.0f,
+					lerp(1.0f, -1.0f, sides.x),  1.0f, -1.0f,  1.0f,
+					lerp(1.0f, -1.0f, sides.y),  1.0f,  1.0f,  1.0f;
 			}
 
 			fx->SetVector(viewport_size_var, &viewport);
