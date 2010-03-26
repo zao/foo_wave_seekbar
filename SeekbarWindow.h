@@ -109,6 +109,8 @@ namespace wave
 		void set_shade_played(bool);
 		void set_display_mode(config::display_mode);
 		void set_downmix_display(bool);
+		void set_channel_enabled(int channel, bool);
+		void swap_channel_order(int ch1, int ch2);
 
 		struct configuration_dialog : ATL::CDialogImpl<configuration_dialog>
 		{
@@ -134,18 +136,28 @@ namespace wave
 				COLOR_USE_HANDLER(IDC_USE_SELECTION)
 				COMMAND_HANDLER_EX(IDC_DISPLAYMODE, CBN_SELCHANGE, on_display_select)
 				COMMAND_HANDLER_EX(IDC_DOWNMIX, BN_CLICKED, on_downmix_click)
+				NOTIFY_HANDLER_EX(IDC_CHANNELS, LVN_ITEMCHANGED, on_channel_changed)
+				NOTIFY_HANDLER_EX(IDC_CHANNELS, NM_CLICK, on_channel_click)
+				COMMAND_HANDLER_EX(IDC_CHANNEL_UP, BN_CLICKED, on_channel_up)
+				COMMAND_HANDLER_EX(IDC_CHANNEL_DOWN, BN_CLICKED, on_channel_down)
 			END_MSG_MAP()
+
+#define HANDLER_EX_IMPL(Name) void Name(UINT, int, CWindow)
 
 			LRESULT on_wm_init_dialog(CWindow focus, LPARAM lparam);
 			void on_wm_close();
 			HBRUSH on_wm_ctl_color_static(CDCHandle dc, CWindow wnd);
-			void on_frontend_select(UINT code, int id, CWindow control);
-			void on_no_border_click(UINT code, int id, CWindow control);
-			void on_shade_played_click(UINT code, int id, CWindow control);
-			void on_color_click(UINT code, int id, CWindow control);
-			void on_use_color_click(UINT code, int id, CWindow control);
-			void on_display_select(UINT code, int id, CWindow control);
-			void on_downmix_click(UINT code, int id, CWindow control);
+			HANDLER_EX_IMPL(on_frontend_select);
+			HANDLER_EX_IMPL(on_no_border_click);
+			HANDLER_EX_IMPL(on_shade_played_click);
+			HANDLER_EX_IMPL(on_color_click);
+			HANDLER_EX_IMPL(on_use_color_click);
+			HANDLER_EX_IMPL(on_display_select);
+			HANDLER_EX_IMPL(on_downmix_click);
+			LRESULT on_channel_changed(NMHDR* nm);
+			LRESULT on_channel_click(NMHDR* nm);
+			HANDLER_EX_IMPL(on_channel_up);
+			HANDLER_EX_IMPL(on_channel_down);			
 
 			virtual void OnFinalMessage(HWND);
 
@@ -154,7 +166,13 @@ namespace wave
 		private:
 			seekbar_window& sw;
 
-			struct color_info : noncopyable
+			CListViewCtrl channels;
+			struct buttons
+			{
+				CButton up, down;
+			} buttons;
+
+			struct color_info
 			{
 				CStatic box;
 				CBrush brush;
@@ -164,8 +182,22 @@ namespace wave
 			};
 
 			void mk_color_info(config::color color, UINT display_id, UINT use_id);
-
 			color_info colors[config::color_count];
+
+			struct channel_info
+			{
+				std::wstring text;
+				int data;
+			};
+
+#if LISTBOX_DIEDIEDIE
+			void synchronize_buttons();
+			void transfer_selection(CListBox from, CListBox to);
+#endif
+			void swap_channels(int i1, int i2);
+			channel_info get_item(int, CListBox&);
+			void add_item(channel_info const&, CListBox&);
+			void remove_item(int, CListBox&);
 		};
 		scoped_ptr<configuration_dialog> config_dialog;
 	};

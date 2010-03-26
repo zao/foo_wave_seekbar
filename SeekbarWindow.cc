@@ -651,6 +651,54 @@ namespace wave
 		}
 	}
 
+	void seekbar_window::set_channel_enabled(int ch, bool state)
+	{
+		scoped_lock sl(fe->mutex);
+		auto& order = settings.channel_order;
+		typedef decltype(order[0]) value_type;
+		auto I = std::find_if(order.begin(), order.end(), [ch](value_type const& a)
+		{
+			return a.first == ch;
+		});
+		if (I != order.end())
+		{
+			I->second = state;
+			if (fe->callback->get_channel_enabled(ch) != state)
+			{
+				fe->callback->set_channel_enabled(ch, state);
+				if (fe->frontend)
+					fe->frontend->on_state_changed(visual_frontend::state_channel_order);
+			}
+		}
+	}
+
+	void seekbar_window::swap_channel_order(int ch1, int ch2)
+	{
+		if (ch1 == ch2)
+			return;
+		scoped_lock sl(fe->mutex);
+		auto& order = settings.channel_order;
+		typedef decltype(order[0]) value_type;
+		auto I1 = std::find_if(order.begin(), order.end(), [ch1](value_type const& a)
+		{
+			return a.first == ch1;
+		});
+		auto I2 = std::find_if(order.begin(), order.end(), [ch2](value_type const& a)
+		{
+			return a.first == ch2;
+		});
+		if (I1 != order.end() && I2 != order.end())
+		{
+			int i1 = fe->callback->get_channel_index(ch1);
+			int i2 = fe->callback->get_channel_index(ch2);
+			std::swap(*I1, *I2);
+			fe->callback->set_channel_index(ch1, i2);
+			fe->callback->set_channel_index(ch2, i1);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_channel_order);
+		}
+	}
+
 	seekbar_state::seekbar_state()
 	{}
 }

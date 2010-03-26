@@ -59,7 +59,28 @@ namespace wave
 		modes.SelectString(0, config::strings::display_mode[sw.settings.display_mode]);
 
 		// Set up channel listings
+		buttons.up = GetDlgItem(IDC_CHANNEL_UP);
+		buttons.down = GetDlgItem(IDC_CHANNEL_DOWN);
 
+		channels = GetDlgItem(IDC_CHANNELS);
+		channels.SetExtendedListViewStyle(LVS_EX_CHECKBOXES);
+
+		auto append = [this](std::wstring const& text, int data, bool checked)
+		{
+			LVITEM item = {};
+			item.mask = LVIF_PARAM | LVIF_TEXT;
+			item.pszText = const_cast<LPWSTR>(text.c_str());
+			item.lParam = data;
+			item.iItem = std::numeric_limits<int>::max();
+			int idx = this->channels.InsertItem(&item);
+			if (checked)
+				this->channels.SetCheckState(idx, checked ? TRUE : FALSE);
+		};
+
+		for each(auto& pair in sw.settings.channel_order)
+		{
+			append(config::strings::channel_names[pair.first], pair.first, pair.second);
+		}
 		return TRUE;
 	}
 
@@ -179,6 +200,80 @@ namespace wave
 		sw.set_downmix_display(!!IsDlgButtonChecked(id));
 	}
 
+	LRESULT seekbar_window::configuration_dialog::on_channel_changed(NMHDR* hdr)
+	{
+		NMLISTVIEW* nm = (NMLISTVIEW*)hdr;
+		if (nm->uChanged & LVIF_STATE)
+		{
+			if (nm->uNewState & LVIS_SELECTED)
+			{
+				buttons.up.EnableWindow(nm->iItem > 0 ? TRUE : FALSE);
+				buttons.down.EnableWindow(nm->iItem + 1 < channels.GetItemCount() ? TRUE : FALSE);
+			}
+			if (int state = (nm->uNewState >> 12 & 0xF)) // has checkbox state
+			{
+				int ch = channels.GetItemData(nm->iItem);
+				//bool checked = !!channels.GetCheckState(nm->iItem);
+				sw.set_channel_enabled(ch, state >> 1);
+			}
+		}
+		return 0;
+	}
+
+	LRESULT seekbar_window::configuration_dialog::on_channel_click(NMHDR* hdr)
+	{
+		NMITEMACTIVATE* nm = (NMITEMACTIVATE*)hdr;
+		return 0;
+	}
+
+	void seekbar_window::configuration_dialog::swap_channels(int i1, int i2)
+	{
+		struct item
+		{
+			wchar_t buf[80];
+			LVITEMW lvitem;
+			explicit item(int idx)
+			{
+				UINT mask = LVIF_PARAM | LVIF_STATE | LVIF_TEXT;
+				LVITEMW i = {mask, idx, 0, 0, (UINT)-1, buf, 80}; lvitem = i;
+			}
+			operator LVITEMW* () { return &lvitem; }
+			LVITEM* operator -> () { return &lvitem; }
+		} item1(i1), item2(i2);
+
+		channels.GetItem(item1);
+		channels.GetItem(item2);
+		item1->iItem = i2;
+		item2->iItem = i1;
+		channels.SetItem(item1);
+		channels.SetItem(item2);
+	}
+
+	void seekbar_window::configuration_dialog::on_channel_up(UINT code, int id, CWindow control)
+	{
+		int idx = channels.GetSelectedIndex();
+		if (idx == 0)
+			return;
+		int ch1 = channels.GetItemData(idx - 1);
+		int ch2 = channels.GetItemData(idx);
+		sw.swap_channel_order(ch1, ch2);
+		swap_channels(idx - 1, idx);
+		channels.SelectItem(idx - 1);
+	}
+
+	void seekbar_window::configuration_dialog::on_channel_down(UINT code, int id, CWindow control)
+	{
+		int idx = channels.GetSelectedIndex();
+		int count = channels.GetItemCount();
+		if (idx + 1 == count)
+			return;
+		int ch1 = channels.GetItemData(idx);
+		int ch2 = channels.GetItemData(idx + 1);
+		sw.swap_channel_order(ch1, ch2);
+		swap_channels(idx, idx + 1);
+		channels.SelectItem(idx + 1);
+	}
+
 	seekbar_window::configuration_dialog::configuration_dialog(seekbar_window& sw) 
 		: sw(sw)
 	{}
@@ -198,5 +293,25 @@ namespace wave
 		ci.color = c;
 		ci.display_id = display_id;
 		ci.use_id = use_id;
+	}
+
+	void seekbar_window::configuration_dialog::add_item(channel_info const& info, CListBox& box)
+	{
+		box.SetItemData(box.AddString(info.text.c_str()), info.data);
+	}
+
+	void seekbar_window::configuration_dialog::remove_item(int idx, CListBox& box)
+	{
+		box.DeleteString(idx);
+	}
+
+	seekbar_window::configuration_dialog::channel_info seekbar_window::configuration_dialog::get_item(int idx, CListBox& box)
+	{
+		channel_info ret;
+		ret.data = box.GetItemData(idx);
+		CString s;
+		box.GetText(idx, s);
+		ret.text = s;
+		return ret;
 	}
 }
