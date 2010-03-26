@@ -60,3 +60,23 @@ inline unsigned count_bits_set(unsigned v)
 	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);        // temp
 	return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
 }
+
+template <typename T>
+inline std::vector<T> expand_flags(T map)
+{
+	std::vector<T> ret;
+	size_t N = sizeof(T) * 8;
+	for (unsigned shift = 0; shift < N; ++shift)
+	{
+		T flag = 1 << shift;
+		if (map & flag)
+			ret += flag;
+	}
+	return ret;
+}
+
+template <typename T>
+inline T lerp(T a, T b, float n)
+{
+	return (1.0f - n)*a + n*b;
+}
