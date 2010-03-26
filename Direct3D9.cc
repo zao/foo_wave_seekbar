@@ -61,70 +61,74 @@ namespace wave
 
 	void direct3d9_frontend::update_data()
 	{
-		HRESULT hr = S_OK;
 		service_ptr_t<waveform> w;
 		if (callback.get_waveform(w))
 		{
+			channel_numbers = expand_flags(w->get_channel_map());
+
 			channel_order.clear();
-			auto& channels = channel_numbers = expand_flags(w->get_channel_map());
-			for (unsigned idx = 0; idx < w->get_channel_count(); ++idx)
+			pfc::list_t<channel_info> infos;
+			callback.get_channel_infos(infos);
+			infos.enumerate([this, &w](channel_info const& info)
 			{
-				unsigned channel = channels[idx];
-				bool enabled = callback.get_channel_enabled(channel);
-				if (!enabled)
-					continue;
-
-				console::printf("Channel %d has index %d", channel, callback.get_channel_index(channel));
-				channel_order[callback.get_channel_index(channel)] = channel;
-
-				if (!channel_textures.count(channel))
-					channel_textures[channel] = create_waveform_texture();
-
-				CComPtr<IDirect3DTexture9> tex = channel_textures[channel];
-				
-				pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
-				w->get_field("minimum", idx, avg_min);
-				w->get_field("maximum", idx, avg_max);
-				w->get_field("rms", idx, avg_rms);
-
-				for (UINT mip = 0; mip < mip_count; ++mip)
+				auto I = std::find(channel_numbers.begin(), channel_numbers.end(), info.channel);
+				decltype(I) first = channel_numbers.begin();
+				if (info.enabled && I != channel_numbers.end())
 				{
-					UINT width = 2048 >> mip;
-					D3DLOCKED_RECT lock = {};
-					hr = tex->LockRect(mip, &lock, 0, 0);
-					if (floating_point_texture)
+					HRESULT hr = S_OK;
+					if (!channel_textures.count(info.channel))
+						channel_textures[info.channel] = create_waveform_texture();
+
+					channel_order += info;
+
+					int idx = std::distance(first, I);
+
+					CComPtr<IDirect3DTexture9> tex = channel_textures[info.channel];
+					
+					pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
+					w->get_field("minimum", idx, avg_min);
+					w->get_field("maximum", idx, avg_max);
+					w->get_field("rms", idx, avg_rms);
+
+					for (UINT mip = 0; mip < mip_count; ++mip)
 					{
-						D3DXFLOAT16* dst = (D3DXFLOAT16*)lock.pBits;
-						for (size_t i = 0; i < width; ++i)
+						UINT width = 2048 >> mip;
+						D3DLOCKED_RECT lock = {};
+						hr = tex->LockRect(mip, &lock, 0, 0);
+						if (floating_point_texture)
 						{
-							dst[(i << 2) + 0] = avg_min[i];
-							dst[(i << 2) + 1] = avg_max[i];
-							dst[(i << 2) + 2] = avg_rms[i];
-							dst[(i << 2) + 3] = 0.0f;
+							D3DXFLOAT16* dst = (D3DXFLOAT16*)lock.pBits;
+							for (size_t i = 0; i < width; ++i)
+							{
+								dst[(i << 2) + 0] = avg_min[i];
+								dst[(i << 2) + 1] = avg_max[i];
+								dst[(i << 2) + 2] = avg_rms[i];
+								dst[(i << 2) + 3] = 0.0f;
+							}
 						}
-					}
-					else
-					{
-						uint32_t* dst = (uint32_t*)lock.pBits;
-						for (size_t i = 0; i < width; ++i)
+						else
 						{
-							uint32_t i_sgn = 3;
-							uint32_t i_min = (uint32_t)(512.0 * (avg_min[i] + 1.0));
-							uint32_t i_max = (uint32_t)(512.0 * (avg_max[i] + 1.0));
-							uint32_t i_rms = (uint32_t)(512.0 * (avg_rms[i] + 1.0));
-							uint32_t val = ((i_sgn & 0x003) << 30)
-							             + ((i_min & 0x3FF) << 20)
-							             + ((i_max & 0x3FF) << 10)
-							             + ((i_rms & 0x3FF) <<  0);
-							dst[i] = val;
+							uint32_t* dst = (uint32_t*)lock.pBits;
+							for (size_t i = 0; i < width; ++i)
+							{
+								uint32_t i_sgn = 3;
+								uint32_t i_min = (uint32_t)(512.0 * (avg_min[i] + 1.0));
+								uint32_t i_max = (uint32_t)(512.0 * (avg_max[i] + 1.0));
+								uint32_t i_rms = (uint32_t)(512.0 * (avg_rms[i] + 1.0));
+								uint32_t val = ((i_sgn & 0x003) << 30)
+								             + ((i_min & 0x3FF) << 20)
+								             + ((i_max & 0x3FF) << 10)
+								             + ((i_rms & 0x3FF) <<  0);
+								dst[i] = val;
+							}
 						}
+						hr = tex->UnlockRect(mip);
+						reduce_by_two(avg_min, width);
+						reduce_by_two(avg_max, width);
+						reduce_by_two(avg_rms, width);
 					}
-					hr = tex->UnlockRect(mip);
-					reduce_by_two(avg_min, width);
-					reduce_by_two(avg_max, width);
-					reduce_by_two(avg_rms, width);
 				}
-			}
+			});
 		}
 	}
 
@@ -463,7 +467,7 @@ namespace wave
 		auto I = channel_order.begin();
 		for (size_t idx = 0; idx < num; ++idx, ++I)
 		{
-			draw_quad(idx, I->second, num);
+			draw_quad(idx, I->channel, num);
 		}
 	}
 

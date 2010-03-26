@@ -29,7 +29,7 @@ namespace wave
 		std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
 		std::deque<CComPtr<IDirect3DTexture9>> annotation_textures;
 		std::vector<unsigned> channel_numbers;
-		std::map<unsigned, unsigned> channel_order;
+		std::vector<channel_info> channel_order;
 		CComPtr<ID3DXEffect> fx;
 		CComPtr<IDirect3DVertexBuffer9> vb;
 		CComPtr<IDirect3DVertexDeclaration9> decl;
