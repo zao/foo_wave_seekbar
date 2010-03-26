@@ -104,6 +104,12 @@ namespace wave
 		return color_to_xbgr(pc) | (((BYTE)(c.a * 255)) << 24);
 	}
 
+	struct channel_info
+	{
+		int channel;
+		bool enabled;
+	};
+
 	struct visual_frontend
 	{
 		virtual ~visual_frontend() {};
@@ -147,8 +153,7 @@ namespace wave
 		virtual bool get_shade_played() const = 0;
 		virtual config::display_mode get_display_mode() const = 0;
 		virtual bool get_downmix_display() const = 0;
-		virtual bool get_channel_enabled(int ch) const = 0;
-		virtual int get_channel_index(int ch) const = 0;
+		virtual void get_channel_infos(pfc::list_t<channel_info>&) const = 0;
 	};
 
 	struct visual_frontend_callback_setter {
@@ -168,8 +173,7 @@ namespace wave
 		virtual void set_shade_played(bool b) = 0;
 		virtual void set_display_mode(config::display_mode mode) = 0;
 		virtual void set_downmix_display(bool downmix) = 0;
-		virtual void set_channel_enabled(int ch, bool enabled) = 0;
-		virtual void set_channel_index(int ch, int idx) = 0;
+		virtual void set_channel_infos(pfc::list_t<channel_info> const&) = 0;
 	};
 
 	struct visual_frontend_factory

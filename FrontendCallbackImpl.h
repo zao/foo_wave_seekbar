@@ -39,8 +39,8 @@ namespace wave
 		virtual bool get_shade_played() const { return shade_played; }
 		virtual config::display_mode get_display_mode() const { return display_mode; }
 		virtual bool get_downmix_display() const { return downmix_display; }
-		virtual bool get_channel_enabled(int ch) const { auto I = channels_enabled.find(ch); return I != channels_enabled.end() ? I->second : false; }
-		virtual int get_channel_index(int ch) const { auto I = channels_index.find(ch); return I != channels_index.end() ? I->second : -1; }
+		virtual void get_channel_infos(pfc::list_t<channel_info>& out) const { out = channel_infos; }
+
 
 		// Setters
 		virtual void set_track_length(double v) { track_length = v; }
@@ -74,8 +74,7 @@ namespace wave
 		virtual void set_shade_played(bool b) { shade_played = b; }
 		virtual void set_display_mode(config::display_mode mode) { display_mode = mode; }
 		virtual void set_downmix_display(bool b) { downmix_display = b; }
-		virtual void set_channel_enabled(int ch, bool b) { channels_enabled[ch] = b; }
-		virtual void set_channel_index(int ch, int idx) { channels_index[ch] = idx; }
+		virtual void set_channel_infos(pfc::list_t<channel_info> const& in) { channel_infos = in; }
 
 		double track_length;
 		double playback_position;
@@ -91,8 +90,7 @@ namespace wave
 		bool shade_played;
 		config::display_mode display_mode;
 		bool downmix_display;
-		std::map<int, bool> channels_enabled;
-		std::map<int, int> channels_index;
+		pfc::list_t<channel_info> channel_infos;
 
 		frontend_callback_impl()
 			: track_length(1.0), playback_position(0.0), cursor_visible(false), seeking(false)

@@ -214,12 +214,14 @@ namespace wave
 		cb.set_shade_played(settings.shade_played);
 		cb.set_display_mode(settings.display_mode);
 		cb.set_downmix_display(settings.downmix_display);
+		pfc::list_t<channel_info> infos;
 		for (size_t i = 0; i < settings.channel_order.size(); ++i)
-		{
+		{			
 			auto const& p = settings.channel_order[i];
-			cb.set_channel_enabled(p.first, p.second);
-			cb.set_channel_index(p.first, i);
+			channel_info info = { p.first, p.second };
+			infos.add_item(info);
 		}
+		cb.set_channel_infos(infos);
 	}
 
 	void seekbar_window::on_wm_paint(HDC dc)
@@ -677,12 +679,9 @@ namespace wave
 		if (I != order.end())
 		{
 			I->second = state;
-			if (fe->callback->get_channel_enabled(ch) != state)
-			{
-				fe->callback->set_channel_enabled(ch, state);
-				if (fe->frontend)
-					fe->frontend->on_state_changed(visual_frontend::state_channel_order);
-			}
+			apply_settings();
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_channel_order);
 		}
 	}
 
@@ -703,11 +702,8 @@ namespace wave
 		});
 		if (I1 != order.end() && I2 != order.end())
 		{
-			int i1 = fe->callback->get_channel_index(ch1);
-			int i2 = fe->callback->get_channel_index(ch2);
 			std::swap(*I1, *I2);
-			fe->callback->set_channel_index(ch1, i2);
-			fe->callback->set_channel_index(ch2, i1);
+			apply_settings();
 			if (fe->frontend)
 				fe->frontend->on_state_changed(visual_frontend::state_channel_order);
 		}
