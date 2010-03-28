@@ -117,14 +117,20 @@ namespace wave
 		rt->Resize(D2D1::SizeU(size.cx, size.cy));
 		service_ptr_t<waveform> wf;
 		if (callback.get_waveform(wf))
+		{
 			trigger_texture_update(wf, size);
+		}
 	}
 
 	void direct2d1_frontend::trigger_texture_update(service_ptr_t<waveform> wf, CSize size)
 	{
 		boost::mutex::scoped_lock sl(cache->mutex);
 		++cache->jobs;
-		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf
+		if (callback.get_downmix_display())
+			wf = downmix_waveform(wf);
+		pfc::list_t<channel_info> infos;
+		callback.get_channel_infos(infos);
+		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
 			, D2D1::SizeF((float)size.cx, (float)size.cy)
 			, callback.get_orientation() == config::orientation_vertical));
 	}
@@ -134,7 +140,7 @@ namespace wave
 			update_size();
 		if (s & state_color)
 			regenerate_brushes();
-		if (s & (state_data | state_color))
+		if (s & (state_data | state_color | state_channel_order | state_downmix_display))
 			update_data();
 	}
 
@@ -145,7 +151,7 @@ namespace wave
 		return p;
 	}
 
-	void image_cache::update_texture_target(service_ptr_t<waveform> wf, D2D1_SIZE_F target_size, bool vertical)
+	void image_cache::update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical)
 	{
 		{
 			boost::mutex::scoped_lock sl(mutex);
@@ -158,17 +164,27 @@ namespace wave
 			std::swap(target_size.width, target_size.height);
 		}
 
+		auto channel_numbers = expand_flags(wf->get_channel_map());
+		pfc::list_t<int> channel_indices;
+		infos.enumerate([&channel_indices, channel_numbers](channel_info const& info)
+		{
+			if (info.enabled)
+			{
+				auto I = std::find(channel_numbers.begin(), channel_numbers.end(), info.channel);
+				decltype(I) first = channel_numbers.begin();
+				if (I != channel_numbers.end())
+				{
+					channel_indices.add_item(std::distance(first, I));
+				}				
+			}
+		});
+
 		FLOAT dpi[2] = {};
 		factory->GetDesktopDpi(&dpi[0], &dpi[1]);
 		D2D1_SIZE_F size = D2D1::SizeF(target_size.width * 96 / dpi[0], target_size.height * 96 / dpi[1]);
 
-		D2D1::Matrix3x2F scale = D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.2f);
-
-		pfc::list_t<float> mini, maxi, rms;
-		//TODO: multichannel
-		wf->get_field("minimum", 0, mini);
-		wf->get_field("maximum", 0, maxi);
-		wf->get_field("rms", 0, rms);
+		int index_count = channel_indices.get_count();
+		D2D1::Matrix3x2F scale = D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.5f / index_count);
 
 		CComPtr<ID2D1RenderTarget> temp_target;
 		CComPtr<IWICBitmap> bm;
@@ -178,58 +194,79 @@ namespace wave
 
 		brush_set brushes = create_brush_set(temp_target, colors);
 
-		CComPtr<ID2D1PathGeometry> wave_geometry, rms_geometry;
-		factory->CreatePathGeometry(&wave_geometry);
-		factory->CreatePathGeometry(&rms_geometry);
+		pfc::list_t<pfc::com_ptr_t<ID2D1PathGeometry>> wave_geometries, rms_geometries;
+		auto& fac = factory;
+		
+		channel_indices.enumerate([&, fac, index_count](int index)
+		{
+			pfc::list_t<float> mini, maxi, rms;
+			wf->get_field("minimum", index, mini);
+			wf->get_field("maximum", index, maxi);
+			wf->get_field("rms", index, rms);
 
+			CComPtr<ID2D1PathGeometry> wave_geometry, rms_geometry;
+			fac->CreatePathGeometry(&wave_geometry);
+			fac->CreatePathGeometry(&rms_geometry);
+
+			wave_geometries.add_item(wave_geometry);
+			rms_geometries.add_item(rms_geometry);
+
+			CComPtr<ID2D1GeometrySink> gs, rms_gs;
+			wave_geometry->Open(&gs);
+			size_t n = mini.get_size();
+
+			// Prepare waveform
+			gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
+			for (size_t i = 0; i < n; i += 1)
+			{
+				D2D1_POINT_2F p = D2D1::Point2(i / (float)n, maxi[i]);
+				gs->AddLine(scale.TransformPoint(p));
+			}
+			for (size_t i = 0; i < n; i += 1)
+			{
+				int x = n - i - 1;
+				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, mini[x]);
+				gs->AddLine(scale.TransformPoint(p));
+			}
+			gs->EndFigure(D2D1_FIGURE_END_CLOSED);
+			gs->Close();
+
+			// Prepare RMS
+			rms_geometry->Open(&rms_gs);
+			rms_gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
+			for (size_t i = 0; i < n; ++i)
+			{
+				D2D1_POINT_2F p = D2D1::Point2(i / (float)n, rms[i]);
+				rms_gs->AddLine(scale.TransformPoint(p));
+			}
+			for (size_t i = 0; i < n; ++i)
+			{
+				int x = n - i - 1;
+				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
+				rms_gs->AddLine(scale.TransformPoint(p));
+			}
+			rms_gs->EndFigure(D2D1_FIGURE_END_CLOSED);
+			rms_gs->Close();
+		});
+		
 		ID2D1RenderTarget* rt = temp_target;
-
-		CComPtr<ID2D1GeometrySink> gs, rms_gs;
-		wave_geometry->Open(&gs);
-		size_t n = mini.get_size();
-
-		// Prepare waveform
-		gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
-		for (size_t i = 0; i < n; i += 1)
-		{
-			D2D1_POINT_2F p = D2D1::Point2(i / (float)n, maxi[i]);
-			gs->AddLine(scale.TransformPoint(p));
-		}
-		for (size_t i = 0; i < n; i += 1)
-		{
-			int x = n - i - 1;
-			D2D1_POINT_2F p = D2D1::Point2(x / (float)n, mini[x]);
-			gs->AddLine(scale.TransformPoint(p));
-		}
-		gs->EndFigure(D2D1_FIGURE_END_CLOSED);
-		gs->Close();
-
-		// Prepare RMS
-		rms_geometry->Open(&rms_gs);
-		rms_gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
-		for (size_t i = 0; i < n; ++i)
-		{
-			D2D1_POINT_2F p = D2D1::Point2(i / (float)n, rms[i]);
-			rms_gs->AddLine(scale.TransformPoint(p));
-		}
-		for (size_t i = 0; i < n; ++i)
-		{
-			int x = n - i - 1;
-			D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
-			rms_gs->AddLine(scale.TransformPoint(p));
-		}
-		rms_gs->EndFigure(D2D1_FIGURE_END_CLOSED);
-		rms_gs->Close();
 
 		rt->BeginDraw();
 		rt->Clear(color_to_d2d1_color(colors.background));
-		D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, boost::math::round(size.height / 2.0f));
-		rt->SetTransform(centered);
-		//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(0.0f, -1.0f))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f, -1.0f))), brushes.text_brush, 0.5);
-		//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(           ))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f       ))), brushes.text_brush, 0.5);
-		//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(0.0f,  1.0f))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f,  1.0f))), brushes.text_brush, 0.5);
-		//rt->DrawGeometry(rms_geometry, brushes.highlight_brush, 0.5);
-		rt->DrawGeometry(wave_geometry, brushes.foreground_brush);
+		int x = 0;
+		wave_geometries.enumerate([this, &brushes, rt, size, &x, index_count](pfc::com_ptr_t<ID2D1PathGeometry> const& geom)
+		{
+			float offset = (float)(2*x + 1)/(float)(2*index_count);
+			D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, boost::math::round(offset*size.height));
+			++x;
+
+			rt->SetTransform(centered);
+			//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(0.0f, -1.0f))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f, -1.0f))), brushes.text_brush, 0.5);
+			//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(           ))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f       ))), brushes.text_brush, 0.5);
+			//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(0.0f,  1.0f))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f,  1.0f))), brushes.text_brush, 0.5);
+			//rt->DrawGeometry(rms_geometry, brushes.highlight_brush, 0.5);
+			rt->DrawGeometry(geom.get_ptr(), brushes.foreground_brush);
+		});
 		rt->EndDraw();
 
 		shared_ptr<image_cache> self = shared_from_this();
@@ -253,7 +290,8 @@ namespace wave
 	{
 		D2D1_SIZE_F size = rt->GetSize();
 		service_ptr_t<waveform> wf;
-		if (callback.get_waveform(wf)) {
+		if (callback.get_waveform(wf))
+		{
 			trigger_texture_update(wf, callback.get_size());
 		}
 	}
