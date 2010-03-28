@@ -165,7 +165,10 @@ namespace wave
 				while (!done)
 				{
 					if (!decoder->run(chunk, abort_cb))
+					{
 						chunk.set_silence((t_size)(sample_count - processed_samples));
+						done = true;
+					}
 					unsigned channel_count = chunk.get_channels();
 					if (!track_channel_count)
 						track_channel_count = channel_count;
