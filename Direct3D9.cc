@@ -32,7 +32,7 @@ namespace wave
 			update_effect_cursor();
 		if (s & state_replaygain)
 			update_replaygain();
-		if (s & (state_data | state_channel_order))
+		if (s & (state_data | state_channel_order | state_downmix_display))
 			update_data();
 		if (s & state_orientation)
 			update_orientation();
@@ -64,6 +64,10 @@ namespace wave
 		service_ptr_t<waveform> w;
 		if (callback.get_waveform(w))
 		{
+			if (callback.get_downmix_display() && w->get_channel_map() != audio_chunk::channel_config_mono)
+			{
+				w = downmix_waveform(w);
+			}
 			channel_numbers = expand_flags(w->get_channel_map());
 
 			channel_order.clear();
