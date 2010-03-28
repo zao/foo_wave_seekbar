@@ -117,9 +117,9 @@ namespace wave
 		unsigned channel_count = channels ? count_bits_set(*channels) : 1;
 
 		service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
-		auto clear_and_set = [&stmt, compression, channel_count](decltype(w->rms)& list, size_t col)
+		auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col)
 		{
-			list.remove_all();
+			pfc::list_t<pfc::list_t<float>> list;
 			
 			float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
 			t_size count = sqlite3_column_bytes(stmt.get(), col) / sizeof(float);
@@ -150,11 +150,12 @@ namespace wave
 					list.add_item(channel);
 				}
 			}
+			w->fields[name] = list;
 		};
 
-		clear_and_set(w->minimum, 0);
-		clear_and_set(w->maximum, 1);
-		clear_and_set(w->rms, 2);
+		clear_and_set("minimum", 0);
+		clear_and_set("maximum", 1);
+		clear_and_set("rms", 2);
 
 		w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
 
