@@ -11,4 +11,5 @@ namespace wave
 	};
 	
 	service_ptr_t<waveform> make_placeholder_waveform();
+	service_ptr_t<waveform> downmix_waveform(service_ptr_t<waveform> const& in);
 }
