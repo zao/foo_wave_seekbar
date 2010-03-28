@@ -199,7 +199,6 @@ namespace wave
 				}
 
 				{
-					service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
 					if (should_downmix)
 					{
 						auto downmix_one = [](pfc::list_t<float>& l)
@@ -221,9 +220,10 @@ namespace wave
 					transpose(tr_maximum, maximum);
 					transpose(tr_rms, rms);
 
-					ret->minimum.add_items(tr_minimum);
-					ret->maximum.add_items(tr_maximum);
-					ret->rms.add_items(tr_rms);
+					service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
+					ret->fields.set("minimum", tr_minimum);
+					ret->fields.set("maximum", tr_maximum);
+					ret->fields.set("rms", tr_rms);
 					ret->channel_map = channel_map;
 
 					out = ret;
