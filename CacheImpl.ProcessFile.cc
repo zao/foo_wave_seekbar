@@ -143,7 +143,7 @@ namespace wave
 					decoder->get_dynamic_info(info, foo);
 				}
 				t_int64 sample_count = info.info_get_length_samples();
-				t_int64 chunk_size = sample_count / 2048;
+				t_int64 chunk_size = sample_count / 2047;
 
 				pfc::list_hybrid_t<pfc::list_t<float>, 2048> minimum, maximum, rms;
 				minimum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
@@ -161,8 +161,11 @@ namespace wave
 				boost::optional<unsigned> track_channel_count;
 				scoped_ptr<span> current_span;
 
-				while (decoder->run(chunk, abort_cb))
+				bool done = false;
+				while (!done)
 				{
+					if (!decoder->run(chunk, abort_cb))
+						chunk.set_silence((t_size)(sample_count - processed_samples));
 					unsigned channel_count = chunk.get_channels();
 					if (!track_channel_count)
 						track_channel_count = channel_count;
@@ -190,14 +193,19 @@ namespace wave
 							current_span.reset();
 							++out_index;
 						}
+						if (processed_samples >= sample_count)
+						{
+							done = true;
+							break;
+						}
 					}
 				}
 
 				if (current_span)
 				{
-					current_span->resolve(minimum[2047], maximum[2047], rms[2047]);
+					current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
 				}
-
+				
 				{
 					if (should_downmix)
 					{
