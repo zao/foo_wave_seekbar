@@ -94,7 +94,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BackingStore.cpp" />
+    <ClCompile Include="BackingStore.cc" />
     <ClCompile Include="GdiFallback.cc" />
     <ClCompile Include="MainSeekbar.cc" />
     <ClCompile Include="PchSeekbar.cc">
@@ -119,7 +119,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="WaveformImpl.cpp" />
+    <ClCompile Include="Waveform.cc" />
+    <ClCompile Include="WaveformImpl.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />

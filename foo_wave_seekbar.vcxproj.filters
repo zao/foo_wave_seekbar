@@ -65,10 +65,13 @@
     <ClCompile Include="sqlite3.c">
       <Filter>Cache</Filter>
     </ClCompile>
-    <ClCompile Include="BackingStore.cpp">
+    <ClCompile Include="Waveform.cc">
       <Filter>Cache</Filter>
     </ClCompile>
-    <ClCompile Include="WaveformImpl.cpp">
+    <ClCompile Include="BackingStore.cc">
+      <Filter>Cache</Filter>
+    </ClCompile>
+    <ClCompile Include="WaveformImpl.cc">
       <Filter>Cache</Filter>
     </ClCompile>
   </ItemGroup>
