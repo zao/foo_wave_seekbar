@@ -6,29 +6,23 @@ namespace wave
 {
 	bool waveform_impl::get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out)
 	{
-		if (index < minimum.get_size() && 0 == pfc::string::g_compare(what, "minimum"))
-		{
-			out = minimum[index];
-			return true;
-		}
-		if (index < maximum.get_size() && 0 == pfc::string::g_compare(what, "maximum"))
-		{
-			out = maximum[index];
-			return true;
-		}
-		if (index < rms.get_size() && 0 == pfc::string::g_compare(what, "rms"))
-		{
-			out = rms[index];
-			return true;
-		}
-		return false;
+		auto I = fields.find(what);
+		if (!I.is_valid())
+			return false;
+
+		auto& field = I->m_value;
+		if (index >= field.get_size())
+			return false;
+		
+		out = field[index];
+		return true;
 	}
 
 	unsigned waveform_impl::get_channel_count() const
 	{
-		unsigned count = minimum.get_count();
-		assert(count == maximum.get_count() && count == rms.get_count());
-		return minimum.get_count();
+		if (fields.get_count() == 0)
+			throw std::runtime_error("channel count query on empty waveform");
+		return fields.first()->m_value.get_count();
 	}
 
 	unsigned waveform_impl::get_channel_map() const
