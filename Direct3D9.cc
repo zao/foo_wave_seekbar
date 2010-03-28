@@ -75,9 +75,12 @@ namespace wave
 			callback.get_channel_infos(infos);
 			infos.enumerate([this, &w](channel_info const& info)
 			{
+				if (!info.enabled)
+					return;
+
 				auto I = std::find(channel_numbers.begin(), channel_numbers.end(), info.channel);
 				decltype(I) first = channel_numbers.begin();
-				if (info.enabled && I != channel_numbers.end())
+				if (I != channel_numbers.end())
 				{
 					HRESULT hr = S_OK;
 					if (!channel_textures.count(info.channel))
