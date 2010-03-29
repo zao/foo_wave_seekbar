@@ -49,6 +49,8 @@ namespace wave
 		// Set up misc settings
 		CheckDlgButton(IDC_NOBORDER, !sw.settings.has_border ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(IDC_SHADEPLAYED, sw.settings.shade_played ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(IDC_MIRRORDISPLAY, sw.settings.flip_display ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(IDC_DOWNMIX, sw.settings.downmix_display ? BST_CHECKED : BST_UNCHECKED);
 
 		// Set up display properties
 		CComboBox modes = GetDlgItem(IDC_DISPLAYMODE);

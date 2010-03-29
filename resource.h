@@ -26,10 +26,11 @@
 #define IDC_DISPLAYMODE                 1024
 #define IDC_DOWNMIX                     1025
 #define IDC_CHECK2                      1026
+#define IDC_MIRROR_DISPLAY              1026
+#define IDC_MIRRORDISPLAY               1026
 #define IDC_USED_CHANNELS               1027
 #define IDC_CHANNELS                    1027
 #define IDC_CHANNEL_UP                  1030
-#define IDC_BUTTON2                     1031
 #define IDC_CHANNEL_DOWN                1031
 
 // Next default values for new objects
