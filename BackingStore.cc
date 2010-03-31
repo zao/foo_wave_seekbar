@@ -277,6 +277,20 @@ namespace wave
 		console::info("Waveform cache: compacted the database.");
 	}
 
+	void backing_store::get_all(pfc::list_t<playable_location_impl>& out)
+	{
+		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+			"SELECT location, subsong FROM file ORDER BY location, subsong");
+
+		out.remove_all();
+		while (SQLITE_ROW == sqlite3_step(stmt.get()))
+		{
+			char const* loc = (char const*)sqlite3_column_text(stmt.get(), 0);
+			t_uint32 sub = (t_uint32)sqlite3_column_int(stmt.get(), 1);
+			out.add_item(playable_location_impl(loc, sub));
+		}
+	}
+
 	shared_ptr<sqlite3_stmt> backing_store::prepare_statement(std::string const& query)
 	{
 		sqlite3_stmt* p = 0;

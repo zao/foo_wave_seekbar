@@ -18,6 +18,8 @@ namespace wave
 		void get_jobs(std::deque<job>&);
 		void put_jobs(std::deque<job> const&);
 
+		void get_all(pfc::list_t<playable_location_impl>&);
+
 	private:
 		shared_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
 		shared_ptr<sqlite3> backing_db;

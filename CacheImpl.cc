@@ -158,6 +158,27 @@ namespace wave
 		}
 	}
 
+	void cache_impl::rescan_waveforms()
+	{
+		if (store)
+		{
+			io.post([this]()
+			{
+				auto get_func = boost::bind(&cache_impl::get_waveform, this, _1);
+				pfc::list_t<playable_location_impl> locations;
+				store->get_all(locations);
+				auto f = [get_func](playable_location const& loc)
+				{
+					auto req = boost::make_shared<get_request>();
+					req->user_requested = true;
+					req->location = loc;
+					get_func(req);
+				};
+				locations.enumerate(f);
+			});
+		}
+	}
+
 	void cache_initquit::on_init()
 	{}
 

@@ -24,6 +24,7 @@ namespace wave
 		void get_waveform(shared_ptr<get_request>) override;
 		void remove_dead_waveforms() override;
 		void compact_storage() override;
+		void rescan_waveforms() override;
 
 		void flush() override;
 

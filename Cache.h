@@ -25,6 +25,7 @@ namespace wave {
 		virtual void get_waveform(shared_ptr<get_request> request) abstract;
 		virtual void remove_dead_waveforms() abstract;
 		virtual void compact_storage() abstract;
+		virtual void rescan_waveforms() abstract;
 
 		virtual void flush() abstract;
 
