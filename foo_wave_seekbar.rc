@@ -66,13 +66,13 @@ BEGIN
     CONTROL         "Highlight color",IDC_USE_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,90,78,14
     CONTROL         "Selection color",IDC_USE_SELECTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,108,78,14
     GROUPBOX        "Colors",IDC_STATIC,6,42,114,84
-    GROUPBOX        "Misc.",IDC_STATIC,6,132,114,66
+    GROUPBOX        "Misc.",IDC_STATIC,6,132,114,54
     GROUPBOX        "Frontend",IDC_STATIC,6,6,114,30
     CONTROL         "Shade played",IDC_SHADEPLAYED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,144,59,10
-    GROUPBOX        "Waveform display",IDC_STATIC,6,204,114,30
-    COMBOBOX        IDC_DISPLAYMODE,12,216,102,30,CBS_DROPDOWNLIST | CBS_SORT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Downmix display to mono",IDC_DOWNMIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,180,97,10
-    CONTROL         "Mirror display",IDC_MIRRORDISPLAY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,12,168,59,10
+    GROUPBOX        "Waveform display",IDC_STATIC,6,204,114,30,NOT WS_VISIBLE
+    COMBOBOX        IDC_DISPLAYMODE,12,216,102,30,CBS_DROPDOWNLIST | CBS_SORT | NOT WS_VISIBLE | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Downmix display to mono",IDC_DOWNMIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,168,97,10
+    CONTROL         "Mirror display",IDC_MIRRORDISPLAY,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | WS_TABSTOP,60,192,59,10
     CONTROL         "",IDC_CHANNELS,"SysListView32",LVS_SMALLICON | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,132,18,90,210
     GROUPBOX        "Channel display order",IDC_STATIC,126,6,156,228
     PUSHBUTTON      "Move up",IDC_CHANNEL_UP,228,18,48,14,WS_DISABLED
@@ -105,8 +105,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,1,14,0
- PRODUCTVERSION 0,1,14,0
+ FILEVERSION 0,2,0,0
+ PRODUCTVERSION 0,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -123,12 +123,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Zao"
             VALUE "FileDescription", "Seekbar component with waveform background for foobar2000."
-            VALUE "FileVersion", "0.1.14.0"
+            VALUE "FileVersion", "0.2.0.0"
             VALUE "InternalName", "foo_wave_seekbar.dll"
             VALUE "LegalCopyright", "Copyright (C) 2010"
             VALUE "OriginalFilename", "foo_wave_seekbar.dll"
             VALUE "ProductName", "Wave Seekbar"
-            VALUE "ProductVersion", "0.1.14.0"
+            VALUE "ProductVersion", "0.2.0.0"
         END
     END
     BLOCK "VarFileInfo"
