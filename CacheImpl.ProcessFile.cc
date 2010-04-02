@@ -95,7 +95,7 @@ namespace wave
 		}
 
 		if (regex_match(loc.get_path(), boost::regex("(random|record):.*", boost::regex::perl | boost::regex::icase)) ||
-			regex_match(loc.get_path(), boost::regex("(http|mms)://.*", boost::regex::perl | boost::regex::icase)) ||
+			regex_match(loc.get_path(), boost::regex("(http|https|mms|lastfm|foo_lastfm_radio)://.*", boost::regex::perl | boost::regex::icase)) ||
 			regex_match(loc.get_path(), boost::regex("(cdda)://.*", boost::regex::perl | boost::regex::icase)) && !user_requested)
 		{
 			console::formatter() << "Wave cache: skipping location " << loc;
