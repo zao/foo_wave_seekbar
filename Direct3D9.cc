@@ -24,6 +24,8 @@ namespace wave
 {
 	void direct3d9_frontend::on_state_changed(state s)
 	{
+		if (device_still_lost())
+			return;
 		if (s & state_size)
 			update_size();
 		if (s & state_color)
@@ -514,7 +516,11 @@ namespace wave
 		update_replaygain();
 		update_orientation();
 		update_shade_played();
-		device_lost = false;
+		if (device_lost)
+		{
+			device_lost = false;
+			on_state_changed((state)~0);
+		}
 	}
 
 	bool direct3d9_frontend::device_still_lost()
