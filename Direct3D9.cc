@@ -307,9 +307,11 @@ namespace wave
 		cursor_visible_var = 0;
 		seek_position_var = 0;
 		seeking_var = 0;
+		viewport_size_var = 0;
 		replaygain_var = 0;
 		orientation_var = 0;
 		shade_played_var = 0;
+
 		annotation_textures.clear();
 		fx.Release();
 	}
@@ -413,6 +415,8 @@ namespace wave
 
 	void direct3d9_frontend::clear()
 	{
+		if (device_still_lost())
+			return;
 		color c = callback.get_color(config::color_background);
 		D3DXCOLOR bg(c.r, c.g, c.b, c.a);
 		dev->Clear(0, 0, D3DCLEAR_TARGET, bg, 1.0f, 0);
@@ -420,6 +424,9 @@ namespace wave
 
 	void direct3d9_frontend::draw()
 	{
+		if (device_still_lost())
+			return;
+
 		D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
 		auto draw_quad = [this, wfd](int idx, int ch, int n)
 		{
@@ -480,7 +487,8 @@ namespace wave
 
 	void direct3d9_frontend::present()
 	{
-		if (D3DERR_DEVICELOST == dev->Present(0, 0, 0, 0))
+		HRESULT hr  = dev->Present(0, 0, 0, 0);
+		if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET)
 		{
 			device_lost = true;
 			update_size();
@@ -494,9 +502,12 @@ namespace wave
 		pp.BackBufferWidth = size.cx;
 		pp.BackBufferHeight = size.cy;
 		HRESULT hr = S_OK;
-		do
+		if (device_lost)
+		{
 			hr = dev->Reset(&pp);
-		while (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET);
+			if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET)
+				return;
+		}
 		create_default_resources();
 		update_effect_colors();
 		update_effect_cursor();
@@ -504,5 +515,12 @@ namespace wave
 		update_orientation();
 		update_shade_played();
 		device_lost = false;
+	}
+
+	bool direct3d9_frontend::device_still_lost()
+	{
+		if (device_lost)
+			update_size();
+		return device_lost;
 	}
 }

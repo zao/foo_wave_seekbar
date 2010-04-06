@@ -53,6 +53,8 @@ namespace wave
 		void create_default_resources();
 		void release_default_resources();
 
+		bool device_still_lost();
+
 		seekbar_state state_copy;
 
 		bool device_lost;
