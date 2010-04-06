@@ -83,6 +83,7 @@ namespace wave
 		{
 			append(config::strings::channel_names[pair.first], pair.first, pair.second);
 		}
+		initializing = false;
 		return TRUE;
 	}
 
@@ -93,6 +94,8 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_frontend_select(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		CComboBox cb = control;
 		config::frontend fe = (config::frontend)cb.GetItemData(cb.GetCurSel());
 		if (fe != sw.settings.active_frontend_kind)
@@ -103,16 +106,22 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_no_border_click(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		sw.set_border_visibility(!IsDlgButtonChecked(id));
 	}
 
 	void seekbar_window::configuration_dialog::on_shade_played_click(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		sw.set_shade_played(!!IsDlgButtonChecked(id));
 	}
 
 	HBRUSH seekbar_window::configuration_dialog::on_wm_ctl_color_static(WTL::CDCHandle dc, ATL::CWindow wnd)
 	{
+		if (initializing)
+			return 0;
 		for (int i = 0; i < config::color_count; ++i)
 			if (wnd == colors[i].box)
 				return colors[i].box.IsWindowEnabled()
@@ -123,6 +132,8 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_color_click(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		config::color idx;
 		switch (id)
 		{
@@ -163,6 +174,8 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_use_color_click(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		config::color idx;
 		switch (id)
 		{
@@ -189,6 +202,8 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_display_select(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		CComboBox cb = control;
 		config::display_mode mode = (config::display_mode)cb.GetItemData(cb.GetCurSel());
 		if (mode != sw.settings.display_mode)
@@ -199,11 +214,15 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_downmix_click(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		sw.set_downmix_display(!!IsDlgButtonChecked(id));
 	}
 
 	LRESULT seekbar_window::configuration_dialog::on_channel_changed(NMHDR* hdr)
 	{
+		if (initializing)
+			return 0;
 		NMLISTVIEW* nm = (NMLISTVIEW*)hdr;
 		if (nm->uChanged & LVIF_STATE)
 		{
@@ -224,6 +243,8 @@ namespace wave
 
 	LRESULT seekbar_window::configuration_dialog::on_channel_click(NMHDR* hdr)
 	{
+		if (initializing)
+			return 0;
 		NMITEMACTIVATE* nm = (NMITEMACTIVATE*)hdr;
 		return 0;
 	}
@@ -253,6 +274,8 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_channel_up(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		int idx = channels.GetSelectedIndex();
 		if (idx == 0)
 			return;
@@ -265,6 +288,8 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_channel_down(UINT code, int id, CWindow control)
 	{
+		if (initializing)
+			return;
 		int idx = channels.GetSelectedIndex();
 		int count = channels.GetItemCount();
 		if (idx + 1 == count)
@@ -277,7 +302,7 @@ namespace wave
 	}
 
 	seekbar_window::configuration_dialog::configuration_dialog(seekbar_window& sw) 
-		: sw(sw)
+		: sw(sw), initializing(true)
 	{}
 
 	void seekbar_window::configuration_dialog::OnFinalMessage(HWND wnd)

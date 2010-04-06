@@ -116,6 +116,7 @@ namespace wave
 		struct configuration_dialog : ATL::CDialogImpl<configuration_dialog>
 		{
 			enum { IDD = IDD_CONFIG };
+			configuration_dialog();
 
 #define COLOR_CLICK_HANDLER(Name) COMMAND_HANDLER_EX(Name, STN_CLICKED, on_color_click)
 #define COLOR_USE_HANDLER(Name) COMMAND_HANDLER_EX(Name, BN_CLICKED, on_use_color_click)
@@ -166,6 +167,7 @@ namespace wave
 
 		private:
 			seekbar_window& sw;
+			bool initializing;
 
 			CListViewCtrl channels;
 			struct buttons
