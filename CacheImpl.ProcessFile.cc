@@ -252,6 +252,7 @@ namespace wave
 		}
 		catch (foobar2000_io::exception_aborted&)
 		{
+			boost::mutex::scoped_lock sl(cache_mutex);
 			job_flush_queue.push_back(make_job(loc, user_requested));
 		}
 		catch (foobar2000_io::exception_io_not_found&)
