@@ -504,7 +504,7 @@ namespace wave
 		pp.BackBufferWidth = size.cx;
 		pp.BackBufferHeight = size.cy;
 		HRESULT hr = S_OK;
-		if (device_lost)
+		
 		{
 			hr = dev->Reset(&pp);
 			if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET)
