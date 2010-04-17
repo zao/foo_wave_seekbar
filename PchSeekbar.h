@@ -16,6 +16,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/spirit/home/karma.hpp>
 #include <boost/make_shared.hpp>
 using boost::scoped_ptr;
 using boost::shared_ptr;
@@ -38,6 +39,7 @@ using boost::function;
 #pragma warning(pop)
 #include <boost/range/iterator_range.hpp>
 namespace io = boost::iostreams;
+namespace karma = boost::spirit::karma;
 
 #include <algorithm>
 using std::min;
