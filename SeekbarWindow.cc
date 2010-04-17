@@ -46,6 +46,29 @@ namespace wave
 		return new service_impl_t<waveform_placeholder>;
 	}
 
+	struct console_seek_notifier : seek_callback
+	{
+		virtual void on_seek_begin() override
+		{
+			console::print("Begun seek...");
+		}
+
+		virtual void on_seek_position(double time) override
+		{
+			std::string s;
+			karma::generate(std::back_inserter(s), " - " << karma::float_, (float)time);
+			console::print(s.c_str());
+		}
+
+		virtual void on_seek_end(bool aborted) override
+		{
+			console::print(aborted
+				? "...seek aborted."
+				: "...seek performed."
+				);
+		}
+	};
+
 	static const UINT_PTR REPAINT_TIMER_ID = 0x4242;
 	seekbar_window::seekbar_window()
 		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
@@ -54,6 +77,8 @@ namespace wave
 	{
 		fe->callback.reset(new frontend_callback_impl);
 		fe->callback->set_waveform(placeholder_waveform);
+		//console_spam_callback.reset(new console_seek_notifier);
+		//seek_callbacks += console_spam_callback;
 	}
 
 	seekbar_window::~seekbar_window()
@@ -86,6 +111,11 @@ namespace wave
 		scoped_lock sl(fe->mutex);
 		seek_in_progress = true;
 		fe->callback->set_seeking(true);
+
+		for each(auto cb in seek_callbacks)
+			if (auto p = cb.lock())
+				p->on_seek_begin();
+
 		set_seek_position(point);
 		if (fe->frontend)
 		{
@@ -100,7 +130,8 @@ namespace wave
 		scoped_lock sl(fe->mutex);
 		seek_in_progress = false;
 		ReleaseCapture();
-		if (fe->callback->is_seeking())
+		bool completed = fe->callback->is_seeking();
+		if (completed)
 		{
 			fe->callback->set_seeking(false);
 			set_seek_position(point);
@@ -110,6 +141,9 @@ namespace wave
 			static_api_ptr_t<playback_control> pc;
 			pc->playback_seek(fe->callback->get_seek_position());
 		}
+		for each(auto cb in seek_callbacks)
+			if (auto p = cb.lock())
+				p->on_seek_end(!completed);
 	}
 
 	struct menu_item_info
@@ -492,10 +526,16 @@ namespace wave
 	{
 		scoped_lock sl(fe->mutex);
 		bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
-		fe->callback->set_seek_position(horizontal
+		double position = horizontal
 			? point.x * fe->callback->get_track_length() / client_rect.Width()
 			: point.y * fe->callback->get_track_length() / client_rect.Height()
-			);
+			;
+		
+		for each(auto cb in seek_callbacks)
+			if (auto p = cb.lock())
+				p->on_seek_position(position);
+
+		fe->callback->set_seek_position(position);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}

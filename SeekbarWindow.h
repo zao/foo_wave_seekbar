@@ -5,6 +5,7 @@
 #include "PersistentSettings.h"
 #include "FrontendCallbackImpl.h"
 #include "Helpers.h"
+#include "SeekCallback.h"
 
 DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU);
 
@@ -93,6 +94,9 @@ namespace wave
 
 		CRect client_rect;
 		UINT_PTR repaint_timer_id;
+
+		boost::shared_ptr<seek_callback> console_spam_callback;
+		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
 
 	private:
 		void test_playback_order(t_size order);
