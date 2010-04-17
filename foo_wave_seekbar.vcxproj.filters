@@ -133,6 +133,9 @@
     <ClInclude Include="WaveformImpl.h">
       <Filter>Cache</Filter>
     </ClInclude>
+    <ClInclude Include="SeekCallback.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc" />
