@@ -3,6 +3,15 @@
 #include "BackingStore.h"
 #include <boost/format.hpp>
 
+// {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
+const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
+
+// {1E01E2F7-79CE-4F3F-95FE-86986236670C}
+static const GUID guid_max_concurrent_jobs = 
+{ 0x1e01e2f7, 0x79ce, 0x4f3f, { 0x95, 0xfe, 0x86, 0x98, 0x62, 0x36, 0x67, 0xc } };
+
+static advconfig_integer_factory g_max_concurrent_jobs("Number of concurrent scanning threads (capped by virtual processor count)", guid_max_concurrent_jobs, guid_seekbar_branch, 0.0, 3, 1, 16);
+
 namespace wave
 {
 	cache_impl::cache_impl()
@@ -92,8 +101,11 @@ namespace wave
 		{
 			load_data(load_barrier);
 		});
+
 		size_t n_cores = boost::thread::hardware_concurrency();
-		for (size_t i = 0; i < std::min(3u, n_cores); ++i) {
+		size_t n_cap = g_max_concurrent_jobs.get();
+
+		for (size_t i = 0; i < std::min(n_cap, n_cores); ++i) {
 			work_threads.create_thread(with_idle_priority([this]()
 			{
 				this->io.run();

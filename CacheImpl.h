@@ -4,6 +4,9 @@
 #include "Waveform.h"
 #include "Job.h"
 
+// {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
+extern const GUID guid_seekbar_branch;
+
 namespace wave
 {
 	inline bool LocationLessThan (const playable_location_impl& x, const playable_location_impl& y)
