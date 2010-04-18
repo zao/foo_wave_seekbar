@@ -61,6 +61,12 @@ namespace wave
 		if (viewport_size_var)   fx->SetVector(viewport_size_var, &D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0, 0));
 	}
 
+	template <typename T>
+	static T clamp(T v, T a, T b)
+	{
+		return std::max(a, std::min(b, v));
+	}
+
 	void direct3d9_frontend::update_data()
 	{
 		service_ptr_t<waveform> w;
@@ -118,17 +124,43 @@ namespace wave
 						else
 						{
 							uint32_t* dst = (uint32_t*)lock.pBits;
-							for (size_t i = 0; i < width; ++i)
+							if (texture_format == D3DFMT_A2R10G10B10)
 							{
 								uint32_t i_sgn = 3;
-								uint32_t i_min = (uint32_t)(512.0 * (avg_min[i] + 1.0));
-								uint32_t i_max = (uint32_t)(512.0 * (avg_max[i] + 1.0));
-								uint32_t i_rms = (uint32_t)(512.0 * (avg_rms[i] + 1.0));
-								uint32_t val = ((i_sgn & 0x003) << 30)
-								             + ((i_min & 0x3FF) << 20)
-								             + ((i_max & 0x3FF) << 10)
-								             + ((i_rms & 0x3FF) <<  0);
-								dst[i] = val;
+								auto project = [](float f) -> uint32_t
+								{
+									return (uint32_t)clamp(512.0f * (f + 1.0f), 0.0f, 1023.0f);
+								};
+								for (size_t i = 0; i < width; ++i)
+								{
+									uint32_t i_min = project(avg_min[i]);
+									uint32_t i_max = project(avg_max[i]);
+									uint32_t i_rms = project(avg_rms[i]);
+									uint32_t val = ((i_sgn & 0x003) << 30)
+												 + ((i_min & 0x3FF) << 20)
+												 + ((i_max & 0x3FF) << 10)
+												 + ((i_rms & 0x3FF) <<  0);
+									dst[i] = val;
+								}
+							}
+							else
+							{
+								uint32_t i_sgn = 0xFF;
+								auto project = [](float f) -> uint32_t
+								{
+									return (uint32_t)clamp(128.0f * (f + 1.0f), 0.0f, 255.0f);
+								};
+								for (size_t i = 0; i < width; ++i)
+								{
+									uint32_t i_min = project(avg_min[i]);
+									uint32_t i_max = project(avg_max[i]);
+									uint32_t i_rms = project(avg_rms[i]);
+									uint32_t val = ((i_sgn & 0xFF) << 24)
+												 + ((i_min & 0xFF) << 16)
+												 + ((i_max & 0xFF) <<  8)
+												 + ((i_rms & 0xFF) <<  0);
+									dst[i] = val;
+								}
 							}
 						}
 						hr = tex->UnlockRect(mip);
