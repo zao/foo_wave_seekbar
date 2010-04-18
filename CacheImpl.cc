@@ -103,7 +103,7 @@ namespace wave
 		});
 
 		size_t n_cores = boost::thread::hardware_concurrency();
-		size_t n_cap = g_max_concurrent_jobs.get();
+		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
 
 		for (size_t i = 0; i < std::min(n_cap, n_cores); ++i) {
 			work_threads.create_thread(with_idle_priority([this]()
