@@ -267,13 +267,13 @@ namespace wave
 				filesystem::g_open_read(f, fx_file.get_ptr(), cb);
 
 				t_filesize size = f->get_size(cb);
-				source.resize(size);
+				source.resize((size_t)size);
 				f->read(&source[0], source.size(), cb);
 				
 				source.erase(std::remove_if(source.begin(), source.end(), [](char c) { return (unsigned char)c >= 0x80U; }), source.end());
 				if (source.size() != size)
 					console::formatter() << "Seekbar: Direct3D: effect " << fx_file.get_ptr() << " contained non-ASCII code units, discarded "
-					                     << (size - source.size()) << " code units. Contents may be invalid.";
+					                     << (size - source.size()) << " code units. Remove any UTF-8 BOM and/or characters with diacritics.";
 			}
 
 			CComPtr<ID3DXBuffer> errors;
