@@ -23,8 +23,6 @@ namespace wave
 
 		virtual bool get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out)
 		{
-			if (index > 0)
-				return false;
 			if (pfc::string::g_equals(what, "minimum"))
 				return out = minimum, true;
 			if (pfc::string::g_equals(what, "maximum"))
@@ -34,8 +32,8 @@ namespace wave
 			return false;
 		}
 
-		virtual unsigned get_channel_count() const { return 1; }
-		virtual unsigned get_channel_map() const { return audio_chunk::channel_config_mono; }
+		virtual unsigned get_channel_count() const { return audio_chunk::defined_channel_count; }
+		virtual unsigned get_channel_map() const { return audio_chunk::defined_channel_count - 1; } // channel mask of bits 0 to 17 set.
 
 	private:
 		pfc::list_hybrid_t<float, 2048> minimum, maximum, rms;
