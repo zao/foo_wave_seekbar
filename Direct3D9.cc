@@ -556,7 +556,10 @@ namespace wave
 		{
 			hr = dev->Reset(&pp);
 			if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET)
+			{
+				device_lost = true;
 				return;
+			}
 		}
 		create_default_resources();
 		update_effect_colors();
