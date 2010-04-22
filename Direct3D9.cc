@@ -379,7 +379,16 @@ namespace wave
 	{
 		bool operator() () const
 		{
-			D3DXGetDriverLevel(0);
+			D3DXGetDriverLevel(nullptr);
+			return true;
+		}
+	};
+
+	struct test_d3dx10_func
+	{
+		bool operator() () const
+		{
+			D3DX10CheckVersion(D3D10_SDK_VERSION, D3DX10_SDK_VERSION);
 			return true;
 		}
 	};
@@ -387,8 +396,9 @@ namespace wave
 	bool has_direct3d9() {
 		CComPtr<IDirect3D9> d3d;
 		d3d.Attach(try_module_call(create_d3d9_func()));
-		bool has_d3dx = try_module_call(test_d3dx9_func());
-		return d3d && has_d3dx;
+		bool has_d3dx9 = try_module_call(test_d3dx9_func());
+		bool has_d3dx10 = try_module_call(test_d3dx10_func());
+		return d3d && has_d3dx9 && has_d3dx10;
 	}
 
 	direct3d9_frontend::direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback)
@@ -397,10 +407,13 @@ namespace wave
 		HRESULT hr = S_OK;
 
 		d3d.Attach(try_module_call(create_d3d9_func()));
-		bool has_d3dx = try_module_call(test_d3dx9_func());
+		bool has_d3dx9 = try_module_call(test_d3dx9_func());
+		bool has_d3dx10 = try_module_call(test_d3dx10_func());
 
-		if (!d3d || !has_d3dx)
+		if (!d3d || !has_d3dx9 || !has_d3dx10)
 		{
+			if (has_d3dx9 && !has_d3dx10 || !has_d3dx9 && has_d3dx10)
+				throw std::runtime_error("Found only half of the required D3DX DLLs. If you've added such DLLs manually, don't do that. Install the proper redist already.");
 			throw std::runtime_error("DirectX redistributable not found. Run the DirectX August 2009 web setup or later.");
 		}
 
@@ -556,7 +569,10 @@ namespace wave
 		{
 			hr = dev->Reset(&pp);
 			if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET)
+			{
+				device_lost = true;
 				return;
+			}
 		}
 		create_default_resources();
 		update_effect_colors();
