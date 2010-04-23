@@ -7,9 +7,12 @@
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
 static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
 
-static advconfig_branch_factory g_seekbar_branch("Waveform Seekbar", guid_seekbar_branch, advconfig_entry::guid_branch_tools, 0.0);
-static advconfig_checkbox_factory g_downmix_in_analysis("Store scanned tracks in mono", guid_downmix_in_analysis, guid_seekbar_branch, 0.0, false);
+// {EC789B1B-23A0-45D7-AB7D-D40B4E3673E5}
+static const GUID guid_analyse_tracks_outside_library = { 0xec789b1b, 0x23a0, 0x45d7, { 0xab, 0x7d, 0xd4, 0xb, 0x4e, 0x36, 0x73, 0xe5 } };
 
+static advconfig_branch_factory g_seekbar_branch("Waveform Seekbar", guid_seekbar_branch, advconfig_entry::guid_branch_tools, 0.0);
+static advconfig_checkbox_factory g_downmix_in_analysis("Store analysed tracks in mono", guid_downmix_in_analysis, guid_seekbar_branch, 0.0, false);
+static advconfig_checkbox_factory g_analyse_tracks_outside_library("Analyse tracks not in the media library", guid_analyse_tracks_outside_library, guid_seekbar_branch, 0.0, true);
 namespace wave
 {
 	class span
@@ -112,6 +115,33 @@ namespace wave
 				console::formatter() << "Wave cache: redundant request for " << loc;
 				store->get(out, loc);
 				return out;
+			}
+		}
+
+		// Test whether tracks are in the Media Library or not
+		if (!g_analyse_tracks_outside_library.get())
+		{
+			shared_ptr<boost::promise<bool>> pb(new boost::promise<bool>);
+
+			in_main_thread([loc, pb]()	
+			{
+				boost::promise<bool>& promise = *pb;
+				static_api_ptr_t<library_manager> lib;
+				static_api_ptr_t<metadb> mdb;
+				metadb_handle_ptr m;
+				mdb->handle_create(m, loc);
+				promise.set_value(lib->is_item_in_library(m));
+			});
+			
+			boost::unique_future<bool> fb = pb->get_future();
+			while (!flush_callback.is_aborting())
+			{
+				if (fb.timed_wait(boost::posix_time::milliseconds(200)))
+				{
+					if (!fb.get())
+						return out;
+					break;
+				}
 			}
 		}
 

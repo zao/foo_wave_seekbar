@@ -23,7 +23,7 @@ namespace wave
 
 		virtual bool get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out)
 		{
-			if (index > 0)
+			if (index >= get_channel_count())
 				return false;
 			if (pfc::string::g_equals(what, "minimum"))
 				return out = minimum, true;
@@ -34,8 +34,8 @@ namespace wave
 			return false;
 		}
 
-		virtual unsigned get_channel_count() const { return 1; }
-		virtual unsigned get_channel_map() const { return audio_chunk::channel_config_mono; }
+		virtual unsigned get_channel_count() const { return audio_chunk::defined_channel_count; }
+		virtual unsigned get_channel_map() const { return (1 << audio_chunk::defined_channel_count) - 1; } // channel mask of bits 0 to 17 set.
 
 	private:
 		pfc::list_hybrid_t<float, 2048> minimum, maximum, rms;
@@ -270,6 +270,7 @@ namespace wave
 		if (!fe->frontend && !initializing_graphics)
 		{
 			scoped_lock sl(fe->mutex);
+			DWORD present_interval = 10;
 			try
 			{
 				OSVERSIONINFOEX osv = {};
@@ -280,7 +281,6 @@ namespace wave
 
 				apply_settings();
 				
-				DWORD present_interval = 10;
 				switch (settings.active_frontend_kind)
 				{
 	#if 0
@@ -306,15 +306,6 @@ namespace wave
 				}
 				console::info("Seekbar: Frontend initialized.");
 				initializing_graphics = true;
-
-				try_get_data();
-
-				fe->frontend->on_state_changed((visual_frontend::state)~0);
-
-				if (fe->frontend)
-				{
-					repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
-				}
 			}
 			catch (std::exception& e)
 			{
@@ -322,6 +313,19 @@ namespace wave
 				initializing_graphics = true;
 				console::complain("Seekbar: frontend creation failed", e);
 				settings.active_frontend_kind = config::frontend_gdi;
+
+				console::info("Seekbar: taking GDI path.");
+				fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
+				present_interval = 50;
+			}
+			
+			try_get_data();
+
+			fe->frontend->on_state_changed((visual_frontend::state)~0);
+
+			if (fe->frontend)
+			{
+				repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
 			}
 		}
 

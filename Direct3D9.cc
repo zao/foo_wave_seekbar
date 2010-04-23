@@ -61,6 +61,12 @@ namespace wave
 		if (viewport_size_var)   fx->SetVector(viewport_size_var, &D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0, 0));
 	}
 
+	template <typename T>
+	static T clamp(T v, T a, T b)
+	{
+		return std::max(a, std::min(b, v));
+	}
+
 	void direct3d9_frontend::update_data()
 	{
 		service_ptr_t<waveform> w;
@@ -118,17 +124,43 @@ namespace wave
 						else
 						{
 							uint32_t* dst = (uint32_t*)lock.pBits;
-							for (size_t i = 0; i < width; ++i)
+							if (texture_format == D3DFMT_A2R10G10B10)
 							{
 								uint32_t i_sgn = 3;
-								uint32_t i_min = (uint32_t)(512.0 * (avg_min[i] + 1.0));
-								uint32_t i_max = (uint32_t)(512.0 * (avg_max[i] + 1.0));
-								uint32_t i_rms = (uint32_t)(512.0 * (avg_rms[i] + 1.0));
-								uint32_t val = ((i_sgn & 0x003) << 30)
-								             + ((i_min & 0x3FF) << 20)
-								             + ((i_max & 0x3FF) << 10)
-								             + ((i_rms & 0x3FF) <<  0);
-								dst[i] = val;
+								auto project = [](float f) -> uint32_t
+								{
+									return (uint32_t)clamp(512.0f * (f + 1.0f), 0.0f, 1023.0f);
+								};
+								for (size_t i = 0; i < width; ++i)
+								{
+									uint32_t i_min = project(avg_min[i]);
+									uint32_t i_max = project(avg_max[i]);
+									uint32_t i_rms = project(avg_rms[i]);
+									uint32_t val = ((i_sgn & 0x003) << 30)
+												 + ((i_min & 0x3FF) << 20)
+												 + ((i_max & 0x3FF) << 10)
+												 + ((i_rms & 0x3FF) <<  0);
+									dst[i] = val;
+								}
+							}
+							else
+							{
+								uint32_t i_sgn = 0xFF;
+								auto project = [](float f) -> uint32_t
+								{
+									return (uint32_t)clamp(128.0f * (f + 1.0f), 0.0f, 255.0f);
+								};
+								for (size_t i = 0; i < width; ++i)
+								{
+									uint32_t i_min = project(avg_min[i]);
+									uint32_t i_max = project(avg_max[i]);
+									uint32_t i_rms = project(avg_rms[i]);
+									uint32_t val = ((i_sgn & 0xFF) << 24)
+												 + ((i_min & 0xFF) << 16)
+												 + ((i_max & 0xFF) <<  8)
+												 + ((i_rms & 0xFF) <<  0);
+									dst[i] = val;
+								}
 							}
 						}
 						hr = tex->UnlockRect(mip);
@@ -228,8 +260,24 @@ namespace wave
 				break;
 			if (!filesystem::g_exists(fx_file.get_ptr(), cb))
 				continue;
+			std::vector<char> source;
+			
+			{
+				service_ptr_t<file> f;
+				filesystem::g_open_read(f, fx_file.get_ptr(), cb);
+
+				t_filesize size = f->get_size(cb);
+				source.resize((size_t)size);
+				f->read(&source[0], source.size(), cb);
+				
+				source.erase(std::remove_if(source.begin(), source.end(), [](char c) { return (unsigned char)c >= 0x80U; }), source.end());
+				if (source.size() != size)
+					console::formatter() << "Seekbar: Direct3D: effect " << fx_file.get_ptr() << " contained non-ASCII code units, discarded "
+					                     << (size - source.size()) << " code units. Remove any UTF-8 BOM and/or characters with diacritics.";
+			}
+
 			CComPtr<ID3DXBuffer> errors;
-			hr = D3DXCreateEffectFromFileA(dev, fx_file.get_ptr() + 7, 0, 0, 0, 0, &fx, &errors);
+			hr = D3DXCreateEffect(dev, &source[0], source.size(), nullptr, nullptr, 0, nullptr, &fx, &errors);
 			if (FAILED(hr))
 			{
 				console::formatter() << "Seekbar: Direct3D: " << DXGetErrorStringA(hr) << "(" << hr << ") " << DXGetErrorDescriptionA(hr);
@@ -331,7 +379,16 @@ namespace wave
 	{
 		bool operator() () const
 		{
-			D3DXGetDriverLevel(0);
+			D3DXGetDriverLevel(nullptr);
+			return true;
+		}
+	};
+
+	struct test_d3dx10_func
+	{
+		bool operator() () const
+		{
+			D3DX10CheckVersion(D3D10_SDK_VERSION, D3DX10_SDK_VERSION);
 			return true;
 		}
 	};
@@ -339,8 +396,9 @@ namespace wave
 	bool has_direct3d9() {
 		CComPtr<IDirect3D9> d3d;
 		d3d.Attach(try_module_call(create_d3d9_func()));
-		bool has_d3dx = try_module_call(test_d3dx9_func());
-		return d3d && has_d3dx;
+		bool has_d3dx9 = try_module_call(test_d3dx9_func());
+		bool has_d3dx10 = try_module_call(test_d3dx10_func());
+		return d3d && has_d3dx9 && has_d3dx10;
 	}
 
 	direct3d9_frontend::direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback)
@@ -349,10 +407,13 @@ namespace wave
 		HRESULT hr = S_OK;
 
 		d3d.Attach(try_module_call(create_d3d9_func()));
-		bool has_d3dx = try_module_call(test_d3dx9_func());
+		bool has_d3dx9 = try_module_call(test_d3dx9_func());
+		bool has_d3dx10 = try_module_call(test_d3dx10_func());
 
-		if (!d3d || !has_d3dx)
+		if (!d3d || !has_d3dx9 || !has_d3dx10)
 		{
+			if (has_d3dx9 && !has_d3dx10 || !has_d3dx9 && has_d3dx10)
+				throw std::runtime_error("Found only half of the required D3DX DLLs. If you've added such DLLs manually, don't do that. Install the proper redist already.");
 			throw std::runtime_error("DirectX redistributable not found. Run the DirectX August 2009 web setup or later.");
 		}
 
@@ -508,7 +569,10 @@ namespace wave
 		{
 			hr = dev->Reset(&pp);
 			if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET)
+			{
+				device_lost = true;
 				return;
+			}
 		}
 		create_default_resources();
 		update_effect_colors();
