@@ -69,11 +69,13 @@ namespace wave
 
 		virtual void on_seek_begin() override
 		{
+			show = true;
 			track_mouse();
 		}
 
-		virtual void on_seek_position(double time) override
+		virtual void on_seek_position(double time, bool legal) override
 		{
+			show = legal;
 			std::wstring txt = format_time(time);
 			toolinfo.lpszText = const_cast<wchar_t*>(txt.c_str());
 			tooltip.SetToolInfo(&toolinfo);
@@ -82,6 +84,7 @@ namespace wave
 
 		virtual void on_seek_end(bool aborted) override
 		{
+			show = false;
 			tooltip.TrackActivate(&toolinfo, FALSE);
 		}
 		
@@ -89,13 +92,14 @@ namespace wave
 		CToolTipCtrl tooltip;
 		TOOLINFO toolinfo;
 		CWindow parent;
+		bool show;
 		
 		void track_mouse()
 		{
 			POINT pos = {};
 			GetCursorPos(&pos);
 			tooltip.TrackPosition(pos.x + 10, pos.y - 20);
-			tooltip.TrackActivate(&toolinfo, TRUE);
+			tooltip.TrackActivate(&toolinfo, show ? TRUE : FALSE);
 		}
 
 		std::wstring format_time(double time)
@@ -585,7 +589,7 @@ namespace wave
 
 		for each(auto cb in seek_callbacks)
 			if (auto p = cb.lock())
-				p->on_seek_position(position);
+				p->on_seek_position(position, fe->callback->is_seeking());
 
 		fe->callback->set_seek_position(position);
 		if (fe->frontend)
