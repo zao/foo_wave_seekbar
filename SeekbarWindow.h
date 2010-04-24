@@ -95,7 +95,9 @@ namespace wave
 		CRect client_rect;
 		UINT_PTR repaint_timer_id;
 
-		boost::shared_ptr<seek_callback> console_spam_callback;
+		CPoint last_seek_point;
+
+		boost::shared_ptr<seek_callback> tooltip;
 		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
 
 	private:
