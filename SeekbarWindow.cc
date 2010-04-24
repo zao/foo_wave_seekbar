@@ -100,14 +100,8 @@ namespace wave
 
 		std::wstring format_time(double time)
 		{
-			std::wstring out;
-			
-			time = std::max(time, 0.0);
-			auto two_digits = karma::right_align(2, 0)[karma::uint_];
-			karma::generate(std::back_inserter(out)
-				, &karma::uint_(0) << karma::uint_ << ':' << two_digits
-				| karma::uint_ << ':' << two_digits << ':' << two_digits
-				, (unsigned)time / 3600, (unsigned)time / 60 % 60, (unsigned)time % 60);
+			auto str = pfc::stringcvt::string_os_from_utf8(pfc::format_time(pfc::rint64(time)));
+			std::wstring out = str.get_ptr();
 			return out;
 		}
 	};
