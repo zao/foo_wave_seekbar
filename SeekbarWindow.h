@@ -7,8 +7,6 @@
 #include "Helpers.h"
 #include "SeekCallback.h"
 
-DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU);
-
 namespace wave
 {
 	struct frontend_data
