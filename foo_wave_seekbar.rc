@@ -50,7 +50,7 @@ END
 // Dialog
 //
 
-IDD_CONFIG DIALOGEX 0, 0, 286, 237
+IDD_CONFIG DIALOGEX 0, 0, 550, 237
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTERMOUSE | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Waveform Seekbar - Configuration"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
@@ -77,6 +77,15 @@ BEGIN
     GROUPBOX        "Channel display order",IDC_STATIC,126,6,156,228
     PUSHBUTTON      "Move up",IDC_CHANNEL_UP,228,18,48,14,WS_DISABLED
     PUSHBUTTON      "Move down",IDC_CHANNEL_DOWN,228,36,48,14,WS_DISABLED
+    GROUPBOX        "Frontend specific settings",IDC_STATIC,288,6,258,228
+END
+
+IDD_CONFIG_D3D9 DIALOGEX 0, 0, 195, 127
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_DISABLED | WS_CAPTION
+CAPTION "Direct3D 9.0"
+FONT 8, "MS Shell Dlg", 400, 0, 0x0
+BEGIN
+    LTEXT           "TODO: layout property page",IDC_STATIC,53,59,90,8
 END
 
 
@@ -91,9 +100,17 @@ BEGIN
     IDD_CONFIG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 279
+        RIGHTMARGIN, 543
         TOPMARGIN, 7
         BOTTOMMARGIN, 230
+    END
+
+    IDD_CONFIG_D3D9, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 188
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 120
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -105,8 +122,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,2,10,0
- PRODUCTVERSION 0,2,10,0
+ FILEVERSION 0,2,12,0
+ PRODUCTVERSION 0,2,12,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -123,12 +140,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Zao"
             VALUE "FileDescription", "Seekbar component with waveform background for foobar2000."
-            VALUE "FileVersion", "0.2.10.0"
+            VALUE "FileVersion", "0.2.12.0"
             VALUE "InternalName", "foo_wave_seekbar.dll"
             VALUE "LegalCopyright", "Copyright (C) 2010"
             VALUE "OriginalFilename", "foo_wave_seekbar.dll"
             VALUE "ProductName", "Wave Seekbar"
-            VALUE "ProductVersion", "0.2.10.0"
+            VALUE "ProductVersion", "0.2.12.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -137,6 +154,15 @@ BEGIN
     END
 END
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RCDATA
+//
+
+IDR_DEFAULT_FX_HEADER          RCDATA                  "seekbar_header.fx"
+IDR_DEFAULT_FX_BODY            RCDATA                  "seekbar_body.fx"
+IDR_DEFAULT_FX_FOOTER          RCDATA                  "seekbar_footer.fx"
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

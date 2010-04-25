@@ -3,6 +3,10 @@
 // Used by foo_wave_seekbar.rc
 //
 #define IDD_CONFIG                      101
+#define IDR_DEFAULT_FX_HEADER           102
+#define IDR_DEFAULT_FX_BODY             103
+#define IDR_DEFAULT_FX_FOOTER           104
+#define IDD_CONFIG_D3D9                 105
 #define IDC_VERTICAL                    1001
 #define IDC_FRONTEND                    1002
 #define IDC_NOBORDER                    1003
@@ -37,7 +41,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        102
+#define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1031
 #define _APS_NEXT_SYMED_VALUE           101
