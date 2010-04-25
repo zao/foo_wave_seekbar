@@ -125,6 +125,7 @@
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
+    <ClInclude Include="FrontendConfigImpl.h" />
     <ClInclude Include="GdiFallback.h" />
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="Job.h" />
@@ -145,21 +146,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Waveform.h" />
     <ClInclude Include="WaveformImpl.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="seekbar.fx">
-      <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Deploying "%(Identity)"...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir D:\apps\foobar2000devel\effects 2&gt;NUL
-copy %(FullPath) D:\apps\foobar2000devel\effects\
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\apps\foobar2000devel\effects\%(Identity);%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Deploying "%(Identity)"...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir D:\apps\foobar2000devel\effects 2&gt;NUL
-copy %(FullPath) D:\apps\foobar2000devel\effects\
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\apps\foobar2000devel\effects\%(Identity);%(Outputs)</Outputs>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc" />
@@ -189,6 +175,11 @@ copy %(FullPath) D:\apps\foobar2000devel\effects\
       <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="seekbar_body.fx" />
+    <None Include="seekbar_footer.fx" />
+    <None Include="seekbar_header.fx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

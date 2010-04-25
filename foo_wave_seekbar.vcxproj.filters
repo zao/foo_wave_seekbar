@@ -17,6 +17,9 @@
     <Filter Include="Seekbar\Frontends">
       <UniqueIdentifier>{54dd4e5f-190f-4cea-99d0-7bda68e7834e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Seekbar\Resources">
+      <UniqueIdentifier>{6a680fc1-a5cb-4223-9a73-754c8d0c9d61}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CacheImpl.cc">
@@ -102,7 +105,6 @@
     <ClInclude Include="ProcessingContext.h">
       <Filter>Cache</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h" />
     <ClInclude Include="SeekbarCui.h">
       <Filter>Seekbar\Boobs</Filter>
     </ClInclude>
@@ -136,13 +138,27 @@
     <ClInclude Include="SeekCallback.h">
       <Filter>Seekbar</Filter>
     </ClInclude>
+    <ClInclude Include="FrontendConfigImpl.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Seekbar\Resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="foo_wave_seekbar.rc" />
+    <ResourceCompile Include="foo_wave_seekbar.rc">
+      <Filter>Seekbar\Resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="seekbar.fx">
+    <None Include="seekbar_body.fx">
       <Filter>Seekbar\Effect Files</Filter>
-    </CustomBuild>
+    </None>
+    <None Include="seekbar_footer.fx">
+      <Filter>Seekbar\Effect Files</Filter>
+    </None>
+    <None Include="seekbar_header.fx">
+      <Filter>Seekbar\Effect Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
