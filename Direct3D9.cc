@@ -2,6 +2,7 @@
 #include "Direct3D.h"
 #include "SeekbarState.h"
 #include "Helpers.h"
+#include "resource.h"
 
 static void reduce_by_two(pfc::list_base_t<float>& data, UINT n)
 {
@@ -242,6 +243,10 @@ namespace wave
 		vb = 0;
 	}
 
+	// {55F2D182-2CFF-4C59-81AD-0EF2784E9D0F}
+	static const GUID guid_fx_string = 
+	{ 0x55f2d182, 0x2cff, 0x4c59, { 0x81, 0xad, 0xe, 0xf2, 0x78, 0x4e, 0x9d, 0xf } };
+	
 	void direct3d9_frontend::create_default_resources()
 	{
 		HRESULT hr = S_OK;
@@ -250,34 +255,38 @@ namespace wave
 		pfc::string profile_directory = core_api::get_profile_path();
 		pfc::string program_directory = get_program_directory();
 
-		std::vector<pfc::string> fx_files = list_of
-			(profile_directory + "\\effects\\seekbar.fx")
-			(program_directory + "\\effects\\seekbar.fx");
+		std::vector<char> fx_header, fx_body, fx_footer;
+		get_resource_contents(fx_header, IDR_DEFAULT_FX_HEADER);
+		get_resource_contents(fx_footer, IDR_DEFAULT_FX_FOOTER);
 
-		for each (pfc::string fx_file in fx_files)
+		pfc::string stored_body;
+		if (conf.get_configuration_string(guid_fx_string, stored_body))
 		{
-			if (fx)
-				break;
-			if (!filesystem::g_exists(fx_file.get_ptr(), cb))
-				continue;
-			std::vector<char> source;
-			
-			{
-				service_ptr_t<file> f;
-				filesystem::g_open_read(f, fx_file.get_ptr(), cb);
+			auto p = stored_body.get_ptr();
+			fx_body.assign(p, p + stored_body.get_length());
+		}
+		else
+		{
+			get_resource_contents(fx_body, IDR_DEFAULT_FX_BODY);
+			stored_body.set_string(&fx_body[0], fx_body.size());
+			conf.set_configuration_string(guid_fx_string, stored_body);
+		}
 
-				t_filesize size = f->get_size(cb);
-				source.resize((size_t)size);
-				f->read(&source[0], source.size(), cb);
-				
-				source.erase(std::remove_if(source.begin(), source.end(), [](char c) { return (unsigned char)c >= 0x80U; }), source.end());
-				if (source.size() != size)
-					console::formatter() << "Seekbar: Direct3D: effect " << fx_file.get_ptr() << " contained non-ASCII code units, discarded "
-					                     << (size - source.size()) << " code units. Remove any UTF-8 BOM and/or characters with diacritics.";
-			}
+		if (size_t diff = nuke_if(fx_body, [](char c) { return (unsigned char)c >= 0x80U; }))
+		{
+				console::formatter() << "Seekbar: Direct3D: effect contained non-ASCII code units, discarded "
+					                 << diff << " code units. Remove any UTF-8 BOM and/or characters with diacritics.";
+		}
 
+		std::string fx_source;
+		{
+			using namespace karma;
+			generate(std::back_inserter(fx_source), *char_ << "\n" << *char_ << "\n" << *char_ << "\n", fx_header, fx_body, fx_footer);
+		}
+
+		{
 			CComPtr<ID3DXBuffer> errors;
-			hr = D3DXCreateEffect(dev, &source[0], source.size(), nullptr, nullptr, 0, nullptr, &fx, &errors);
+			hr = D3DXCreateEffect(dev, &fx_source[0], fx_source.size(), nullptr, nullptr, 0, nullptr, &fx, &errors);
 			if (FAILED(hr))
 			{
 				console::formatter() << "Seekbar: Direct3D: " << DXGetErrorStringA(hr) << "(" << hr << ") " << DXGetErrorDescriptionA(hr);
@@ -401,8 +410,8 @@ namespace wave
 		return d3d && has_d3dx9 && has_d3dx10;
 	}
 
-	direct3d9_frontend::direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback)
-		: mip_count(4), callback(callback), floating_point_texture(true)
+	direct3d9_frontend::direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
+		: mip_count(4), callback(callback), conf(conf), floating_point_texture(true)
 	{
 		HRESULT hr = S_OK;
 

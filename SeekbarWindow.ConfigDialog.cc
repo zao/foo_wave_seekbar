@@ -84,6 +84,7 @@ namespace wave
 			append(config::strings::channel_names[pair.first], pair.first, pair.second);
 		}
 		initializing = false;
+		
 		return TRUE;
 	}
 

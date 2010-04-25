@@ -46,26 +46,67 @@ namespace wave
 		return new service_impl_t<waveform_placeholder>;
 	}
 
-	struct console_seek_notifier : seek_callback
+	struct seek_tooltip : seek_callback, noncopyable
 	{
-		virtual void on_seek_begin() override
+		explicit seek_tooltip(HWND parent)
+			: parent(parent)
 		{
-			console::print("Begun seek...");
+			tooltip.Create(nullptr);
+			toolinfo.cbSize = sizeof(toolinfo);
+			toolinfo.uFlags = TTF_TRACK | TTF_IDISHWND | TTF_ABSOLUTE | TTF_TRANSPARENT;
+			toolinfo.hwnd = parent;
+			toolinfo.uId = 0;
+			toolinfo.lpszText = L"";
+			toolinfo.hinst = core_api::get_my_instance();
+			tooltip.AddTool(&toolinfo);
 		}
 
-		virtual void on_seek_position(double time) override
+		~seek_tooltip()
 		{
-			std::string s;
-			karma::generate(std::back_inserter(s), " - " << karma::float_, (float)time);
-			console::print(s.c_str());
+			tooltip.DelTool(&toolinfo);
+			tooltip.DestroyWindow();
+		}
+
+		virtual void on_seek_begin() override
+		{
+			show = true;
+			track_mouse();
+		}
+
+		virtual void on_seek_position(double time, bool legal) override
+		{
+			show = legal;
+			std::wstring txt = format_time(time);
+			toolinfo.lpszText = const_cast<wchar_t*>(txt.c_str());
+			tooltip.SetToolInfo(&toolinfo);
+			track_mouse();
 		}
 
 		virtual void on_seek_end(bool aborted) override
 		{
-			console::print(aborted
-				? "...seek aborted."
-				: "...seek performed."
-				);
+			show = false;
+			tooltip.TrackActivate(&toolinfo, FALSE);
+		}
+		
+	private:
+		CToolTipCtrl tooltip;
+		TOOLINFO toolinfo;
+		CWindow parent;
+		bool show;
+		
+		void track_mouse()
+		{
+			POINT pos = {};
+			GetCursorPos(&pos);
+			tooltip.TrackPosition(pos.x + 10, pos.y - 20);
+			tooltip.TrackActivate(&toolinfo, show ? TRUE : FALSE);
+		}
+
+		std::wstring format_time(double time)
+		{
+			auto str = pfc::stringcvt::string_os_from_utf8(pfc::format_time(pfc::rint64(time)));
+			std::wstring out = str.get_ptr();
+			return out;
 		}
 	};
 
@@ -76,9 +117,8 @@ namespace wave
 		, seek_in_progress(false), possible_next_enqueued(false), repaint_timer_id(0)
 	{
 		fe->callback.reset(new frontend_callback_impl);
+		fe->conf.reset(new frontend_config_impl(settings));
 		fe->callback->set_waveform(placeholder_waveform);
-		//console_spam_callback.reset(new console_seek_notifier);
-		//seek_callbacks += console_spam_callback;
 	}
 
 	seekbar_window::~seekbar_window()
@@ -108,6 +148,12 @@ namespace wave
 
 	void seekbar_window::on_wm_lbuttondown(UINT wparam, CPoint point)
 	{
+		if (!tooltip)
+		{
+			tooltip.reset(new seek_tooltip(*this));
+			seek_callbacks += tooltip;
+		}
+
 		scoped_lock sl(fe->mutex);
 		seek_in_progress = true;
 		fe->callback->set_seeking(true);
@@ -218,6 +264,11 @@ namespace wave
 	{
 		if (seek_in_progress)
 		{
+			if (last_seek_point == point)
+				return;
+
+			last_seek_point = point;
+
 			scoped_lock sl(fe->mutex);
 			CRect r;
 			GetWindowRect(r);
@@ -291,7 +342,7 @@ namespace wave
 	#endif
 				case config::frontend_direct3d9:
 					console::info("Seekbar: taking Direct3D9 path.");
-					fe->frontend.reset(new direct3d9_frontend(*this, client_rect.Size(), *fe->callback));
+					fe->frontend.reset(new direct3d9_frontend(*this, client_rect.Size(), *fe->callback, *fe->conf));
 					break;
 				case config::frontend_direct2d1:
 					console::info("Seekbar: taking Direct2D1 path.");
@@ -535,9 +586,11 @@ namespace wave
 			: point.y * fe->callback->get_track_length() / client_rect.Height()
 			;
 		
+		position = std::max(0.0, std::min(fe->callback->get_track_length(), position));
+
 		for each(auto cb in seek_callbacks)
 			if (auto p = cb.lock())
-				p->on_seek_position(position);
+				p->on_seek_position(position, fe->callback->is_seeking());
 
 		fe->callback->set_seek_position(position);
 		if (fe->frontend)

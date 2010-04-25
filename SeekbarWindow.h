@@ -4,10 +4,9 @@
 #include "resource.h"
 #include "PersistentSettings.h"
 #include "FrontendCallbackImpl.h"
+#include "FrontendConfigImpl.h"
 #include "Helpers.h"
 #include "SeekCallback.h"
-
-DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU);
 
 namespace wave
 {
@@ -21,6 +20,7 @@ namespace wave
 		}
 		boost::recursive_mutex mutex;
 		scoped_ptr<frontend_callback_impl> callback;
+		scoped_ptr<frontend_config_impl> conf;
 		scoped_ptr<visual_frontend> frontend;
 		uint32_t auto_get_serial;
 	};
@@ -95,7 +95,9 @@ namespace wave
 		CRect client_rect;
 		UINT_PTR repaint_timer_id;
 
-		boost::shared_ptr<seek_callback> console_spam_callback;
+		CPoint last_seek_point;
+
+		boost::shared_ptr<seek_callback> tooltip;
 		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
 
 	private:

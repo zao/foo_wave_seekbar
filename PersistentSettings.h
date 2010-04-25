@@ -1,6 +1,23 @@
 #pragma once
+#include "Helpers.h"
+#include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
+
+namespace boost
+{
+namespace serialization
+{
+	template<class Archive>
+	void serialize(Archive & ar, GUID & g, const unsigned int version)
+	{
+		ar & make_nvp("Data1", g.Data1);
+		ar & make_nvp("Data2", g.Data2);
+		ar & make_nvp("Data3", g.Data3);
+		ar & make_nvp("Data4", g.Data4);
+	}
+}
+}
 
 namespace wave
 {
@@ -9,6 +26,7 @@ namespace wave
 		persistent_settings()
 			: active_frontend_kind(config::frontend_direct3d9), has_border(true), shade_played(true)
 			, display_mode(config::display_normal), flip_display(false), downmix_display(false)
+			, generic_strings(&less_guid)
 		{
 			std::fill_n(colors.begin(), colors.size(), color());
 			std::fill_n(override_colors.begin(), override_colors.size(), false);
@@ -31,6 +49,7 @@ namespace wave
 		bool flip_display;
 		bool downmix_display;
 		std::vector<std::pair<int, bool>> channel_order; // int is unnamed channel enum from audio_chunk, contains the channels used
+		std::map<GUID, std::string, decltype(&less_guid)> generic_strings;
 		
 
 		template <class Archive>
@@ -45,6 +64,7 @@ namespace wave
 			ar & BOOST_SERIALIZATION_NVP(flip_display);
 			ar & BOOST_SERIALIZATION_NVP(downmix_display);
 			ar & BOOST_SERIALIZATION_NVP(channel_order);
+			ar & BOOST_SERIALIZATION_NVP(generic_strings);
 		}
 
 		template <class Archive>
@@ -80,6 +100,10 @@ namespace wave
 				ar & BOOST_SERIALIZATION_NVP(channel_order);
 				insert_remaining_channels();
 			}
+			if (version >= 10)
+			{
+				ar & BOOST_SERIALIZATION_NVP(generic_strings);
+			}
 		}
 		BOOST_SERIALIZATION_SPLIT_MEMBER()
 
@@ -113,4 +137,4 @@ namespace wave
 	};
 }
 
-BOOST_CLASS_VERSION(wave::persistent_settings, 9)
+BOOST_CLASS_VERSION(wave::persistent_settings, 10)

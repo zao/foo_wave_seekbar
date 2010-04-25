@@ -8,7 +8,7 @@ namespace wave
 
 	struct direct3d9_frontend : visual_frontend
 	{
-		direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback);
+		direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
 		virtual void clear();
 		virtual void draw();
 		virtual void present();
@@ -45,6 +45,7 @@ namespace wave
 		D3DPRESENT_PARAMETERS pp;
 
 		visual_frontend_callback& callback;
+		visual_frontend_config& conf;
 
 	private:
 		CComPtr<IDirect3DTexture9> create_waveform_texture();

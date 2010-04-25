@@ -131,6 +131,7 @@ namespace wave
 			state_channel_order = 1<<10
 		};
 		virtual void on_state_changed(state s) = 0;
+		virtual void show_configuration(CWindow parent) { }
 	};
 
 	struct visual_frontend_callback
@@ -174,6 +175,14 @@ namespace wave
 		virtual void set_display_mode(config::display_mode mode) = 0;
 		virtual void set_downmix_display(bool downmix) = 0;
 		virtual void set_channel_infos(pfc::list_t<channel_info> const&) = 0;
+	};
+
+	struct visual_frontend_config
+	{
+		virtual ~visual_frontend_config() {}
+		
+		virtual bool get_configuration_string(GUID key, pfc::string& out) const = 0;
+		virtual void set_configuration_string(GUID key, pfc::string const& value) = 0;
 	};
 
 	struct visual_frontend_factory
