@@ -1,70 +1,145 @@
 #pragma once
 #include "VisualFrontend.h"
 #include <map>
+#include "resource.h"
+#include <boost/fusion/include/adapted.hpp>
 
 namespace wave
 {
 	bool has_direct3d9();
 
-	struct direct3d9_frontend : visual_frontend
+	namespace direct3d9
 	{
-		direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
-		virtual void clear();
-		virtual void draw();
-		virtual void present();
-		virtual void on_state_changed(state s);
+		struct config_dialog;
+		struct effect_compiler;
+		struct effect_handle;
 
-	private:
-		void update_effect_colors();
-		void update_effect_cursor();
-		void update_replaygain();
-		void update_data();
-		void update_size();
-		void update_orientation();
-		void update_shade_played();
+		extern const GUID guid_fx_string;
 
-		CComPtr<IDirect3D9> d3d;
-		CComPtr<IDirect3DDevice9> dev;
+		struct frontend_impl : visual_frontend
+		{
+			friend config_dialog;
 
-		std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
-		std::deque<CComPtr<IDirect3DTexture9>> annotation_textures;
-		std::vector<unsigned> channel_numbers;
-		std::vector<channel_info> channel_order;
-		CComPtr<ID3DXEffect> fx;
-		CComPtr<IDirect3DVertexBuffer9> vb;
-		CComPtr<IDirect3DVertexDeclaration9> decl;
+			frontend_impl(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
+			virtual void clear();
+			virtual void draw();
+			virtual void present();
+			virtual void on_state_changed(state s);
+			virtual void show_configuration(CWindow parent);
 
-		D3DXHANDLE background_color_var, foreground_color_var, highlight_color_var, selection_color_var;
-		D3DXHANDLE cursor_position_var, cursor_visible_var;
-		D3DXHANDLE seek_position_var, seeking_var;
-		D3DXHANDLE viewport_size_var;
-		D3DXHANDLE replaygain_var;
-		D3DXHANDLE orientation_var;
-		D3DXHANDLE shade_played_var;
+		private: // Update
+			void update_effect_colors();
+			void update_effect_cursor();
+			void update_replaygain();
+			void update_data();
+			void update_size();
+			void update_orientation();
+			void update_shade_played();
 
-		D3DPRESENT_PARAMETERS pp;
+		private: // Misc state
+			CComPtr<IDirect3D9> d3d;
+			CComPtr<IDirect3DDevice9> dev;
 
-		visual_frontend_callback& callback;
-		visual_frontend_config& conf;
+			std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
+			std::deque<CComPtr<IDirect3DTexture9>> annotation_textures;
+			std::vector<unsigned> channel_numbers;
+			std::vector<channel_info> channel_order;
+			CComPtr<ID3DXEffect> fx;
+			CComPtr<IDirect3DVertexBuffer9> vb;
+			CComPtr<IDirect3DVertexDeclaration9> decl;
 
-	private:
-		CComPtr<IDirect3DTexture9> create_waveform_texture();
-		void create_vertex_resources();
-		void release_vertex_resources();
-		void create_default_resources();
-		void release_default_resources();
+			D3DXHANDLE background_color_var, foreground_color_var, highlight_color_var, selection_color_var;
+			D3DXHANDLE cursor_position_var, cursor_visible_var;
+			D3DXHANDLE seek_position_var, seeking_var;
+			D3DXHANDLE viewport_size_var;
+			D3DXHANDLE replaygain_var;
+			D3DXHANDLE orientation_var;
+			D3DXHANDLE shade_played_var;
 
-		bool device_still_lost();
+			D3DPRESENT_PARAMETERS pp;
 
-		seekbar_state state_copy;
+		private: // Host references
+			visual_frontend_callback& callback;
+			visual_frontend_config& conf;
 
-		bool device_lost;
-		UINT mip_count;
-		D3DFORMAT texture_format;
-		bool floating_point_texture;
-	};
+		private: // Resources
+			CComPtr<IDirect3DTexture9> create_waveform_texture();
+			void create_vertex_resources();
+			void release_vertex_resources();
+			void create_default_resources();
+			void release_default_resources();
 
-#if 0
+			bool device_still_lost();
+
+			seekbar_state state_copy;
+
+			bool device_lost;
+			UINT mip_count;
+			D3DFORMAT texture_format;
+			bool floating_point_texture;
+
+		private: // Configuration
+			scoped_ptr<config_dialog> config;
+
+			void get_effect_compiler(service_ptr_t<effect_compiler>& out);
+			void set_effect(service_ptr_t<effect_handle> effect, bool permanent);
+		};
+
+		struct config_dialog : CDialogImpl<config_dialog>
+		{
+			enum { IDD = IDD_CONFIG_D3D, WM_USER_CLEAR_EFFECT_SELECTION = WM_USER + 0x1 };
+			config_dialog(weak_ptr<frontend_impl> fe);
+
+			BEGIN_MSG_MAP_EX(config_dialog)
+				MSG_WM_INITDIALOG(on_wm_init_dialog)
+				MSG_WM_CLOSE(on_wm_close)
+				COMMAND_HANDLER_EX(IDC_EFFECT_APPLY, BN_CLICKED, on_effect_apply_click)
+				MESSAGE_HANDLER(WM_USER_CLEAR_EFFECT_SELECTION, on_clear_effect_selection)
+				COMMAND_HANDLER_EX(IDC_EFFECT_SOURCE, EN_CHANGE, on_effect_source_change)
+			END_MSG_MAP()
+
+		private:
+			LRESULT on_wm_init_dialog(CWindow focus, LPARAM lparam);
+			void on_wm_close();
+			void on_effect_apply_click(UINT, int, CWindow);
+			LRESULT on_clear_effect_selection(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+			void on_effect_source_change(UINT, int, CEdit);
+
+			virtual void OnFinalMessage(HWND);
+
+			weak_ptr<frontend_impl> fe;
+			service_ptr_t<effect_compiler> compiler;
+			CFont mono_font;
+		};
+
+		struct NOVTABLE effect_compiler : service_base
+		{
+			struct diagnostic_entry
+			{
+				struct location
+				{
+					int row, col;
+				};
+				location loc;
+				std::string type;
+				std::string code;
+				std::string message;
+			};
+
+			virtual ~effect_compiler() {}
+			virtual bool compile_fragment(service_ptr_t<effect_handle>& effect, pfc::list_t<diagnostic_entry>& output, pfc::string const& data) = 0;
+		};
+
+		struct NOVTABLE effect_handle : service_base
+		{
+			virtual ~effect_handle();
+		};
+	}
+}
+
+namespace wave
+{
+	#if 0
 	struct direct3d10 : visual_frontend
 	{
 
@@ -99,3 +174,17 @@ namespace wave
 	typedef visual_frontend_factory_impl<direct3d10_frontend> direct3d10_frontend_factory;
 #endif
 }
+
+BOOST_FUSION_ADAPT_STRUCT(
+	wave::direct3d9::effect_compiler::diagnostic_entry::location,
+	(int, row)
+	(int, col)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+	wave::direct3d9::effect_compiler::diagnostic_entry,
+	(wave::direct3d9::effect_compiler::diagnostic_entry::location, loc)
+	(std::string, type)
+	(std::string, code)
+	(std::string, message)
+)
