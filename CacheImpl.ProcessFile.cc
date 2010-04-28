@@ -121,24 +121,31 @@ namespace wave
 		// Test whether tracks are in the Media Library or not
 		if (!g_analyse_tracks_outside_library.get())
 		{
-			shared_ptr<boost::promise<bool>> pb(new boost::promise<bool>);
-
-			in_main_thread([loc, pb]()	
+			struct result
 			{
-				boost::promise<bool>& promise = *pb;
+				shared_ptr<boost::promise<bool>> p;
+				boost::shared_future<bool> res;
+
+				result()
+					: p(new boost::promise<bool>), res(p->get_future())
+				{}
+			} res;
+
+			in_main_thread([loc, res]()	
+			{
 				static_api_ptr_t<library_manager> lib;
 				static_api_ptr_t<metadb> mdb;
 				metadb_handle_ptr m;
 				mdb->handle_create(m, loc);
-				promise.set_value(lib->is_item_in_library(m));
+				res.p->set_value(lib->is_item_in_library(m));
 			});
 			
-			boost::unique_future<bool> fb = pb->get_future();
+			boost::shared_future<bool> f = res.res;
 			while (!flush_callback.is_aborting())
 			{
-				if (fb.timed_wait(boost::posix_time::milliseconds(200)))
+				if (f.timed_wait(boost::posix_time::milliseconds(200)))
 				{
-					if (!fb.get())
+					if (!f.get())
 						return out;
 					break;
 				}
