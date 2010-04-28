@@ -110,7 +110,7 @@ namespace wave
 		bool enabled;
 	};
 
-	struct visual_frontend
+	struct visual_frontend : enable_shared_from_this<visual_frontend>
 	{
 		virtual ~visual_frontend() {};
 		virtual void clear() = 0;
