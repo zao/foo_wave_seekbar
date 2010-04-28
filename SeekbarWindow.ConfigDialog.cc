@@ -302,6 +302,14 @@ namespace wave
 		channels.SelectItem(idx + 1);
 	}
 
+	void seekbar_window::configuration_dialog::on_configure_click(UINT code, int id, CWindow control)
+	{
+		if (sw.fe && sw.fe->frontend)
+		{
+			sw.fe->frontend->show_configuration(sw);
+		}
+	}
+
 	seekbar_window::configuration_dialog::configuration_dialog(seekbar_window& sw) 
 		: sw(sw), initializing(true)
 	{}

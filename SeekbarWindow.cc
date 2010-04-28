@@ -342,7 +342,7 @@ namespace wave
 	#endif
 				case config::frontend_direct3d9:
 					console::info("Seekbar: taking Direct3D9 path.");
-					fe->frontend.reset(new direct3d9_frontend(*this, client_rect.Size(), *fe->callback, *fe->conf));
+					fe->frontend.reset(new direct3d9::frontend_impl(*this, client_rect.Size(), *fe->callback, *fe->conf));
 					break;
 				case config::frontend_direct2d1:
 					console::info("Seekbar: taking Direct2D1 path.");
