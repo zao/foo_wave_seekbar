@@ -42,7 +42,6 @@ namespace wave
 
 	void seekbar_dui::set_configuration( ui_element_config::ptr data )
 	{
-		OutputDebugStringA("set_configuration()\n");
 		uint8_t const* p = (uint8_t const*)data->get_data();
 		try
 		{
@@ -61,7 +60,6 @@ namespace wave
 
 	ui_element_config::ptr seekbar_dui::get_configuration()
 	{
-		OutputDebugStringA("get_configuration()\n");
 		std::vector<char> data;
 		save_settings(settings, data);
 		return ui_element_config::g_create(s_guid, &data[0], data.size());
@@ -69,7 +67,6 @@ namespace wave
 
 	ui_element_config::ptr seekbar_dui::g_get_default_configuration()
 	{
-		OutputDebugStringA("get_default_configuration()\n");
 		persistent_settings s;
 		std::vector<char> v;
 		save_settings(s, v);
