@@ -109,3 +109,27 @@ typename Cont::size_type nuke_if(Cont& c, Pred p)
 	c.erase(std::remove_if(begin(c), end(c), p), end(c));
 	return count - c.size();
 }
+
+inline void reduce_by_two(pfc::list_base_t<float>& data, UINT n)
+{
+	for (UINT i = 0; i < n; i += 2)
+	{
+		float avg = (data[i] + data[i + 1]) / 2.0f;
+		data.replace_item(i >> 1, avg);
+	}
+}
+
+inline pfc::string get_program_directory()
+{
+	char* filename;
+	_get_pgmptr(&filename);
+	pfc::string exe_name = (const char*)filename;
+	return pfc::string("file://") + exe_name.subString(0, exe_name.lastIndexOf('\\'));
+}
+
+
+template <typename T>
+T clamp(T v, T a, T b)
+{
+	return std::max(a, std::min(b, v));
+}
