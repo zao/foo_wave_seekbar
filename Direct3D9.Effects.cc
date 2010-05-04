@@ -77,7 +77,11 @@ namespace wave
 				CComPtr<ID3DXEffect> fx;
 				CComPtr<ID3DXBuffer> err;
 				HRESULT hr = S_OK;
-				hr = D3DXCreateEffect(dev, &fx_body[0], fx_body.size(), nullptr, nullptr, _DEBUG ? (D3DXSHADER_DEBUG | D3DXSHADER_OPTIMIZATION_LEVEL0) : 0, nullptr, &fx, &err);
+				DWORD flags = 0;
+#if defined(_DEBUG)
+				flags |= D3DXSHADER_DEBUG | D3DXSHADER_OPTIMIZATION_LEVEL0;
+#endif
+				hr = D3DXCreateEffect(dev, &fx_body[0], fx_body.size(), nullptr, nullptr, flags, nullptr, &fx, &err);
 				if (FAILED(hr))
 				{
 					pfc::list_t<diagnostic_entry> errors;
