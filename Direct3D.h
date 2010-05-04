@@ -16,6 +16,30 @@ namespace wave
 
 		extern const GUID guid_fx_string;
 
+		namespace parameters
+		{
+			extern pfc::string const background_color, foreground_color, highlight_color, selection_color,
+				cursor_position, cursor_visible,
+				seek_position, seeking,
+				viewport_size, replaygain,
+				orientation, shade_played,
+				waveform_data;
+		};
+
+		struct effect_parameters
+		{
+			typedef boost::variant<float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9*> attribute;
+			pfc::map_t<pfc::string, attribute> attributes;
+
+			template <typename T>
+			void set(pfc::string what, T const& t)
+			{
+				attributes.set(what, t);
+			}
+
+			void apply_to(CComPtr<ID3DXEffect> fx);
+		};
+
 		struct frontend_impl : visual_frontend
 		{
 			friend config_dialog;
@@ -41,13 +65,19 @@ namespace wave
 			CComPtr<IDirect3DDevice9> dev;
 
 			std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
-			std::deque<CComPtr<IDirect3DTexture9>> annotation_textures;
 			std::vector<unsigned> channel_numbers;
 			std::vector<channel_info> channel_order;
-			CComPtr<ID3DXEffect> fx;
+
+			std::stack<service_ptr_t<effect_handle>> effect_stack;
+			service_ptr_t<effect_handle> effect_override;
+
 			CComPtr<IDirect3DVertexBuffer9> vb;
 			CComPtr<IDirect3DVertexDeclaration9> decl;
 
+			effect_parameters effect_params;
+
+			CComPtr<ID3DXEffect> select_effect();
+/*
 			D3DXHANDLE background_color_var, foreground_color_var, highlight_color_var, selection_color_var;
 			D3DXHANDLE cursor_position_var, cursor_visible_var;
 			D3DXHANDLE seek_position_var, seeking_var;
@@ -55,6 +85,7 @@ namespace wave
 			D3DXHANDLE replaygain_var;
 			D3DXHANDLE orientation_var;
 			D3DXHANDLE shade_played_var;
+*/
 
 			D3DPRESENT_PARAMETERS pp;
 
@@ -94,6 +125,8 @@ namespace wave
 				MSG_WM_INITDIALOG(on_wm_init_dialog)
 				MSG_WM_CLOSE(on_wm_close)
 				COMMAND_HANDLER_EX(IDC_EFFECT_APPLY, BN_CLICKED, on_effect_apply_click)
+				COMMAND_HANDLER_EX(IDC_EFFECT_DEFAULT, BN_CLICKED, on_effect_default_click)
+				COMMAND_HANDLER_EX(IDC_EFFECT_RESET, BN_CLICKED, on_effect_reset_click)
 				MESSAGE_HANDLER(WM_USER_CLEAR_EFFECT_SELECTION, on_clear_effect_selection)
 				COMMAND_HANDLER_EX(IDC_EFFECT_SOURCE, EN_CHANGE, on_effect_source_change)
 			END_MSG_MAP()
@@ -102,6 +135,8 @@ namespace wave
 			LRESULT on_wm_init_dialog(CWindow focus, LPARAM lparam);
 			void on_wm_close();
 			void on_effect_apply_click(UINT, int, CWindow);
+			void on_effect_default_click(UINT, int, CWindow);
+			void on_effect_reset_click(UINT, int, CWindow);
 			LRESULT on_clear_effect_selection(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 			void on_effect_source_change(UINT, int, CEdit);
 
@@ -110,6 +145,9 @@ namespace wave
 			weak_ptr<frontend_impl> fe;
 			service_ptr_t<effect_compiler> compiler;
 			CFont mono_font;
+			CEdit code_box, error_box;
+			CButton apply_button, default_button, reset_button;
+			service_ptr_t<effect_handle> fx;
 		};
 
 		struct NOVTABLE effect_compiler : service_base
@@ -132,7 +170,8 @@ namespace wave
 
 		struct NOVTABLE effect_handle : service_base
 		{
-			virtual ~effect_handle();
+			virtual ~effect_handle() {}
+			virtual CComPtr<ID3DXEffect> get_effect() const = 0;
 		};
 	}
 }

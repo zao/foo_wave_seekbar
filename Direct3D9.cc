@@ -133,8 +133,8 @@ namespace wave
 			if (device_still_lost())
 				return;
 
-			D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
-			auto draw_quad = [this, wfd](int idx, int ch, int n)
+			//D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
+			auto draw_quad = [this](int idx, int ch, int n)
 			{
 				D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
 				D3DXVECTOR4 viewport = D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0.0f, 0.0f);
@@ -162,11 +162,16 @@ namespace wave
 						lerp(1.0f, -1.0f, sides.y),  1.0f,  1.0f,  1.0f;
 				}
 
-				fx->SetVector(viewport_size_var, &viewport);
+				effect_params.set(parameters::viewport_size, viewport);
 
 				HRESULT hr = S_OK;
 				hr = dev->BeginScene();
-				fx->SetTexture(wfd, channel_textures[ch]);
+				effect_params.set(parameters::waveform_data,
+					channel_textures[ch]);
+
+				CComPtr<ID3DXEffect> fx = select_effect();
+				effect_params.apply_to(fx);
+
 				hr = dev->SetTexture(0, channel_textures[ch]);
 				hr = dev->SetVertexDeclaration(decl);
 
@@ -199,6 +204,13 @@ namespace wave
 				device_lost = true;
 				update_size();
 			}
+		}
+
+		CComPtr<ID3DXEffect> frontend_impl::select_effect()
+		{
+			if (effect_override.is_valid())
+				return effect_override->get_effect();
+			return effect_stack.top()->get_effect();
 		}
 
 		void frontend_impl::on_state_changed(state s)
@@ -242,8 +254,86 @@ namespace wave
 
 		void frontend_impl::get_effect_compiler(service_ptr_t<effect_compiler>& out)
 		{
-			auto fe = boost::dynamic_pointer_cast<frontend_impl>(shared_from_this());
-			out = new service_impl_t<effect_compiler_impl>(fe, dev);
+			out = new service_impl_t<effect_compiler_impl>(dev);
+		}
+
+		void frontend_impl::set_effect(service_ptr_t<effect_handle> in, bool permanent)
+		{
+			if (permanent)
+			{
+				if (effect_stack.size() > 1) // TODO: dynamic count for the future?
+					effect_stack.pop();
+				effect_stack.push(in);
+			}
+			else
+				effect_override = in;
+		}
+
+		namespace parameters
+		{
+			pfc::string const
+				background_color = "BACKGROUNDCOLOR",
+				foreground_color = "TEXTCOLOR",
+				highlight_color = "HIGHLIGHTCOLOR",
+				selection_color = "SELECTIONCOLOR",
+			
+				cursor_position = "CURSORPOSITION",
+				cursor_visible = "CURSORVISIBLE",
+			
+				seek_position = "SEEKPOSITION",
+				seeking = "SEEKING",
+
+				viewport_size = "VIEWPORTSIZE",
+				replaygain = "REPLAYGAIN",
+
+				orientation = "ORIENTATION",
+				shade_played = "SHADEPLAYED",
+			
+				waveform_data = "WAVEFORMDATA";
+		}
+
+		struct attribute_setter : boost::static_visitor<void>
+		{
+			CComPtr<ID3DXEffect> const& fx;
+			pfc::string const& key;
+			explicit attribute_setter(CComPtr<ID3DXEffect> const& fx, pfc::string const& key) : fx(fx), key(key) {}
+
+			D3DXHANDLE get() { return fx->GetParameterBySemantic(nullptr, key.get_ptr()); }
+
+			// <float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9>
+			void operator () (float const& f)
+			{
+				if (auto h = get()) fx->SetFloat(h, f);
+			}
+
+			void operator () (bool const& b)
+			{
+				if (auto h = get()) fx->SetBool(h, b);
+			}
+
+			void operator () (D3DXVECTOR4 const& v)
+			{
+				if (auto h = get()) fx->SetVector(h, &v);
+			}
+
+			void operator () (D3DXMATRIX const& m)
+			{
+				if (auto h = get()) fx->SetMatrix(h, &m);
+			}
+
+			void operator () (IDirect3DTexture9* tex)
+			{
+				if (auto h = get()) fx->SetTexture(h, tex);
+			}
+		};
+
+		void effect_parameters::apply_to(CComPtr<ID3DXEffect> fx)
+		{
+			attributes.enumerate([fx](pfc::string const& key, attribute& value)
+			{
+				attribute_setter vtor(fx, key);
+				boost::apply_visitor(vtor, value);
+			});
 		}
 	}
 }

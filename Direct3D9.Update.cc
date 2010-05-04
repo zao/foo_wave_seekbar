@@ -8,21 +8,27 @@ namespace wave
 	{
 		void frontend_impl::update_effect_colors()
 		{
-	#define UPDATE_COLOR(Name) if (Name##_color_var) { color c = callback.get_color(config::color_##Name); D3DXCOLOR d(c.r, c.g, c.b, c.a); fx->SetVector(Name##_color_var, &D3DXVECTOR4(d)); }
+		#define UPDATE_COLOR(Name)                 \
+			{                                      \
+				color c = callback.get_color(config::color_##Name);  \
+				D3DXCOLOR d(c.r, c.g, c.b, c.a);                     \
+				effect_params.set(parameters::Name##_color, D3DXVECTOR4(d)); \
+			}
+
 			UPDATE_COLOR(background)
 			UPDATE_COLOR(foreground)
 			UPDATE_COLOR(highlight)
 			UPDATE_COLOR(selection)
-	#undef UPDATE_COLOR
+		#undef UPDATE_COLOR
 		}
 
 		void frontend_impl::update_effect_cursor()
 		{
-			if (cursor_position_var) fx->SetFloat(cursor_position_var, (float)(callback.get_playback_position() / callback.get_track_length()));
-			if (cursor_visible_var)  fx->SetBool(cursor_visible_var, callback.is_cursor_visible());
-			if (seek_position_var)   fx->SetFloat(seek_position_var, (float)(callback.get_seek_position() / callback.get_track_length()));
-			if (seeking_var)         fx->SetBool(seeking_var, callback.is_seeking());
-			if (viewport_size_var)   fx->SetVector(viewport_size_var, &D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0, 0));
+			effect_params.set(parameters::cursor_position, (float)(callback.get_playback_position() / callback.get_track_length()));
+			effect_params.set(parameters::cursor_visible, callback.is_cursor_visible());
+			effect_params.set(parameters::seek_position, (float)(callback.get_seek_position() / callback.get_track_length()));
+			effect_params.set(parameters::seeking, callback.is_seeking());
+			effect_params.set(parameters::viewport_size, D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0, 0));
 		}
 
 		void frontend_impl::update_data()
@@ -133,8 +139,7 @@ namespace wave
 
 		void frontend_impl::update_replaygain()
 		{
-			if (replaygain_var)
-				fx->SetVector(replaygain_var, &D3DXVECTOR4(
+			effect_params.set(parameters::replaygain, D3DXVECTOR4(
 					callback.get_replaygain(visual_frontend_callback::replaygain_album_gain),
 					callback.get_replaygain(visual_frontend_callback::replaygain_track_gain),
 					callback.get_replaygain(visual_frontend_callback::replaygain_album_peak),
@@ -144,17 +149,17 @@ namespace wave
 
 		void frontend_impl::update_orientation()
 		{
-			if (orientation_var)
-				fx->SetBool(orientation_var, config::orientation_horizontal == callback.get_orientation());
+			effect_params.set(parameters::orientation, 
+				config::orientation_horizontal == callback.get_orientation());
 		}
 
 		void frontend_impl::update_shade_played()
 		{
-			if (shade_played_var)
-				fx->SetBool(shade_played_var, callback.get_shade_played());
+			effect_params.set(parameters::shade_played,
+				callback.get_shade_played());
 		}
 
-			void frontend_impl::update_size()
+		void frontend_impl::update_size()
 		{
 			release_default_resources();
 			CSize size = callback.get_size();

@@ -2,6 +2,7 @@
 #include "Direct3D.h"
 #include "Helpers.h"
 #include "resource.h"
+#include "Direct3D.Effects.h"
 
 namespace wave
 {
@@ -44,122 +45,55 @@ namespace wave
 			HRESULT hr = S_OK;
 			abort_callback_dummy cb;
 
-			pfc::string profile_directory = core_api::get_profile_path();
-			pfc::string program_directory = get_program_directory();
+			service_ptr_t<effect_compiler> compiler;
+			get_effect_compiler(compiler);
 
-			std::vector<char> fx_header, fx_body, fx_footer;
-			get_resource_contents(fx_header, IDR_DEFAULT_FX_HEADER);
-			get_resource_contents(fx_footer, IDR_DEFAULT_FX_FOOTER);
+			auto build_effect = [compiler](pfc::string body) -> service_ptr_t<effect_handle>
+			{
+				service_ptr_t<effect_handle> fx;
+				pfc::list_t<effect_compiler::diagnostic_entry> errors;
+				bool success = compiler->compile_fragment(fx, errors, body);
 
-			pfc::string stored_body;
-			if (conf.get_configuration_string(guid_fx_string, stored_body))
+				if (!success)
+				{
+					console::formatter() << "Seekbar: Direct3D: effect compile failed.";
+					pfc::string text = simple_diagnostic_format(errors);
+					console::formatter() << "Seekbar: Direct3D: " << text.get_ptr();
+				}
+				return fx;
+			};
+
+			// Compile fallback effect
 			{
-				auto p = stored_body.get_ptr();
-				fx_body.assign(p, p + stored_body.get_length());
-			}
-			else
-			{
+				std::vector<char> fx_body;
 				get_resource_contents(fx_body, IDR_DEFAULT_FX_BODY);
+				pfc::string stored_body;
 				stored_body.set_string(&fx_body[0], fx_body.size());
-				conf.set_configuration_string(guid_fx_string, stored_body);
+				auto fx = build_effect(stored_body);
+				if (fx.is_valid())
+					effect_stack.push(fx);
 			}
 
-			if (size_t diff = nuke_if(fx_body, [](char c) { return (unsigned char)c >= 0x80U; }))
+			// Compile current stored effect
 			{
-					console::formatter() << "Seekbar: Direct3D: effect contained non-ASCII code units, discarded "
-										 << diff << " code units. Remove any UTF-8 BOM and/or characters with diacritics.";
-			}
-
-			std::string fx_source;
-			{
-				using namespace karma;
-				generate(std::back_inserter(fx_source), *char_ << "\n" << *char_ << "\n" << *char_ << "\n", fx_header, fx_body, fx_footer);
-			}
-
-			{
-				CComPtr<ID3DXBuffer> errors;
-				hr = D3DXCreateEffect(dev, &fx_source[0], fx_source.size(), nullptr, nullptr, 0, nullptr, &fx, &errors);
-				if (FAILED(hr))
+				pfc::string stored_body;
+				if (conf.get_configuration_string(guid_fx_string, stored_body))
 				{
-					console::formatter() << "Seekbar: Direct3D: " << DXGetErrorStringA(hr) << "(" << hr << ") " << DXGetErrorDescriptionA(hr);
-					if (errors)
-						console::formatter() << "Seekbar: Direct3D: " << pfc::string8((char*)errors->GetBufferPointer(), errors->GetBufferSize());
+					service_ptr_t<effect_handle> fx;
+					fx = build_effect(stored_body);
+					if (fx.is_valid())
+						effect_stack.push(fx);
 				}
 			}
 
-			if (!fx)
+			if (effect_stack.empty())
 				throw std::exception("Direct3D9: could not create effects.");
-
-			D3DXHANDLE h = 0;
-			for (int i = 0; h = fx->GetParameter(0, i); ++i)
-			{
-				D3DXPARAMETER_DESC pd = {};
-				fx->GetParameterDesc(h, &pd);
-				if (pd.Type == D3DXPT_TEXTURE2D)
-				{
-					for (UINT ann_idx = 0; ann_idx < pd.Annotations; ++ann_idx)
-					{
-						D3DXHANDLE ann = fx->GetAnnotation(h, ann_idx);
-						D3DXPARAMETER_DESC ann_desc = {};
-						fx->GetParameterDesc(ann, &ann_desc);
-						if (ann_desc.Type == D3DXPT_STRING && ann_desc.Name == std::string("ResourceName"))
-						{
-							char const* resource_name = 0;
-							fx->GetString(ann, &resource_name);
-
-							CComPtr<IDirect3DTexture9> ann_tex;
-							hr = D3DXCreateTextureFromFileA(dev, resource_name, &ann_tex);
-							if (!SUCCEEDED(hr))
-							{
-								pfc::string file = profile_directory + "\\effects\\" + resource_name;
-								hr = D3DXCreateTextureFromFileA(dev, file.get_ptr() + 7, &ann_tex);
-								if (!SUCCEEDED(hr))
-								{
-									console::formatter() << "Wave seekbar: Direct3D9: Could not load annotation texture " << resource_name;
-								}
-							}
-							if (ann_tex)
-							{
-								annotation_textures.push_back(ann_tex);
-								fx->SetTexture(h, ann_tex);
-							}
-						}
-					}
-				}
-			}
-
-			background_color_var = fx->GetParameterBySemantic(0, "BACKGROUNDCOLOR");
-			foreground_color_var = fx->GetParameterBySemantic(0, "TEXTCOLOR");
-			highlight_color_var = fx->GetParameterBySemantic(0, "HIGHLIGHTCOLOR");
-			selection_color_var = fx->GetParameterBySemantic(0, "SELECTIONCOLOR");
-
-			cursor_position_var = fx->GetParameterBySemantic(0, "CURSORPOSITION");
-			cursor_visible_var = fx->GetParameterBySemantic(0, "CURSORVISIBLE");
-
-			seek_position_var = fx->GetParameterBySemantic(0, "SEEKPOSITION");
-			seeking_var = fx->GetParameterBySemantic(0, "SEEKING");
-
-			viewport_size_var = fx->GetParameterBySemantic(0, "VIEWPORTSIZE");
-			replaygain_var = fx->GetParameterBySemantic(0, "REPLAYGAIN");
-
-			orientation_var = fx->GetParameterBySemantic(0, "ORIENTATION");
-			shade_played_var = fx->GetParameterBySemantic(0, "SHADEPLAYED");
 		}
 
 		void frontend_impl::release_default_resources()
 		{
-			background_color_var = foreground_color_var = highlight_color_var = selection_color_var = 0;
-			cursor_position_var = 0;
-			cursor_visible_var = 0;
-			seek_position_var = 0;
-			seeking_var = 0;
-			viewport_size_var = 0;
-			replaygain_var = 0;
-			orientation_var = 0;
-			shade_played_var = 0;
-
-			annotation_textures.clear();
-			fx.Release();
+			effect_stack = std::stack<service_ptr_t<effect_handle>>();
+			effect_override.release();
 		}
 	}
 }

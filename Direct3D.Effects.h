@@ -8,14 +8,23 @@ namespace wave
 	{
 		struct effect_compiler_impl : effect_compiler
 		{
-			effect_compiler_impl(weak_ptr<frontend_impl> fe, CComPtr<IDirect3DDevice9> dev);
+			explicit effect_compiler_impl(CComPtr<IDirect3DDevice9> dev);
 			virtual bool compile_fragment(service_ptr_t<effect_handle>& effect, pfc::list_t<diagnostic_entry>& output, pfc::string const& source);
 
 		private:
-			weak_ptr<frontend_impl> fe;
 			CComPtr<IDirect3DDevice9> dev;
-			std::vector<char> fx_header, fx_footer;
-			size_t offset_lines;
 		};
+
+		struct effect_impl : effect_handle
+		{
+			explicit effect_impl(CComPtr<ID3DXEffect> fx);
+
+			CComPtr<ID3DXEffect> get_effect() const;
+
+		private:
+			CComPtr<ID3DXEffect> fx;
+		};
+
+		pfc::string simple_diagnostic_format(pfc::list_t<effect_compiler::diagnostic_entry> const& entries);
 	}
 }

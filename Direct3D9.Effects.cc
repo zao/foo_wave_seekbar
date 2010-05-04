@@ -53,12 +53,9 @@ namespace wave
 			qi::rule<Iterator, std::string()> type, code, message;
 		};
 
-		effect_compiler_impl::effect_compiler_impl(weak_ptr<frontend_impl> fe, CComPtr<IDirect3DDevice9> dev)
-			: fe(fe), dev(dev)
+		effect_compiler_impl::effect_compiler_impl(CComPtr<IDirect3DDevice9> dev)
+			: dev(dev)
 		{
-			get_resource_contents(fx_header, IDR_DEFAULT_FX_HEADER);
-			get_resource_contents(fx_footer, IDR_DEFAULT_FX_FOOTER);
-			offset_lines = 1 + std::count(begin(fx_header), end(fx_header), '\n');
 		}
 
 		bool effect_compiler_impl::compile_fragment(service_ptr_t<effect_handle>& effect, pfc::list_t<effect_compiler::diagnostic_entry>& output, pfc::string const& source)
@@ -66,8 +63,7 @@ namespace wave
 			effect = nullptr;
 			output.remove_all();
 
-			auto front = fe.lock();
-			if (!front)
+			if (source.get_length() == 0)
 				return false;
 				
 			std::vector<char> fx_body(source.get_ptr(), source.get_ptr() + source.get_length());
@@ -77,34 +73,61 @@ namespace wave
 				output.add_item(e);
 			}
 
-			std::string fx_source;
-			{
-				using namespace karma;
-				generate(std::back_inserter(fx_source), *char_ << "\n" << *char_ << "\n" << *char_ << "\n", fx_header, fx_body, fx_footer);
-			}
-
 			{
 				CComPtr<ID3DXEffect> fx;
 				CComPtr<ID3DXBuffer> err;
 				HRESULT hr = S_OK;
-				hr = D3DXCreateEffect(dev, &fx_source[0], fx_source.size(), nullptr, nullptr, 0, nullptr, &fx, &err);
+				hr = D3DXCreateEffect(dev, &fx_body[0], fx_body.size(), nullptr, nullptr, _DEBUG ? (D3DXSHADER_DEBUG | D3DXSHADER_OPTIMIZATION_LEVEL0) : 0, nullptr, &fx, &err);
 				if (FAILED(hr))
 				{
 					pfc::list_t<diagnostic_entry> errors;
 					typedef char const* iter;
-					iter first = (char*)err->GetBufferPointer(), last = first + err->GetBufferSize();
-					qi::parse(first, last, error_grammar<iter>(), errors);
-
-					for (t_size idx = 0u, n = errors.get_count(); idx < n; ++idx)
+					if (err)
 					{
-						errors[idx].loc.row -= offset_lines;
+						iter first = (char*)err->GetBufferPointer(), last = first + err->GetBufferSize();
+						qi::parse(first, last, error_grammar<iter>(), errors);
+						output.add_items(errors);
 					}
-
-					output.add_items(errors);
 					return false;
 				}
+				effect = new service_impl_t<effect_impl>(fx);
 			}
 			return true;
+		}
+
+		effect_impl::effect_impl(CComPtr<ID3DXEffect> fx)
+			: fx(fx)
+		{}
+
+		CComPtr<ID3DXEffect> effect_impl::get_effect() const
+		{
+			return fx;
+		}
+
+		
+		pfc::string simple_diagnostic_format(pfc::list_t<effect_compiler::diagnostic_entry> const& in)
+		{
+			using karma::int_;
+			using karma::string;
+
+			typedef std::back_insert_iterator<std::string> Iter;
+			karma::rule<Iter, effect_compiler::diagnostic_entry::location()> loc = '(' << int_ << ',' << int_ << "): ";
+
+			std::vector<std::string> lines;
+			in.enumerate([&lines, &loc](effect_compiler::diagnostic_entry const& e)
+			{
+				std::string out;
+				auto sink = std::back_inserter(out);
+
+				karma::generate(sink,
+					loc << string << ": " << string << ": " << string , e);
+				lines.push_back(out);
+			});
+
+			std::string out;
+			auto sink = std::back_inserter(out);
+			karma::generate(sink, string % "\n", lines);
+			return pfc::string(out.c_str());
 		}
 	}
 }

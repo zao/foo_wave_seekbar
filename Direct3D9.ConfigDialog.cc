@@ -1,5 +1,7 @@
 #include "PchSeekbar.h"
 #include "Direct3D.h"
+#include "Direct3D.Effects.h"
+#include "Helpers.h"
 
 namespace wave
 {
@@ -19,8 +21,12 @@ namespace wave
 				return FALSE;
 
 			// set up monospaced fonts
-			CEdit code_box = GetDlgItem(IDC_EFFECT_SOURCE);
-			CEdit error_box = GetDlgItem(IDC_EFFECT_ERRORS);
+			code_box = GetDlgItem(IDC_EFFECT_SOURCE);
+			error_box = GetDlgItem(IDC_EFFECT_ERRORS);
+
+			apply_button = GetDlgItem(IDC_EFFECT_APPLY);
+			default_button = GetDlgItem(IDC_EFFECT_DEFAULT);
+			reset_button = GetDlgItem(IDC_EFFECT_RESET);
 
 			mono_font.CreateFontW(0, 0, 0, 0,
 				FW_DONTCARE, FALSE, FALSE, FALSE,
@@ -32,13 +38,7 @@ namespace wave
 			code_box.SetFont(mono_font);
 			error_box.SetFont(mono_font);
 
-			// read up effect contents
-			pfc::string fx_data;
-			front->conf.get_configuration_string(guid_fx_string, fx_data);
-		
-			// set effect box text
-			code_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(fx_data.get_ptr()).get_ptr());
-			PostMessage(WM_USER_CLEAR_EFFECT_SELECTION);
+			on_effect_reset_click(BN_CLICKED, IDC_EFFECT_RESET, reset_button);
 
 			// compile effect
 			PostMessage(WM_COMMAND, MAKEWPARAM(IDC_EFFECT_SOURCE, EN_CHANGE), (LPARAM)(HWND)GetDlgItem(IDC_EFFECT_SOURCE));
@@ -53,6 +53,42 @@ namespace wave
 
 		void config_dialog::on_effect_apply_click(UINT code, int id, CWindow control)
 		{
+			if (auto front = fe.lock())
+			{
+				front->set_effect(fx, true);
+
+				ATL::CString source;
+				code_box.GetWindowTextW(source);
+				front->conf.set_configuration_string(guid_fx_string, pfc::stringcvt::string_utf8_from_wide(source, source.GetLength()));
+				apply_button.EnableWindow(FALSE);
+				reset_button.EnableWindow(FALSE);
+			}
+		}
+
+		void config_dialog::on_effect_default_click(UINT code, int id, CWindow control)
+		{
+			std::vector<char> fx_body;
+			get_resource_contents(fx_body, IDR_DEFAULT_FX_BODY);
+			code_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(&fx_body[0], fx_body.size()));
+			on_effect_source_change(EN_CHANGE, IDC_EFFECT_SOURCE, code_box);
+			apply_button.EnableWindow(TRUE);
+			reset_button.EnableWindow(TRUE);
+		}
+
+		void config_dialog::on_effect_reset_click(UINT code, int id, CWindow control)
+		{
+			if (auto front = fe.lock())
+			{
+				// read up effect contents
+				pfc::string fx_data;
+				front->conf.get_configuration_string(guid_fx_string, fx_data);
+		
+				// set effect box text
+				code_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(fx_data.get_ptr()).get_ptr());
+				PostMessage(WM_USER_CLEAR_EFFECT_SELECTION);
+			}
+			apply_button.EnableWindow(FALSE);
+			reset_button.EnableWindow(FALSE);
 		}
 
 		LRESULT config_dialog::on_clear_effect_selection(UINT, WPARAM, LPARAM, BOOL& handled)
@@ -63,48 +99,32 @@ namespace wave
 			return TRUE;
 		}
 
-		pfc::string flatten(pfc::list_t<effect_compiler::diagnostic_entry> const& in)
-		{
-			using karma::int_;
-			using karma::string;
-
-			typedef std::back_insert_iterator<std::string> Iter;
-			karma::rule<Iter, effect_compiler::diagnostic_entry::location()> loc = '(' << int_ << ',' << int_ << "): ";
-
-			std::vector<std::string> lines;
-			in.enumerate([&lines, &loc](effect_compiler::diagnostic_entry const& e)
-			{
-				std::string out;
-				auto sink = std::back_inserter(out);
-
-				karma::generate(sink,
-					loc << string << ": " << string << ": " << string , e);
-				lines.push_back(out);
-			});
-
-			std::string out;
-			auto sink = std::back_inserter(out);
-			karma::generate(sink, string % "\n", lines);
-			return pfc::string(out.c_str());
-		}
-
 		void config_dialog::on_effect_source_change(UINT code, int id, CEdit control)
 		{
 			CEdit error_box = GetDlgItem(IDC_EFFECT_ERRORS);
 			ATL::CString source;
 			control.GetWindowTextW(source);
 
-			service_ptr_t<effect_handle> fx;
 			pfc::list_t<effect_compiler::diagnostic_entry> output;
 			bool success = compiler->compile_fragment(fx, output, pfc::stringcvt::string_utf8_from_wide(source));
 			if (success)
+			{
 				error_box.SetWindowTextW(L"No errors.\n");
+			}
 			else
 			{
-				pfc::string errors = flatten(output);
+				pfc::string errors = simple_diagnostic_format(output);
 				error_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(errors.get_ptr()));
 			}
 			error_box.SetSelNone(FALSE);
+
+			if (auto front = fe.lock())
+			{
+				front->set_effect(fx, false);
+				bool ok = fx.is_valid();
+				apply_button.EnableWindow(ok);
+				reset_button.EnableWindow(TRUE);
+			}
 		}
 
 		void config_dialog::OnFinalMessage(HWND wnd)
