@@ -37,6 +37,11 @@ namespace wave
 			display_maximum
 		};
 
+		__declspec(selectany) bool frontend_has_configuration[] =
+		{
+			true, false, false, false
+		};
+
 		namespace strings
 		{
 			__declspec(selectany) wchar_t const* frontend[] =
