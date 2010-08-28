@@ -1,8 +1,6 @@
 Cache:
 More visible update progress for user-initiated scans.
 Summary of failure.
-Error handling/recovery in cache loading.
-Compress data?
 Change database location.
 Store data in tracks / folder.
 
@@ -16,20 +14,18 @@ Time tooltip when seeking.
 Seek on wheel.
 Zoom?
 Hollow toggle.
-WM_CAPTURECHANGED
 
 Direct2D:
-Make high-DPI look less horrible.
 
 Direct3D:
-Several effects.
-Error handling in effects.
-Load textures from annotations.
-Fallback no-op effect in resource.
-Fallback to A8R8G8B8 if A2R10G10B10 fails.
 
 DUI:
 
 CUI:
-Loses duration on layout change.
-Multi-instance unsafe.
+
+New:
+channels displayed on stop
+blank when changing UI layout
+change frontend settings crashing
+change frontend while stopped
+futures crashing
