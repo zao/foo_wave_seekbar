@@ -101,6 +101,7 @@ namespace wave
 		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
 
 	private:
+		void initialize_frontend();
 		void test_playback_order(t_size order);
 		void apply_settings();
 

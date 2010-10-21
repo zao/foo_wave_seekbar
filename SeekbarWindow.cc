@@ -309,6 +309,68 @@ namespace wave
 		cb.set_channel_infos(infos);
 	}
 
+	void seekbar_window::initialize_frontend()
+	{		
+		scoped_lock sl(fe->mutex);
+		DWORD present_interval = 10;
+		try
+		{
+			OSVERSIONINFOEX osv = {};
+			osv.dwOSVersionInfoSize = sizeof(osv);
+			GetVersionEx((OSVERSIONINFO*)&osv);
+			bool vista_least_sp1 = (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0 && osv.wServicePackMajor >= 1);
+			bool seven_and_up = (osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1) || (osv.dwMajorVersion >= 7);
+
+			apply_settings();
+				
+			switch (settings.active_frontend_kind)
+			{
+#if 0
+			case persistent_settings::frontend_direct3d10:
+				console::info("Seekbar: taking Direct3D10 path.");
+				frontend.reset(new direct3d10_frontend(*this, client_rect.Size(), *frontend_callback));
+				break;
+#endif
+			case config::frontend_direct3d9:
+				console::info("Seekbar: taking Direct3D9 path.");
+				fe->frontend.reset(new direct3d9::frontend_impl(*this, client_rect.Size(), *fe->callback, *fe->conf));
+				break;
+			case config::frontend_direct2d1:
+				console::info("Seekbar: taking Direct2D1 path.");
+				fe->frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *fe->callback));
+				present_interval = 25;
+				break;
+			case config::frontend_gdi:
+				console::info("Seekbar: taking GDI path.");
+				fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
+				present_interval = 50;
+				break;
+			}
+			console::info("Seekbar: Frontend initialized.");
+			initializing_graphics = true;
+		}
+		catch (std::exception& e)
+		{
+			//TODO: Show fall-back help frontend
+			initializing_graphics = true;
+			console::complain("Seekbar: frontend creation failed", e);
+			settings.active_frontend_kind = config::frontend_gdi;
+
+			console::info("Seekbar: taking GDI path.");
+			fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
+			present_interval = 50;
+		}
+			
+		try_get_data();
+
+		fe->frontend->on_state_changed((visual_frontend::state)~0);
+
+		if (fe->frontend)
+		{
+			repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
+		}
+	}
+
 	void seekbar_window::on_wm_paint(HDC dc)
 	{
 		GetClientRect(client_rect);
@@ -320,64 +382,7 @@ namespace wave
 
 		if (!fe->frontend && !initializing_graphics)
 		{
-			scoped_lock sl(fe->mutex);
-			DWORD present_interval = 10;
-			try
-			{
-				OSVERSIONINFOEX osv = {};
-				osv.dwOSVersionInfoSize = sizeof(osv);
-				GetVersionEx((OSVERSIONINFO*)&osv);
-				bool vista_least_sp1 = (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0 && osv.wServicePackMajor >= 1);
-				bool seven_and_up = (osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1) || (osv.dwMajorVersion >= 7);
-
-				apply_settings();
-				
-				switch (settings.active_frontend_kind)
-				{
-	#if 0
-				case persistent_settings::frontend_direct3d10:
-					console::info("Seekbar: taking Direct3D10 path.");
-					frontend.reset(new direct3d10_frontend(*this, client_rect.Size(), *frontend_callback));
-					break;
-	#endif
-				case config::frontend_direct3d9:
-					console::info("Seekbar: taking Direct3D9 path.");
-					fe->frontend.reset(new direct3d9::frontend_impl(*this, client_rect.Size(), *fe->callback, *fe->conf));
-					break;
-				case config::frontend_direct2d1:
-					console::info("Seekbar: taking Direct2D1 path.");
-					fe->frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *fe->callback));
-					present_interval = 25;
-					break;
-				case config::frontend_gdi:
-					console::info("Seekbar: taking GDI path.");
-					fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
-					present_interval = 50;
-					break;
-				}
-				console::info("Seekbar: Frontend initialized.");
-				initializing_graphics = true;
-			}
-			catch (std::exception& e)
-			{
-				//TODO: Show fall-back help frontend
-				initializing_graphics = true;
-				console::complain("Seekbar: frontend creation failed", e);
-				settings.active_frontend_kind = config::frontend_gdi;
-
-				console::info("Seekbar: taking GDI path.");
-				fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
-				present_interval = 50;
-			}
-			
-			try_get_data();
-
-			fe->frontend->on_state_changed((visual_frontend::state)~0);
-
-			if (fe->frontend)
-			{
-				repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
-			}
+			initialize_frontend();
 		}
 
 		if (fe->frontend)
