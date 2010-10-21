@@ -166,9 +166,7 @@ END
 // RCDATA
 //
 
-
 IDR_DEFAULT_FX_BODY     RCDATA                  "seekbar_body.fx"
-
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
