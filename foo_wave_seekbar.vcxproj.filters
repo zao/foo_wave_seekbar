@@ -92,9 +92,6 @@
     <ClCompile Include="Direct2D1.cc">
       <Filter>Seekbar\Frontends\Direct2D</Filter>
     </ClCompile>
-    <ClCompile Include="Direct3D10.cc">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClCompile>
     <ClCompile Include="GdiFallback.cc">
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClCompile>

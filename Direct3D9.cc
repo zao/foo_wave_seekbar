@@ -166,8 +166,7 @@ namespace wave
 
 				HRESULT hr = S_OK;
 				hr = dev->BeginScene();
-				effect_params.set(parameters::waveform_data,
-					channel_textures[ch]);
+				effect_params.set(parameters::waveform_data, channel_textures[ch]);
 
 				CComPtr<ID3DXEffect> fx = select_effect();
 				effect_params.apply_to(fx);

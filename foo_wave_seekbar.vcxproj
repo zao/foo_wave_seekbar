@@ -108,7 +108,6 @@
     <ClCompile Include="SeekbarWindow.cc" />
     <ClCompile Include="SeekbarWindow.ConfigDialog.cc" />
     <ClCompile Include="Direct2D1.cc" />
-    <ClCompile Include="Direct3D10.cc" />
     <ClCompile Include="Direct3D9.cc" />
     <ClCompile Include="SeekbarCui.cc" />
     <ClCompile Include="SeekbarDui.cc" />
