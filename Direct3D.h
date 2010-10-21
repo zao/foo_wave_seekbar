@@ -50,6 +50,7 @@ namespace wave
 			virtual void present();
 			virtual void on_state_changed(state s);
 			virtual void show_configuration(CWindow parent);
+			virtual void close_configuration();
 
 		private: // Update
 			void update_effect_colors();

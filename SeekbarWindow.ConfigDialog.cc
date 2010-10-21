@@ -106,6 +106,7 @@ namespace wave
 			return;
 
 		// close frontend config window
+		sw.fe->frontend->close_configuration();
 
 		if (fe != sw.settings.active_frontend_kind)
 		{

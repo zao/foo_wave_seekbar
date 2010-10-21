@@ -137,6 +137,7 @@ namespace wave
 		};
 		virtual void on_state_changed(state s) = 0;
 		virtual void show_configuration(CWindow parent) { }
+		virtual void close_configuration() { }
 	};
 
 	struct visual_frontend_callback

@@ -252,6 +252,15 @@ namespace wave
 			}
 		}
 
+		void frontend_impl::close_configuration()
+		{
+			if (config)
+			{
+				config->DestroyWindow();
+				config.reset();
+			}
+		}
+
 		void frontend_impl::get_effect_compiler(service_ptr_t<effect_compiler>& out)
 		{
 			out = new service_impl_t<effect_compiler_impl>(dev);
