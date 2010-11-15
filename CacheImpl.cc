@@ -142,7 +142,19 @@ namespace wave
 			}
 			io.post([this, request, response]()
 			{
+				static_api_ptr_t<metadb> mdb;
+				metadb_handle_ptr handle;
+				mdb->handle_create(handle, request->location);
+
 				response->waveform = process_file(request->location, request->user_requested);
+
+				in_main_thread([handle]
+				{
+					static_api_ptr_t<metadb_io> io;
+					// for notification to users of titleformatting hooks
+					io->dispatch_refresh(handle);
+				});
+
 				request->completion_handler(response);
 			});
 		}
@@ -189,6 +201,15 @@ namespace wave
 				locations.enumerate(f);
 			});
 		}
+	}
+
+	bool cache_impl::has_waveform(playable_location const& loc)
+	{
+		if (store)
+		{
+			return store->has(loc);
+		}
+		return false;
 	}
 
 	void cache_initquit::on_init()

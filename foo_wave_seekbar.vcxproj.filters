@@ -74,6 +74,9 @@
     <ClCompile Include="WaveformImpl.cc">
       <Filter>Cache</Filter>
     </ClCompile>
+    <ClCompile Include="MetaHooks.cc">
+      <Filter>Cache</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h">

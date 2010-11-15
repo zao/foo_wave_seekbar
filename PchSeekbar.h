@@ -69,9 +69,11 @@ using boost::noncopyable;
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/make_shared.hpp>
 using boost::scoped_ptr;
 using boost::shared_ptr;
 using boost::weak_ptr;
+using boost::make_shared;
 
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>

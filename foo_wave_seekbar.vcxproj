@@ -97,6 +97,7 @@
     <ClCompile Include="BackingStore.cc" />
     <ClCompile Include="GdiFallback.cc" />
     <ClCompile Include="MainSeekbar.cc" />
+    <ClCompile Include="MetaHooks.cc" />
     <ClCompile Include="PchSeekbar.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

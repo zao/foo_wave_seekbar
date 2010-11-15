@@ -32,6 +32,16 @@ namespace wave {
 		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(cache)
 	};
 
+	struct cache_v2 : cache
+	{
+		virtual bool has_waveform(playable_location const& loc) abstract;
+
+		FB2K_MAKE_SERVICE_INTERFACE(cache_v2, cache)
+	};
+
+	// {195F8048-1CF9-467A-AC72-5811E0636D77}
+	__declspec(selectany) const GUID cache_v2::class_guid = 
+	{ 0x195f8048, 0x1cf9, 0x467a, { 0xac, 0x72, 0x58, 0x11, 0xe0, 0x63, 0x6d, 0x77 } };
 
 	// {5A1DFE0F-B6B8-4891-9798-16230D8C4D21}
 	__declspec(selectany) const GUID cache::class_guid = 
