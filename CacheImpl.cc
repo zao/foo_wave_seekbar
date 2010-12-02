@@ -1,6 +1,7 @@
 #include "PchSeekbar.h"
 #include "CacheImpl.h"
 #include "BackingStore.h"
+#include "Helpers.h"
 #include <boost/format.hpp>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
