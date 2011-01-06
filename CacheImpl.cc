@@ -11,7 +11,12 @@ const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d
 static const GUID guid_max_concurrent_jobs = 
 { 0x1e01e2f7, 0x79ce, 0x4f3f, { 0x95, 0xfe, 0x86, 0x98, 0x62, 0x36, 0x67, 0xc } };
 
+// {44AA5DAB-F35E-4E21-8033-80087B2550FD}
+static const GUID guid_always_rescan_user = 
+{ 0x44aa5dab, 0xf35e, 0x4e21, { 0x80, 0x33, 0x80, 0x8, 0x7b, 0x25, 0x50, 0xfd } };
+
 static advconfig_integer_factory g_max_concurrent_jobs("Number of concurrent scanning threads (capped by virtual processor count)", guid_max_concurrent_jobs, guid_seekbar_branch, 0.0, 3, 1, 16);
+static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if requested by user", guid_always_rescan_user, guid_seekbar_branch, 0.0, false);
 
 namespace wave
 {
@@ -127,6 +132,7 @@ namespace wave
 		}
 
 		shared_ptr<get_response> response(new get_response);
+		bool force_rescan = g_always_rescan_user.get();
 		if (!request->user_requested && store && store->get(response->waveform, request->location))
 		{
 			request->completion_handler(response);
