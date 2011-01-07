@@ -223,6 +223,14 @@ namespace wave
 		return false;
 	}
 
+	void cache_impl::remove_waveform(playable_location const& loc)
+	{
+		if (store)
+		{
+			store->remove(loc);
+		}
+	}
+
 	void cache_initquit::on_init()
 	{}
 

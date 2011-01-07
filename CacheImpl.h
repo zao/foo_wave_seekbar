@@ -32,6 +32,7 @@ namespace wave
 		void flush() override;
 
 		bool has_waveform(playable_location const& loc) override;
+		void remove_waveform(playable_location const& loc) override;
 
 	private:
 		void open_store();

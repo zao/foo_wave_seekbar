@@ -90,6 +90,15 @@ namespace wave
 		return false;
 	}
 
+	void backing_store::remove(playable_location const& file)
+	{
+		auto stmt = prepare_statement(
+			"DELETE FROM file WHERE file.location = ? AND file.subsong = ?");
+		sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
+		sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
+		sqlite3_step(stmt.get());
+	}
+
 	bool backing_store::get(service_ptr_t<waveform>& out, playable_location const& file)
 	{
 		shared_ptr<sqlite3_stmt> stmt = prepare_statement(

@@ -35,6 +35,7 @@ namespace wave {
 	struct cache_v2 : cache
 	{
 		virtual bool has_waveform(playable_location const& loc) abstract;
+		virtual void remove_waveform(playable_location const& loc) abstract;
 
 		FB2K_MAKE_SERVICE_INTERFACE(cache_v2, cache)
 	};
