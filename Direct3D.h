@@ -1,100 +1,183 @@
 #pragma once
 #include "VisualFrontend.h"
 #include <map>
+#include "resource.h"
+#include <boost/fusion/include/adapted.hpp>
 
 namespace wave
 {
 	bool has_direct3d9();
 
-	struct direct3d9_frontend : visual_frontend
+	namespace direct3d9
 	{
-		direct3d9_frontend(HWND wnd, CSize client_size, visual_frontend_callback& callback);
-		virtual void clear();
-		virtual void draw();
-		virtual void present();
-		virtual void on_state_changed(state s);
+		struct config_dialog;
+		struct effect_compiler;
+		struct effect_handle;
 
-	private:
-		void update_effect_colors();
-		void update_effect_cursor();
-		void update_replaygain();
-		void update_data();
-		void update_size();
-		void update_orientation();
-		void update_shade_played();
+		extern const GUID guid_fx_string;
 
-		CComPtr<IDirect3D9> d3d;
-		CComPtr<IDirect3DDevice9> dev;
+		namespace parameters
+		{
+			extern pfc::string const background_color, foreground_color, highlight_color, selection_color,
+				cursor_position, cursor_visible,
+				seek_position, seeking,
+				viewport_size, replaygain,
+				orientation, shade_played,
+				waveform_data;
+		};
 
-		std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
-		std::deque<CComPtr<IDirect3DTexture9>> annotation_textures;
-		std::vector<unsigned> channel_numbers;
-		std::vector<channel_info> channel_order;
-		CComPtr<ID3DXEffect> fx;
-		CComPtr<IDirect3DVertexBuffer9> vb;
-		CComPtr<IDirect3DVertexDeclaration9> decl;
+		struct effect_parameters
+		{
+			typedef boost::variant<float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9*> attribute;
+			pfc::map_t<pfc::string, attribute> attributes;
 
-		D3DXHANDLE background_color_var, foreground_color_var, highlight_color_var, selection_color_var;
-		D3DXHANDLE cursor_position_var, cursor_visible_var;
-		D3DXHANDLE seek_position_var, seeking_var;
-		D3DXHANDLE viewport_size_var;
-		D3DXHANDLE replaygain_var;
-		D3DXHANDLE orientation_var;
-		D3DXHANDLE shade_played_var;
+			template <typename T>
+			void set(pfc::string what, T const& t)
+			{
+				attributes.set(what, t);
+			}
 
-		D3DPRESENT_PARAMETERS pp;
+			void apply_to(CComPtr<ID3DXEffect> fx);
+		};
 
-		visual_frontend_callback& callback;
+		struct frontend_impl : visual_frontend
+		{
+			friend config_dialog;
 
-	private:
-		CComPtr<IDirect3DTexture9> create_waveform_texture();
-		void create_vertex_resources();
-		void release_vertex_resources();
-		void create_default_resources();
-		void release_default_resources();
+			frontend_impl(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
+			virtual void clear();
+			virtual void draw();
+			virtual void present();
+			virtual void on_state_changed(state s);
+			virtual void show_configuration(CWindow parent);
+			virtual void close_configuration();
 
-		bool device_still_lost();
+		private: // Update
+			void update_effect_colors();
+			void update_effect_cursor();
+			void update_replaygain();
+			void update_data();
+			void update_size();
+			void update_orientation();
+			void update_shade_played();
 
-		seekbar_state state_copy;
+		private: // Misc state
+			CComPtr<IDirect3D9> d3d;
+			CComPtr<IDirect3DDevice9> dev;
 
-		bool device_lost;
-		UINT mip_count;
-		D3DFORMAT texture_format;
-		bool floating_point_texture;
-	};
+			std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
+			std::vector<unsigned> channel_numbers;
+			std::vector<channel_info> channel_order;
 
-#if 0
-	struct direct3d10 : visual_frontend
-	{
+			std::stack<service_ptr_t<effect_handle>> effect_stack;
+			service_ptr_t<effect_handle> effect_override;
 
-		direct3d10(HWND wnd, CSize client_size);
-		virtual void clear();
-		virtual void draw();
-		virtual void present();
-		virtual void resize(CSize size);
-		virtual void update_effect_colors(window_state& state);
-		virtual void update_effect_cursor(window_state& state);
-		virtual void update_texture_data(const pfc::list_base_const_t<float>& mini, const pfc::list_base_const_t<float>& maxi, const pfc::list_base_const_t<float>& rms);
-		virtual void update_replaygain(window_state& state);
+			CComPtr<IDirect3DVertexBuffer9> vb;
+			CComPtr<IDirect3DVertexDeclaration9> decl;
 
-		CComPtr<ID3D10Device> dev;
-		CComPtr<IDXGISwapChain> swap_chain;
-		CComPtr<ID3D10RenderTargetView> render_target_view;
+			effect_parameters effect_params;
 
-		CComPtr<ID3D10InputLayout> input_layout;
-		CComPtr<ID3D10Texture1D> tex;
-		CComPtr<ID3D10Texture1D> stage_tex;
-		CComPtr<ID3D10ShaderResourceView> tex_srv;
+			CComPtr<ID3DXEffect> select_effect();
 
-		CComPtr<ID3D10Effect> fx;
-		CComPtr<ID3D10Buffer> vb;
+			D3DPRESENT_PARAMETERS pp;
 
-		ID3D10EffectVectorVariable* background_color_var, * highlight_color_var, * selection_color_var, * text_color_var;
-		ID3D10EffectScalarVariable* cursor_position_var, * cursor_visible_var;
+		private: // Host references
+			visual_frontend_callback& callback;
+			visual_frontend_config& conf;
 
-		UINT mip_count;
-	};
+		private: // Resources
+			CComPtr<IDirect3DTexture9> create_waveform_texture();
+			void create_vertex_resources();
+			void release_vertex_resources();
+			void create_default_resources();
+			void release_default_resources();
 
-	typedef visual_frontend_factory_impl<direct3d10_frontend> direct3d10_frontend_factory;
-#endif
+			bool device_still_lost();
+
+			seekbar_state state_copy;
+
+			bool device_lost;
+			UINT mip_count;
+			D3DFORMAT texture_format;
+			bool floating_point_texture;
+
+		private: // Configuration
+			scoped_ptr<config_dialog> config;
+
+			void get_effect_compiler(service_ptr_t<effect_compiler>& out);
+			void set_effect(service_ptr_t<effect_handle> effect, bool permanent);
+		};
+
+		struct config_dialog : CDialogImpl<config_dialog>
+		{
+			enum { IDD = IDD_CONFIG_D3D, WM_USER_CLEAR_EFFECT_SELECTION = WM_USER + 0x1 };
+			config_dialog(weak_ptr<frontend_impl> fe);
+
+			BEGIN_MSG_MAP_EX(config_dialog)
+				MSG_WM_INITDIALOG(on_wm_init_dialog)
+				MSG_WM_CLOSE(on_wm_close)
+				COMMAND_HANDLER_EX(IDC_EFFECT_APPLY, BN_CLICKED, on_effect_apply_click)
+				COMMAND_HANDLER_EX(IDC_EFFECT_DEFAULT, BN_CLICKED, on_effect_default_click)
+				COMMAND_HANDLER_EX(IDC_EFFECT_RESET, BN_CLICKED, on_effect_reset_click)
+				MESSAGE_HANDLER(WM_USER_CLEAR_EFFECT_SELECTION, on_clear_effect_selection)
+				COMMAND_HANDLER_EX(IDC_EFFECT_SOURCE, EN_CHANGE, on_effect_source_change)
+			END_MSG_MAP()
+
+		private:
+			LRESULT on_wm_init_dialog(CWindow focus, LPARAM lparam);
+			void on_wm_close();
+			void on_effect_apply_click(UINT, int, CWindow);
+			void on_effect_default_click(UINT, int, CWindow);
+			void on_effect_reset_click(UINT, int, CWindow);
+			LRESULT on_clear_effect_selection(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+			void on_effect_source_change(UINT, int, CEdit);
+
+			virtual void OnFinalMessage(HWND);
+
+			weak_ptr<frontend_impl> fe;
+			service_ptr_t<effect_compiler> compiler;
+			CFont mono_font;
+			CEdit code_box, error_box;
+			CButton apply_button, default_button, reset_button;
+			service_ptr_t<effect_handle> fx;
+		};
+
+		struct NOVTABLE effect_compiler : service_base
+		{
+			struct diagnostic_entry
+			{
+				struct location
+				{
+					int row, col;
+				};
+				location loc;
+				std::string type;
+				std::string code;
+				std::string message;
+			};
+
+			virtual ~effect_compiler() {}
+			virtual bool compile_fragment(service_ptr_t<effect_handle>& effect, pfc::list_t<diagnostic_entry>& output, pfc::string const& data) = 0;
+		};
+
+		struct NOVTABLE effect_handle : service_base
+		{
+			virtual ~effect_handle() {}
+			virtual CComPtr<ID3DXEffect> get_effect() const = 0;
+		};
+	}
 }
+
+BOOST_FUSION_ADAPT_STRUCT(
+	wave::direct3d9::effect_compiler::diagnostic_entry::location,
+	(int, row)
+	(int, col)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+	wave::direct3d9::effect_compiler::diagnostic_entry,
+	(wave::direct3d9::effect_compiler::diagnostic_entry::location, loc)
+	(std::string, type)
+	(std::string, code)
+	(std::string, message)
+)

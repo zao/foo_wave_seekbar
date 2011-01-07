@@ -84,6 +84,7 @@ namespace wave
 			append(config::strings::channel_names[pair.first], pair.first, pair.second);
 		}
 		initializing = false;
+		
 		return TRUE;
 	}
 
@@ -94,14 +95,25 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::on_frontend_select(UINT code, int id, CWindow control)
 	{
-		if (initializing)
-			return;
 		CComboBox cb = control;
 		config::frontend fe = (config::frontend)cb.GetItemData(cb.GetCurSel());
+
+		CButton config_button = GetDlgItem(IDC_CONFIGURE);
+		bool has_conf = config::frontend_has_configuration[fe];
+		config_button.EnableWindow(has_conf);
+
+		if (initializing)
+			return;
+
+		// close frontend config window
+		if (sw.fe->frontend)
+			sw.fe->frontend->close_configuration();
+
 		if (fe != sw.settings.active_frontend_kind)
 		{
 			sw.set_frontend(fe);
 		}
+
 	}
 
 	void seekbar_window::configuration_dialog::on_no_border_click(UINT code, int id, CWindow control)
@@ -299,6 +311,14 @@ namespace wave
 		sw.swap_channel_order(ch1, ch2);
 		swap_channels(idx, idx + 1);
 		channels.SelectItem(idx + 1);
+	}
+
+	void seekbar_window::configuration_dialog::on_configure_click(UINT code, int id, CWindow control)
+	{
+		if (sw.fe && sw.fe->frontend)
+		{
+			sw.fe->frontend->show_configuration(sw);
+		}
 	}
 
 	seekbar_window::configuration_dialog::configuration_dialog(seekbar_window& sw) 

@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "PersistentSettings.h"
 #include "FrontendCallbackImpl.h"
+#include "FrontendConfigImpl.h"
 #include "Helpers.h"
 #include "SeekCallback.h"
 
@@ -19,7 +20,8 @@ namespace wave
 		}
 		boost::recursive_mutex mutex;
 		scoped_ptr<frontend_callback_impl> callback;
-		scoped_ptr<visual_frontend> frontend;
+		scoped_ptr<frontend_config_impl> conf;
+		shared_ptr<visual_frontend> frontend;
 		uint32_t auto_get_serial;
 	};
 
@@ -99,6 +101,7 @@ namespace wave
 		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
 
 	private:
+		void initialize_frontend();
 		void test_playback_order(t_size order);
 		void apply_settings();
 
@@ -117,6 +120,7 @@ namespace wave
 		void set_channel_enabled(int channel, bool);
 		void swap_channel_order(int ch1, int ch2);
 
+		// Config dialog
 		struct configuration_dialog : ATL::CDialogImpl<configuration_dialog>
 		{
 			enum { IDD = IDD_CONFIG };
@@ -146,6 +150,7 @@ namespace wave
 				NOTIFY_HANDLER_EX(IDC_CHANNELS, NM_CLICK, on_channel_click)
 				COMMAND_HANDLER_EX(IDC_CHANNEL_UP, BN_CLICKED, on_channel_up)
 				COMMAND_HANDLER_EX(IDC_CHANNEL_DOWN, BN_CLICKED, on_channel_down)
+				COMMAND_HANDLER_EX(IDC_CONFIGURE, BN_CLICKED, on_configure_click)
 			END_MSG_MAP()
 
 #define HANDLER_EX_IMPL(Name) void Name(UINT, int, CWindow)
@@ -163,7 +168,8 @@ namespace wave
 			LRESULT on_channel_changed(NMHDR* nm);
 			LRESULT on_channel_click(NMHDR* nm);
 			HANDLER_EX_IMPL(on_channel_up);
-			HANDLER_EX_IMPL(on_channel_down);			
+			HANDLER_EX_IMPL(on_channel_down);	
+			HANDLER_EX_IMPL(on_configure_click);
 
 			virtual void OnFinalMessage(HWND);
 
@@ -197,10 +203,6 @@ namespace wave
 				int data;
 			};
 
-#if LISTBOX_DIEDIEDIE
-			void synchronize_buttons();
-			void transfer_selection(CListBox from, CListBox to);
-#endif
 			void swap_channels(int i1, int i2);
 			channel_info get_item(int, CListBox&);
 			void add_item(channel_info const&, CListBox&);

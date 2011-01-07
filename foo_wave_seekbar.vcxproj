@@ -62,7 +62,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>d3d9.dll;d3dx9_42.dll;dxgi.dll;d3d10.dll;d3dx10_42.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>d3d9.dll;d3dx9_43.dll;dxgi.dll;d3d10.dll;d3dx10_43.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -85,7 +85,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>d3d9.dll;d3dx9_42.dll;dxgi.dll;d3d10.dll;d3dx10_42.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>d3d9.dll;d3dx9_43.dll;dxgi.dll;d3d10.dll;d3dx10_43.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -95,6 +95,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BackingStore.cc" />
+    <ClCompile Include="Direct3D9.ConfigDialog.cc" />
+    <ClCompile Include="Direct3D9.Effects.cc" />
+    <ClCompile Include="Direct3D9.Resources.cc" />
+    <ClCompile Include="Direct3D9.Update.cc" />
     <ClCompile Include="GdiFallback.cc" />
     <ClCompile Include="MainSeekbar.cc" />
     <ClCompile Include="MetaHooks.cc" />
@@ -105,7 +109,6 @@
     <ClCompile Include="SeekbarWindow.cc" />
     <ClCompile Include="SeekbarWindow.ConfigDialog.cc" />
     <ClCompile Include="Direct2D1.cc" />
-    <ClCompile Include="Direct3D10.cc" />
     <ClCompile Include="Direct3D9.cc" />
     <ClCompile Include="SeekbarCui.cc" />
     <ClCompile Include="SeekbarDui.cc" />
@@ -125,12 +128,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
+    <ClInclude Include="Direct3D.Effects.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
+    <ClInclude Include="FrontendConfigImpl.h" />
     <ClInclude Include="GdiFallback.h" />
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="Job.h" />
     <ClInclude Include="PchSeekbar.h" />
     <ClInclude Include="PersistentSettings.h" />
+    <ClInclude Include="PfcSpirit.h" />
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />
     <ClInclude Include="Direct2D.h" />
@@ -146,21 +152,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Waveform.h" />
     <ClInclude Include="WaveformImpl.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="seekbar.fx">
-      <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Deploying "%(Identity)"...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir D:\apps\foobar2000devel\effects 2&gt;NUL
-copy %(FullPath) D:\apps\foobar2000devel\effects\
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\apps\foobar2000devel\effects\%(Identity);%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Deploying "%(Identity)"...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir D:\apps\foobar2000devel\effects 2&gt;NUL
-copy %(FullPath) D:\apps\foobar2000devel\effects\
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\apps\foobar2000devel\effects\%(Identity);%(Outputs)</Outputs>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc" />
@@ -190,6 +181,11 @@ copy %(FullPath) D:\apps\foobar2000devel\effects\
       <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="seekbar_body.fx" />
+    <None Include="seekbar_footer.fx" />
+    <None Include="seekbar_header.fx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

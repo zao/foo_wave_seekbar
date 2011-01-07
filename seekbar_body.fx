@@ -1,8 +1,8 @@
-Texture1D tex : WAVEFORMDATA;
+texture tex : WAVEFORMDATA;
 
 sampler sTex = sampler_state
 {
-	Texture = <tex>;
+	Texture = (tex);
 	MipFilter = LINEAR;
 	MinFilter = LINEAR;
 	MagFilter = LINEAR;
@@ -105,7 +105,7 @@ float4 played( float pos, float2 tc, float4 fg, float4 bg, float alpha)
 float4 evaluate( float2 tc )
 {
 	// alpha 1 indicates biased texture
-	float4 minmaxrms = tex.Sample(sTex, tc.x);
+	float4 minmaxrms = tex1D(sTex, tc.x);
 	minmaxrms.rgb -= 0.5 * minmaxrms.a;
 	minmaxrms.rgb *= 1.0 + minmaxrms.a;
 	float below = tc.y - minmaxrms.r;

@@ -17,6 +17,18 @@
     <Filter Include="Seekbar\Frontends">
       <UniqueIdentifier>{54dd4e5f-190f-4cea-99d0-7bda68e7834e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Seekbar\Resources">
+      <UniqueIdentifier>{6a680fc1-a5cb-4223-9a73-754c8d0c9d61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Seekbar\Frontends\Direct2D">
+      <UniqueIdentifier>{b2ffa99e-67d1-484c-a27d-07cbe667e423}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Seekbar\Frontends\Direct3D">
+      <UniqueIdentifier>{e34abdab-1aeb-4123-8569-ddbe3c58d0b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Seekbar\Frontends\GDI">
+      <UniqueIdentifier>{7f9faa07-f528-4c6c-a34e-c626d5a97717}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CacheImpl.cc">
@@ -24,18 +36,6 @@
     </ClCompile>
     <ClCompile Include="CacheImpl.ProcessFile.cc">
       <Filter>Cache</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct2D1.cc">
-      <Filter>Seekbar\Frontends</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct3D10.cc">
-      <Filter>Seekbar\Frontends</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct3D9.cc">
-      <Filter>Seekbar\Frontends</Filter>
-    </ClCompile>
-    <ClCompile Include="GdiFallback.cc">
-      <Filter>Seekbar\Frontends</Filter>
     </ClCompile>
     <ClCompile Include="MainCache.cc">
       <Filter>Cache</Filter>
@@ -74,8 +74,26 @@
     <ClCompile Include="WaveformImpl.cc">
       <Filter>Cache</Filter>
     </ClCompile>
-    <ClCompile Include="MetaHooks.cc">
-      <Filter>Cache</Filter>
+    <ClCompile Include="Direct3D9.cc">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D9.Update.cc">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D9.ConfigDialog.cc">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D9.Effects.cc">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D9.Resources.cc">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct2D1.cc">
+      <Filter>Seekbar\Frontends\Direct2D</Filter>
+    </ClCompile>
+    <ClCompile Include="GdiFallback.cc">
+      <Filter>Seekbar\Frontends\GDI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -85,17 +103,8 @@
     <ClInclude Include="CacheImpl.h">
       <Filter>Cache</Filter>
     </ClInclude>
-    <ClInclude Include="Direct2D.h">
-      <Filter>Seekbar\Frontends</Filter>
-    </ClInclude>
-    <ClInclude Include="Direct3D.h">
-      <Filter>Seekbar\Frontends</Filter>
-    </ClInclude>
     <ClInclude Include="FrontendCallbackImpl.h">
       <Filter>Seekbar</Filter>
-    </ClInclude>
-    <ClInclude Include="GdiFallback.h">
-      <Filter>Seekbar\Frontends</Filter>
     </ClInclude>
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="PchSeekbar.h" />
@@ -105,7 +114,6 @@
     <ClInclude Include="ProcessingContext.h">
       <Filter>Cache</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h" />
     <ClInclude Include="SeekbarCui.h">
       <Filter>Seekbar\Boobs</Filter>
     </ClInclude>
@@ -139,13 +147,40 @@
     <ClInclude Include="SeekCallback.h">
       <Filter>Seekbar</Filter>
     </ClInclude>
+    <ClInclude Include="FrontendConfigImpl.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Seekbar\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct2D.h">
+      <Filter>Seekbar\Frontends\Direct2D</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D.h">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClInclude>
+    <ClInclude Include="GdiFallback.h">
+      <Filter>Seekbar\Frontends\GDI</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D.Effects.h">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClInclude>
+    <ClInclude Include="PfcSpirit.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="foo_wave_seekbar.rc" />
+    <ResourceCompile Include="foo_wave_seekbar.rc">
+      <Filter>Seekbar\Resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="seekbar.fx">
+    <None Include="seekbar_body.fx">
       <Filter>Seekbar\Effect Files</Filter>
-    </CustomBuild>
+    </None>
+    <None Include="seekbar_footer.fx">
+      <Filter>Seekbar\Effect Files</Filter>
+    </None>
+    <None Include="seekbar_header.fx">
+      <Filter>Seekbar\Effect Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

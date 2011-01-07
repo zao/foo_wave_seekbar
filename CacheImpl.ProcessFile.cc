@@ -4,6 +4,8 @@
 #include "WaveformImpl.h"
 #include "Helpers.h"
 
+#include <boost/regex.hpp>
+
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
 static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
 

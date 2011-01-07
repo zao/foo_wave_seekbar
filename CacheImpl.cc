@@ -3,6 +3,7 @@
 #include "BackingStore.h"
 #include "Helpers.h"
 #include <boost/format.hpp>
+#include "Helpers.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
@@ -110,10 +111,13 @@ namespace wave
 
 		size_t n_cores = boost::thread::hardware_concurrency();
 		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
+		size_t n = std::min(n_cores, n_cap);
 
-		for (size_t i = 0; i < std::min(n_cap, n_cores); ++i) {
-			work_threads.create_thread(with_idle_priority([this]()
+		for (size_t i = 0; i < n; ++i) {
+			work_threads.create_thread(with_idle_priority([this, i, n]()
 			{
+				std::string name = (boost::format("wave-processing-%d/%d") % (i+1) % n).str();
+				::SetThreadName(-1, name.c_str());
 				this->io.run();
 			}));
 			if (!i)

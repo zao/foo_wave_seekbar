@@ -41,7 +41,6 @@ namespace wave
 		virtual bool get_downmix_display() const { return downmix_display; }
 		virtual void get_channel_infos(pfc::list_t<channel_info>& out) const { out = channel_infos; }
 
-
 		// Setters
 		virtual void set_track_length(double v) { track_length = v; }
 		virtual void set_playback_position(double v) { playback_position = v; }
