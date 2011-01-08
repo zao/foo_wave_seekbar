@@ -768,6 +768,18 @@ namespace wave
 				fe->frontend->on_state_changed(visual_frontend::state_downmix_display);
 		}
 	}
+	
+	void seekbar_window::set_flip_display(bool flip)
+	{
+		scoped_lock sl(fe->mutex);
+		settings.flip_display = flip;
+		if (fe->callback->get_flip_display() != flip)
+		{
+			fe->callback->set_flip_display(flip);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_flip_display);
+		}
+	}
 
 	void seekbar_window::set_channel_enabled(int ch, bool state)
 	{

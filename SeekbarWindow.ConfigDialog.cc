@@ -230,6 +230,13 @@ namespace wave
 			return;
 		sw.set_downmix_display(!!IsDlgButtonChecked(id));
 	}
+	
+	void seekbar_window::configuration_dialog::on_flip_click(UINT code, int id, CWindow control)
+	{
+		if (initializing)
+			return;
+		sw.set_flip_display(!!IsDlgButtonChecked(id));
+	}
 
 	LRESULT seekbar_window::configuration_dialog::on_channel_changed(NMHDR* hdr)
 	{
