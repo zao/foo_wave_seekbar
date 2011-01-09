@@ -228,6 +228,8 @@ namespace wave
 				update_data();
 			if (s & state_orientation)
 				update_orientation();
+			if (s & state_flip_display)
+				update_flipped();
 			if (s & state_shade_played)
 				update_shade_played();
 		}
@@ -295,6 +297,7 @@ namespace wave
 				replaygain = "REPLAYGAIN",
 
 				orientation = "ORIENTATION",
+				flipped = "FLIPPED",
 				shade_played = "SHADEPLAYED",
 			
 				waveform_data = "WAVEFORMDATA";
