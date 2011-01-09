@@ -61,10 +61,10 @@ namespace wave
 			ar & BOOST_SERIALIZATION_NVP(override_colors);
 			ar & BOOST_SERIALIZATION_NVP(shade_played);
 			ar & BOOST_SERIALIZATION_NVP(display_mode);
-			ar & BOOST_SERIALIZATION_NVP(flip_display);
 			ar & BOOST_SERIALIZATION_NVP(downmix_display);
 			ar & BOOST_SERIALIZATION_NVP(channel_order);
 			ar & BOOST_SERIALIZATION_NVP(generic_strings);
+			ar & BOOST_SERIALIZATION_NVP(flip_display);
 		}
 
 		template <class Archive>
@@ -87,7 +87,6 @@ namespace wave
 			if (version >= 7)
 			{
 				ar & BOOST_SERIALIZATION_NVP(display_mode);
-				ar & BOOST_SERIALIZATION_NVP(flip_display);
 				ar & BOOST_SERIALIZATION_NVP(downmix_display);
 			}
 			if (version >= 8 && version < 9)
@@ -103,6 +102,10 @@ namespace wave
 			if (version >= 10)
 			{
 				ar & BOOST_SERIALIZATION_NVP(generic_strings);
+			}
+			if (version >= 11)
+			{
+				ar & BOOST_SERIALIZATION_NVP(flip_display);
 			}
 		}
 		BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -137,4 +140,4 @@ namespace wave
 	};
 }
 
-BOOST_CLASS_VERSION(wave::persistent_settings, 10)
+BOOST_CLASS_VERSION(wave::persistent_settings, 11)
