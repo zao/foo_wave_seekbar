@@ -25,7 +25,7 @@ namespace wave
 		~image_cache();
 		void start();
 
-		void update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical);
+		void update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip);
 
 		CComPtr<ID2D1Factory> factory;
 		boost::mutex mutex;
