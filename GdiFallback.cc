@@ -26,11 +26,19 @@ namespace wave
 			CSize size = callback.get_size(), true_size = size;
 			back_dc->BitBlt(0, 0, size.cx, size.cy, *wave_dc, 0, 0, SRCCOPY);
 
-			if (callback.get_orientation() == config::orientation_vertical)
+			bool vertical = callback.get_orientation() == config::orientation_vertical;
+			if (vertical)
 				std::swap(size.cx, size.cy);
+
+			bool flip = callback.get_flip_display();
 
 			auto draw_bar = [&](CPoint p1, CPoint p2)
 			{
+				if (flip)
+				{
+					p1.x = size.cx - p1.x;
+					p2.x = size.cx - p2.x;
+				}
 				back_dc->SelectPen(*pen_selection);
 				back_dc->MoveTo(orientate(p1));
 				back_dc->LineTo(orientate(p2));
@@ -46,7 +54,19 @@ namespace wave
 				CPoint p = orientate(CPoint((int)(pos * size.cx / len), size.cy));
 				BLENDFUNCTION bf = { AC_SRC_OVER, 0, 0x40, 0 };
 				if (p.x * p.y)
-					back_dc->AlphaBlend(0, 0, p.x, p.y, *shade_dc, 0, 0, 1, 1, bf);
+				{
+					if (!flip)
+						back_dc->AlphaBlend(0, 0, p.x, p.y, *shade_dc, 0, 0, 1, 1, bf);
+					else
+					{
+						CPoint LR = orientate(CPoint(size.cx, size.cy));
+						if (vertical)
+							p = CPoint(0, LR.y - p.y);
+						else
+							p = CPoint(size.cx - p.x, 0);
+						back_dc->AlphaBlend(p.x, p.y, LR.x, LR.y, *shade_dc, 0, 0, 1, 1, bf);
+					}
+				}
 			}
 
 			if (callback.is_cursor_visible())
@@ -83,7 +103,7 @@ namespace wave
 			release_objects();
 			create_objects();
 		}
-		if (s & (state_data | state_size | state_orientation | state_color | state_channel_order | state_downmix_display))
+		if (s & (state_data | state_size | state_orientation | state_color | state_channel_order | state_downmix_display | state_flip_display))
 			update_data();
 #if 0
 		if (s & state_shade_played)
@@ -152,6 +172,8 @@ namespace wave
 		if (vertical)
 			std::swap(size.cx, size.cy);
 
+		bool flip = callback.get_flip_display();
+
 		service_ptr_t<waveform> w;
 		if (callback.get_waveform(w))
 		{
@@ -201,7 +223,10 @@ namespace wave
 				for (size_t x = 0; x < (size_t)size.cx; ++x)
 				{
 					tc.x = (float)x / (float)size.cx;
-					size_t ix = x * 2048ul / size.cx;
+					size_t ix = (x * 2048ul / size.cx);
+					if (flip)
+						ix = 2047ul - ix;
+
 					D3DXVECTOR4 sample(avg_min[ix], avg_max[ix], avg_rms[ix], 1);
 		#if 1
 					for (size_t y = 0; y < (size_t)size.cy; ++y)
