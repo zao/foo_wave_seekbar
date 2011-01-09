@@ -77,6 +77,8 @@ namespace wave
 	void direct2d1_frontend::draw()
 	{
 		bool vertical = callback.get_orientation() == config::orientation_vertical;
+		bool flip = callback.get_flip_display();
+
 		D2D1_SIZE_F size = rt->GetSize();
 		if (vertical) std::swap(size.width, size.height);
 		
@@ -84,6 +86,12 @@ namespace wave
 		rt->Clear(color_to_d2d1_color(colors.background));
 		float seek_x = (float)(size.width * callback.get_seek_position() / callback.get_track_length());
 		float play_x = (float)(size.width * callback.get_playback_position() / callback.get_track_length());
+
+		if (flip)
+		{
+			seek_x = size.width - seek_x;
+			play_x = size.width - play_x;
+		}
 		
 		if (vertical) rt->SetTransform(D2D1::Matrix3x2F(0, 1, 1, 0, 0, 0));
 		{
@@ -93,15 +101,21 @@ namespace wave
 				rt->DrawBitmap(cache->wave_bitmap);
 			}
 		}
+
 		if (callback.is_seeking())
 			rt->DrawLine(D2D1::Point2F(seek_x), D2D1::Point2F(seek_x, size.height), brushes.selection_brush, 2.5f);
+
 		if (callback.get_shade_played())
 		{
 			D2D1_COLOR_F hi = brushes.highlight_brush->GetColor();
 			CComPtr<ID2D1SolidColorBrush> overlay_brush;
 			rt->CreateSolidColorBrush(hi, D2D1::BrushProperties(0.3f), &overlay_brush);
-			rt->FillRectangle(D2D1::RectF(0, 0, play_x, size.height), overlay_brush);
+			if (flip)
+				rt->FillRectangle(D2D1::RectF(play_x, 0, size.width, size.height), overlay_brush);
+			else
+				rt->FillRectangle(D2D1::RectF(0, 0, play_x, size.height), overlay_brush);
 		}
+
 		rt->DrawLine(D2D1::Point2F(play_x), D2D1::Point2F(play_x, size.height), brushes.selection_brush, 2.5f);
 		rt->SetTransform(D2D1::Matrix3x2F::Identity());
 		rt->EndDraw();
@@ -132,7 +146,8 @@ namespace wave
 		callback.get_channel_infos(infos);
 		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
 			, D2D1::SizeF((float)size.cx, (float)size.cy)
-			, callback.get_orientation() == config::orientation_vertical));
+			, callback.get_orientation() == config::orientation_vertical
+			, callback.get_flip_display()));
 	}
 
 	void direct2d1_frontend::on_state_changed(state s) {
@@ -140,7 +155,7 @@ namespace wave
 			update_size();
 		if (s & state_color)
 			regenerate_brushes();
-		if (s & (state_data | state_color | state_channel_order | state_downmix_display))
+		if (s & (state_data | state_color | state_channel_order | state_downmix_display | state_flip_display))
 			update_data();
 	}
 
@@ -151,7 +166,7 @@ namespace wave
 		return p;
 	}
 
-	void image_cache::update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical)
+	void image_cache::update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical, bool flip)
 	{
 		{
 			boost::mutex::scoped_lock sl(mutex);
@@ -216,16 +231,28 @@ namespace wave
 			size_t n = mini.get_size();
 
 			// Prepare waveform
+			size_t x;
 			gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
 			for (size_t i = 0; i < n; i += 1)
 			{
-				D2D1_POINT_2F p = D2D1::Point2(i / (float)n, maxi[i]);
+				if (flip)
+					x = n - i - 1;
+				else
+					x = i;
+				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, maxi[x]);
+				if (flip)
+					p.x = 1.0f - p.x;
 				gs->AddLine(scale.TransformPoint(p));
 			}
 			for (size_t i = 0; i < n; i += 1)
 			{
-				int x = n - i - 1;
+				if (flip)
+					x = i;
+				else
+					x = n - i - 1;
 				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, mini[x]);
+				if (flip)
+					p.x = 1.0f - p.x;
 				gs->AddLine(scale.TransformPoint(p));
 			}
 			gs->EndFigure(D2D1_FIGURE_END_CLOSED);
@@ -236,13 +263,24 @@ namespace wave
 			rms_gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
 			for (size_t i = 0; i < n; ++i)
 			{
-				D2D1_POINT_2F p = D2D1::Point2(i / (float)n, rms[i]);
+				if (flip)
+					x = n - i - 1;
+				else
+					x = i;
+				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
+				if (flip)
+					p.x = 1.0f - p.x;
 				rms_gs->AddLine(scale.TransformPoint(p));
 			}
 			for (size_t i = 0; i < n; ++i)
 			{
-				int x = n - i - 1;
+				if (flip)
+					x = i;
+				else
+					x = n - i - 1;
 				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
+				if (flip)
+					p.x = 1.0f - p.x;
 				rms_gs->AddLine(scale.TransformPoint(p));
 			}
 			rms_gs->EndFigure(D2D1_FIGURE_END_CLOSED);
@@ -261,10 +299,6 @@ namespace wave
 			++x;
 
 			rt->SetTransform(centered);
-			//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(0.0f, -1.0f))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f, -1.0f))), brushes.text_brush, 0.5);
-			//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(           ))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f       ))), brushes.text_brush, 0.5);
-			//rt->DrawLine(round_point(scale.TransformPoint(D2D1::Point2F(0.0f,  1.0f))), round_point(scale.TransformPoint(D2D1::Point2F(1.0f,  1.0f))), brushes.text_brush, 0.5);
-			//rt->DrawGeometry(rms_geometry, brushes.highlight_brush, 0.5);
 			rt->DrawGeometry(geom.get_ptr(), brushes.foreground_brush);
 		});
 		rt->EndDraw();

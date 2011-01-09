@@ -133,7 +133,8 @@ namespace wave
 			state_shade_played = 1<<7,
 			state_display_mode = 1<<8,
 			state_downmix_display = 1<<9,
-			state_channel_order = 1<<10
+			state_flip_display = 1<<10,
+			state_channel_order = 1<<11
 		};
 		virtual void on_state_changed(state s) = 0;
 		virtual void show_configuration(CWindow parent) { }
@@ -160,6 +161,7 @@ namespace wave
 		virtual bool get_shade_played() const = 0;
 		virtual config::display_mode get_display_mode() const = 0;
 		virtual bool get_downmix_display() const = 0;
+		virtual bool get_flip_display() const = 0;
 		virtual void get_channel_infos(pfc::list_t<channel_info>&) const = 0;
 	};
 
@@ -180,6 +182,7 @@ namespace wave
 		virtual void set_shade_played(bool b) = 0;
 		virtual void set_display_mode(config::display_mode mode) = 0;
 		virtual void set_downmix_display(bool downmix) = 0;
+		virtual void set_flip_display(bool flip) = 0;
 		virtual void set_channel_infos(pfc::list_t<channel_info> const&) = 0;
 	};
 

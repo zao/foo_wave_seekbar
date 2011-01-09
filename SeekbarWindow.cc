@@ -308,6 +308,7 @@ namespace wave
 		cb.set_shade_played(settings.shade_played);
 		cb.set_display_mode(settings.display_mode);
 		cb.set_downmix_display(settings.downmix_display);
+		cb.set_flip_display(settings.flip_display);
 		pfc::list_t<channel_info> infos;
 		for (size_t i = 0; i < settings.channel_order.size(); ++i)
 		{			
@@ -596,13 +597,16 @@ namespace wave
 	void seekbar_window::set_seek_position(CPoint point)
 	{
 		scoped_lock sl(fe->mutex);
+		double track_length = fe->callback->get_track_length();
 		bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
 		double position = horizontal
-			? point.x * fe->callback->get_track_length() / client_rect.Width()
-			: point.y * fe->callback->get_track_length() / client_rect.Height()
+			? point.x * track_length / client_rect.Width()
+			: point.y * track_length / client_rect.Height()
 			;
+		if (fe->callback->get_flip_display())
+			position = track_length - position;
 		
-		position = std::max(0.0, std::min(fe->callback->get_track_length(), position));
+		position = std::max(0.0, std::min(track_length, position));
 
 		for each(auto cb in seek_callbacks)
 			if (auto p = cb.lock())
@@ -777,6 +781,18 @@ namespace wave
 			fe->callback->set_downmix_display(downmix);
 			if (fe->frontend)
 				fe->frontend->on_state_changed(visual_frontend::state_downmix_display);
+		}
+	}
+	
+	void seekbar_window::set_flip_display(bool flip)
+	{
+		scoped_lock sl(fe->mutex);
+		settings.flip_display = flip;
+		if (fe->callback->get_flip_display() != flip)
+		{
+			fe->callback->set_flip_display(flip);
+			if (fe->frontend)
+				fe->frontend->on_state_changed(visual_frontend::state_flip_display);
 		}
 	}
 

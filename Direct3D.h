@@ -22,7 +22,7 @@ namespace wave
 				cursor_position, cursor_visible,
 				seek_position, seeking,
 				viewport_size, replaygain,
-				orientation, shade_played,
+				orientation, flipped, shade_played,
 				waveform_data;
 		};
 
@@ -59,6 +59,7 @@ namespace wave
 			void update_data();
 			void update_size();
 			void update_orientation();
+			void update_flipped();
 			void update_shade_played();
 
 		private: // Misc state

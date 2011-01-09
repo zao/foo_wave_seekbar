@@ -117,6 +117,7 @@ namespace wave
 		void set_shade_played(bool);
 		void set_display_mode(config::display_mode);
 		void set_downmix_display(bool);
+		void set_flip_display(bool);
 		void set_channel_enabled(int channel, bool);
 		void swap_channel_order(int ch1, int ch2);
 
@@ -146,6 +147,7 @@ namespace wave
 				COLOR_USE_HANDLER(IDC_USE_SELECTION)
 				COMMAND_HANDLER_EX(IDC_DISPLAYMODE, CBN_SELCHANGE, on_display_select)
 				COMMAND_HANDLER_EX(IDC_DOWNMIX, BN_CLICKED, on_downmix_click)
+				COMMAND_HANDLER_EX(IDC_MIRRORDISPLAY, BN_CLICKED, on_flip_click)
 				NOTIFY_HANDLER_EX(IDC_CHANNELS, LVN_ITEMCHANGED, on_channel_changed)
 				NOTIFY_HANDLER_EX(IDC_CHANNELS, NM_CLICK, on_channel_click)
 				COMMAND_HANDLER_EX(IDC_CHANNEL_UP, BN_CLICKED, on_channel_up)
@@ -165,6 +167,7 @@ namespace wave
 			HANDLER_EX_IMPL(on_use_color_click);
 			HANDLER_EX_IMPL(on_display_select);
 			HANDLER_EX_IMPL(on_downmix_click);
+			HANDLER_EX_IMPL(on_flip_click);
 			LRESULT on_channel_changed(NMHDR* nm);
 			LRESULT on_channel_click(NMHDR* nm);
 			HANDLER_EX_IMPL(on_channel_up);

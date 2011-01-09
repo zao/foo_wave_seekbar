@@ -153,6 +153,12 @@ namespace wave
 				config::orientation_horizontal == callback.get_orientation());
 		}
 
+		void frontend_impl::update_flipped()
+		{
+			effect_params.set(parameters::flipped,
+				callback.get_flip_display());
+		}
+
 		void frontend_impl::update_shade_played()
 		{
 			effect_params.set(parameters::shade_played,

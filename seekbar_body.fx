@@ -10,21 +10,6 @@ sampler sTex = sampler_state
     AddressU = Clamp;
 };
 
-#if 0
-Texture2D bgTex < string ResourceName = "074.jpg"; >;
-Texture2D seekTex < string ResourceName = "seekbar.png"; >;
-
-sampler sTexBg = sampler_state
-{
-	Texture = <bgTex>;	
-	MipFilter = LINEAR;
-	MinFilter = LINEAR;
-	MagFilter = LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-#endif
-
 struct VS_IN
 {
 	float2 pos : POSITION;
@@ -49,6 +34,7 @@ bool seeking           : SEEKING;
 float4 replayGain      : REPLAYGAIN; // album gain, track gain, album peak, track peak
 float2 viewportSize    : VIEWPORTSIZE;
 bool horizontal        : ORIENTATION;
+bool flipped           : FLIPPED;
 bool shade_played      : SHADEPLAYED;
 
 PS_IN VS( VS_IN input )
@@ -57,10 +43,18 @@ PS_IN VS( VS_IN input )
 
 	float2 half_pixel = float2(1,-1) / viewportSize;
 	output.pos = float4(input.pos - half_pixel, 0, 1);
+
 	if (horizontal)
+	{
 		output.tc = float2((input.tc.x + 1.0) / 2.0, input.tc.y);
+	}
 	else
+	{
 		output.tc = float2((-input.tc.y + 1.0) / 2.0, input.tc.x);
+	}
+
+	if (flipped)
+		output.tc.x = 1.0 - output.tc.x;
 
 	return output;
 }
