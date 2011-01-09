@@ -4,6 +4,15 @@
 #include "Direct2D.h"
 #include "GdiFallback.h"
 
+// {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
+extern const GUID guid_seekbar_branch;
+
+// {F76A694E-CB85-45A6-A9C6-269877A0AAA4}
+static const GUID guid_presentation_scale = 
+{ 0xf76a694e, 0xcb85, 0x45a6, { 0xa9, 0xc6, 0x26, 0x98, 0x77, 0xa0, 0xaa, 0xa4 } };
+
+static advconfig_integer_factory g_presentation_scale("Percentage of base display rate to display at (1-200%)", guid_presentation_scale, guid_seekbar_branch, 0.0, 100, 1, 200);
+
 namespace wave
 {
 	struct waveform_placeholder : waveform
@@ -312,7 +321,8 @@ namespace wave
 	void seekbar_window::initialize_frontend()
 	{		
 		scoped_lock sl(fe->mutex);
-		DWORD present_interval = 10;
+		double present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
+		DWORD present_interval = 100;
 		try
 		{
 			OSVERSIONINFOEX osv = {};
@@ -334,6 +344,7 @@ namespace wave
 			case config::frontend_direct3d9:
 				console::info("Seekbar: taking Direct3D9 path.");
 				fe->frontend.reset(new direct3d9::frontend_impl(*this, client_rect.Size(), *fe->callback, *fe->conf));
+				present_interval = 10;
 				break;
 			case config::frontend_direct2d1:
 				console::info("Seekbar: taking Direct2D1 path.");
@@ -367,7 +378,7 @@ namespace wave
 
 		if (fe->frontend)
 		{
-			repaint_timer_id = SetTimer(REPAINT_TIMER_ID, present_interval);
+			repaint_timer_id = SetTimer(REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
 		}
 	}
 
