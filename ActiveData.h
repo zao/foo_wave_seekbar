@@ -65,5 +65,7 @@ namespace wave
 		typedef std::set<weak_ptr<active_data_listener<T>>> listener_collection;
 		boost::shared_ptr<T> value;
 		boost::shared_ptr<listener_collection> listeners;
+
+		active_data<T>& operator = (active_data<T> const&);
 	};
 };
