@@ -105,6 +105,23 @@ namespace wave
 		void test_playback_order(t_size order);
 		void apply_settings();
 
+		struct update_state_impl
+		{
+			template <typename>
+			struct result { typedef void type; };
+
+			template <typename T>
+			void operator () (T state) const
+			{
+				if (fe->frontend)
+					fe->frontend->on_state_changed(state);
+			}
+
+			update_state_impl(boost::shared_ptr<frontend_data>& fe) : fe(fe) {}
+			boost::shared_ptr<frontend_data>& fe;
+		};
+		boost::phoenix::function<update_state_impl> update_state;
+
 	public:
 		void on_playback_order_changed(t_size p_new_index);
 
@@ -116,14 +133,13 @@ namespace wave
 		void set_orientation(config::orientation);
 		void set_shade_played(bool);
 		void set_display_mode(config::display_mode);
-		void set_downmix_display(bool);
-		void set_flip_display(bool);
 		void set_channel_enabled(int channel, bool);
 		void swap_channel_order(int ch1, int ch2);
 		
 		struct configuration_data
 		{
 			color_set colors;
+			active_data<bool> downmix_display, flip_display;
 		};
 
 		// Config dialog
@@ -134,6 +150,9 @@ namespace wave
 
 #define COLOR_CLICK_HANDLER(Name) COMMAND_HANDLER_EX(Name, STN_CLICKED, on_color_click)
 #define COLOR_USE_HANDLER(Name) COMMAND_HANDLER_EX(Name, BN_CLICKED, on_use_color_click)
+#define ACTIVE_BOOL_CLICK_HANDLER(Id, Variable) \
+	if (!initializing && uMsg == WM_COMMAND && BN_CLICKED == HIWORD(wParam) && Id == LOWORD(wParam)) { \
+	SetMsgHandled(TRUE); data.##Variable = !!IsDlgButtonChecked(Id); lResult = 0; return TRUE; }
 
 			BEGIN_MSG_MAP_EX(configuration_dialog)
 				MSG_WM_INITDIALOG(on_wm_init_dialog)
@@ -151,8 +170,8 @@ namespace wave
 				COLOR_USE_HANDLER(IDC_USE_HIGHLIGHT)
 				COLOR_USE_HANDLER(IDC_USE_SELECTION)
 				COMMAND_HANDLER_EX(IDC_DISPLAYMODE, CBN_SELCHANGE, on_display_select)
-				COMMAND_HANDLER_EX(IDC_DOWNMIX, BN_CLICKED, on_downmix_click)
-				COMMAND_HANDLER_EX(IDC_MIRRORDISPLAY, BN_CLICKED, on_flip_click)
+				ACTIVE_BOOL_CLICK_HANDLER(IDC_DOWNMIX, downmix_display)
+				ACTIVE_BOOL_CLICK_HANDLER(IDC_MIRRORDISPLAY, flip_display)
 				NOTIFY_HANDLER_EX(IDC_CHANNELS, LVN_ITEMCHANGED, on_channel_changed)
 				NOTIFY_HANDLER_EX(IDC_CHANNELS, NM_CLICK, on_channel_click)
 				COMMAND_HANDLER_EX(IDC_CHANNEL_UP, BN_CLICKED, on_channel_up)
@@ -171,8 +190,6 @@ namespace wave
 			HANDLER_EX_IMPL(on_color_click);
 			HANDLER_EX_IMPL(on_use_color_click);
 			HANDLER_EX_IMPL(on_display_select);
-			HANDLER_EX_IMPL(on_downmix_click);
-			HANDLER_EX_IMPL(on_flip_click);
 			LRESULT on_channel_changed(NMHDR* nm);
 			LRESULT on_channel_click(NMHDR* nm);
 			HANDLER_EX_IMPL(on_channel_up);

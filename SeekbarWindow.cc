@@ -22,7 +22,7 @@ namespace wave
 	seekbar_window::seekbar_window()
 		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 		, placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
-		, seek_in_progress(false), possible_next_enqueued(false), repaint_timer_id(0)
+		, seek_in_progress(false), possible_next_enqueued(false), repaint_timer_id(0), update_state(fe)
 	{
 		fe->data.reset(new visual_frontend_data);
 		fe->conf.reset(new frontend_config_impl(settings));
@@ -32,6 +32,9 @@ namespace wave
 		{
 			custom_colors[i].subscribe(remember(make_active_data_function_listener<color>(boost::bind(&seekbar_window::set_color, this, (config::color)i, _1, true))));
 		}
+		using boost::phoenix::val; using boost::phoenix::ref; using boost::phoenix::arg_names::arg1;
+		fe->data->downmix_display.subscribe(remember(make_active_data_function_listener<bool>((ref(settings.downmix_display) = arg1, update_state(val(visual_frontend::state_downmix_display))))));
+		fe->data->flip_display.subscribe(remember(make_active_data_function_listener<bool>((ref(settings.flip_display) = arg1, update_state(val(visual_frontend::state_flip_display))))));
 	}
 
 	seekbar_window::~seekbar_window()
@@ -147,7 +150,9 @@ namespace wave
 					custom_colors[config::color_background],
 					custom_colors[config::color_foreground],
 					custom_colors[config::color_highlight],
-					custom_colors[config::color_selection]
+					custom_colors[config::color_selection],
+					fe->data->downmix_display,
+					fe->data->flip_display
 				};
 				config_dialog.reset(new configuration_dialog(*this, cfg_data));
 				config_dialog->Create(*this);
@@ -661,31 +666,7 @@ namespace wave
 				fe->frontend->on_state_changed(visual_frontend::state_display_mode);
 		}
 	}
-
-	void seekbar_window::set_downmix_display(bool downmix)
-	{
-		scoped_lock sl(fe->mutex);
-		settings.downmix_display = downmix;
-		if (fe->data->downmix_display != downmix)
-		{
-			fe->data->downmix_display = downmix;
-			if (fe->frontend)
-				fe->frontend->on_state_changed(visual_frontend::state_downmix_display);
-		}
-	}
 	
-	void seekbar_window::set_flip_display(bool flip)
-	{
-		scoped_lock sl(fe->mutex);
-		settings.flip_display = flip;
-		if (fe->data->flip_display != flip)
-		{
-			fe->data->flip_display = flip;
-			if (fe->frontend)
-				fe->frontend->on_state_changed(visual_frontend::state_flip_display);
-		}
-	}
-
 	void seekbar_window::set_channel_enabled(int ch, bool state)
 	{
 		scoped_lock sl(fe->mutex);
