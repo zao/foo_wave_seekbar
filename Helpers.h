@@ -158,9 +158,20 @@ inline pfc::string get_program_directory()
 	return pfc::string("file://") + exe_name.subString(0, exe_name.lastIndexOf('\\'));
 }
 
-
 template <typename T>
 T clamp(T v, T a, T b)
 {
 	return std::max(a, std::min(b, v));
+}
+
+inline bool is_outside(CPoint point, CRect r, int N, bool horizontal)
+{
+	if (!horizontal)
+	{
+		std::swap(point.x, point.y);
+		std::swap(r.right, r.bottom);
+		std::swap(r.left, r.top);
+	}
+	return point.y < -2 * N || point.y > r.bottom - r.top + 2 * N ||
+		    point.x < -N     || point.x > r.right - r.left + N;
 }
