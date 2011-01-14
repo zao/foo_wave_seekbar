@@ -3,10 +3,10 @@
 #include "VisualFrontend.h"
 #include "resource.h"
 #include "PersistentSettings.h"
-#include "FrontendCallbackImpl.h"
 #include "FrontendConfigImpl.h"
 #include "Helpers.h"
 #include "SeekCallback.h"
+#include "RememberPointers.h"
 
 namespace wave
 {
@@ -15,17 +15,17 @@ namespace wave
 		frontend_data() : auto_get_serial(0) {}
 		void clear()
 		{
-			callback.reset();
+			data.reset();
 			frontend.reset();
 		}
 		boost::recursive_mutex mutex;
-		scoped_ptr<frontend_callback_impl> callback;
+		scoped_ptr<visual_frontend_data> data;
 		scoped_ptr<frontend_config_impl> conf;
 		shared_ptr<visual_frontend> frontend;
 		uint32_t auto_get_serial;
 	};
 
-	struct seekbar_window : CWindowImpl<seekbar_window>, play_callback_impl_base, playlist_callback_impl_base, noncopyable
+	struct seekbar_window : CWindowImpl<seekbar_window>, play_callback_impl_base, playlist_callback_impl_base, remember_pointers, noncopyable
 	{
 		seekbar_window();
 		~seekbar_window();
@@ -75,7 +75,6 @@ namespace wave
 		static void load_settings(persistent_settings& s, std::vector<char> const& in);
 		static void save_settings(persistent_settings const& s, std::vector<char>& out);
 
-		void toggle_orientation(frontend_callback_impl& cb, persistent_settings& s);
 		virtual bool forward_rightclick() { return false; }
 
 		service_ptr_t<waveform> placeholder_waveform;
@@ -87,6 +86,7 @@ namespace wave
 		bool possible_next_enqueued;
 		seekbar_state state;
 		color global_colors[config::color_count];
+		active_data<color> custom_colors[config::color_count];
 
 		void try_get_data();
 		void flush_frontend();
@@ -120,6 +120,11 @@ namespace wave
 		void set_flip_display(bool);
 		void set_channel_enabled(int channel, bool);
 		void swap_channel_order(int ch1, int ch2);
+		
+		struct configuration_data
+		{
+			color_set colors;
+		};
 
 		// Config dialog
 		struct configuration_dialog : ATL::CDialogImpl<configuration_dialog>
@@ -176,10 +181,11 @@ namespace wave
 
 			virtual void OnFinalMessage(HWND);
 
-			explicit configuration_dialog(seekbar_window& sw);
+			explicit configuration_dialog(seekbar_window& sw, configuration_data data);
 
 		private:
 			seekbar_window& sw;
+			configuration_data data;
 			bool initializing;
 
 			CListViewCtrl channels;
