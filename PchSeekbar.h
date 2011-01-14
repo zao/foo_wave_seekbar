@@ -93,6 +93,7 @@ using boost::uint32_t;
 using boost::enable_shared_from_this;
 using boost::optional;
 
+#include <boost/spirit/include/phoenix.hpp>
 
 #include <delayimp.h>
 
