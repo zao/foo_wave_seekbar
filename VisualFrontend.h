@@ -152,7 +152,7 @@ namespace wave
 
 	struct color_set
 	{
-		active_data<color> background_color, foreground_color, highlight_color, selection_color;
+		active_data<color> background_color, foreground_color, highlight_color, selection_color; // brittle order, do not change
 
 		active_data<color> get_color(config::color which) const {
 			switch (which) {
@@ -184,19 +184,27 @@ namespace wave
 	{
 		virtual void get_channel_infos(pfc::list_t<channel_info>& out) const
 		{
-			using namespace boost::phoenix; using namespace boost::phoenix::arg_names;
+			using boost::phoenix::ref; using boost::phoenix::arg_names::arg1;
+			pfc::list_t<channel_info> const& infos = channel_infos;
 			out.remove_all();
-			channel_infos.enumerate(add_item(ref(out), arg1));
+			infos.enumerate(add_item(ref(out), arg1));
 		}
 
-		virtual void set_channel_infos(pfc::list_t<channel_info> const& in) { channel_infos = in; }
+		virtual void set_channel_infos(pfc::list_t<channel_info> const& in)
+		{
+			using boost::phoenix::ref; using boost::phoenix::arg_names::arg1;
+			pfc::list_t<channel_info> infos = channel_infos;
+			infos.remove_all();
+			in.enumerate(add_item(ref(infos), arg1));
+			channel_infos = infos;
+		}
 
 		active_data<CSize> size;
 		active_data<config::orientation> orientation;
 		active_data<bool> shade_played;
 		active_data<config::display_mode> display_mode;
 		active_data<bool> downmix_display, flip_display;
-		pfc::list_t<active_data<channel_info>> channel_infos;
+		active_data<pfc::list_t<channel_info>> channel_infos;
 
 		display_data()
 			: orientation(config::orientation_horizontal), shade_played(true), downmix_display(false), flip_display(false)
