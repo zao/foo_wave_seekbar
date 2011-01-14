@@ -1,6 +1,7 @@
 #include "PchSeekbar.h"
 #include "Direct2D.h"
 #include "Helpers.h"
+#include "ActiveData.h"
 #include <boost/math/special_functions.hpp>
 
 namespace wave
@@ -53,12 +54,14 @@ namespace wave
 		pump_thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, pump)));
 	}
 
-	direct2d1_frontend::direct2d1_frontend(HWND wnd, CSize size, visual_frontend_callback& callback)
-		: callback(callback)
+	direct2d1_frontend::direct2d1_frontend(HWND wnd, CSize size, visual_frontend_data& data)
+		: data(data)
 	{
 		factory.Attach(try_module_call(create_d2d1_factory_func(opts)));
 		if (!factory)
 			throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
+
+		bind_handlers();
 
 		cache.reset(new image_cache);
 		factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(size.cx, size.cy)), &rt);
@@ -70,22 +73,29 @@ namespace wave
 	{
 	}
 
+	void direct2d1_frontend::bind_handlers()
+	{
+		using namespace boost::phoenix;
+		using namespace boost::phoenix::arg_names;
+		data.background_color.subscribe(remember(make_active_data_function_listener<color>(boost::bind(&direct2d1_frontend::on_state_changed, this, state_color))));
+	}
+
 	void direct2d1_frontend::clear()
 	{
 	}
 
 	void direct2d1_frontend::draw()
 	{
-		bool vertical = callback.get_orientation() == config::orientation_vertical;
-		bool flip = callback.get_flip_display();
+		bool vertical = data.orientation == config::orientation_vertical;
+		bool flip = data.flip_display;
 
 		D2D1_SIZE_F size = rt->GetSize();
 		if (vertical) std::swap(size.width, size.height);
 		
 		rt->BeginDraw();
 		rt->Clear(color_to_d2d1_color(colors.background));
-		float seek_x = (float)(size.width * callback.get_seek_position() / callback.get_track_length());
-		float play_x = (float)(size.width * callback.get_playback_position() / callback.get_track_length());
+		float seek_x = (float)(size.width * data.seek_position / data.track_length);
+		float play_x = (float)(size.width * data.playback_position / data.track_length);
 
 		if (flip)
 		{
@@ -102,10 +112,10 @@ namespace wave
 			}
 		}
 
-		if (callback.is_seeking())
+		if (data.seeking)
 			rt->DrawLine(D2D1::Point2F(seek_x), D2D1::Point2F(seek_x, size.height), brushes.selection_brush, 2.5f);
 
-		if (callback.get_shade_played())
+		if (data.shade_played)
 		{
 			D2D1_COLOR_F hi = brushes.highlight_brush->GetColor();
 			CComPtr<ID2D1SolidColorBrush> overlay_brush;
@@ -127,10 +137,10 @@ namespace wave
 
 	void direct2d1_frontend::update_size()
 	{
-		CSize size = callback.get_size();
+		CSize size = data.size;
 		rt->Resize(D2D1::SizeU(size.cx, size.cy));
 		service_ptr_t<waveform> wf;
-		if (callback.get_waveform(wf))
+		if (wf = data.waveform, wf.is_valid())
 		{
 			trigger_texture_update(wf, size);
 		}
@@ -140,14 +150,14 @@ namespace wave
 	{
 		boost::mutex::scoped_lock sl(cache->mutex);
 		++cache->jobs;
-		if (callback.get_downmix_display())
+		if (data.downmix_display)
 			wf = downmix_waveform(wf);
 		pfc::list_t<channel_info> infos;
-		callback.get_channel_infos(infos);
+		data.get_channel_infos(infos);
 		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
 			, D2D1::SizeF((float)size.cx, (float)size.cy)
-			, callback.get_orientation() == config::orientation_vertical
-			, callback.get_flip_display()));
+			, data.orientation == config::orientation_vertical
+			, data.flip_display));
 	}
 
 	void direct2d1_frontend::on_state_changed(state s) {
@@ -324,9 +334,9 @@ namespace wave
 	{
 		D2D1_SIZE_F size = rt->GetSize();
 		service_ptr_t<waveform> wf;
-		if (callback.get_waveform(wf))
+		if (wf = data.waveform, wf.is_valid())
 		{
-			trigger_texture_update(wf, callback.get_size());
+			trigger_texture_update(wf, data.size);
 		}
 	}
 
@@ -334,10 +344,10 @@ namespace wave
 	{
 		palette p =
 		{
-			callback.get_color(config::color_background),
-			callback.get_color(config::color_foreground),
-			callback.get_color(config::color_highlight),
-			callback.get_color(config::color_selection)
+			data.get_color(config::color_background),
+			data.get_color(config::color_foreground),
+			data.get_color(config::color_highlight),
+			data.get_color(config::color_selection)
 		};
 		colors = p;
 		boost::mutex::scoped_lock sl(cache->mutex);

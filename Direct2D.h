@@ -3,6 +3,7 @@
 #include <D2D1.h>
 #include <D2D1Helper.h>
 #include <wincodec.h>
+#include "RememberPointers.h"
 
 namespace wave
 {
@@ -40,9 +41,9 @@ namespace wave
 		palette colors;
 	};
 
-	struct direct2d1_frontend : visual_frontend
+	struct direct2d1_frontend : visual_frontend, remember_pointers
 	{
-		direct2d1_frontend(HWND wnd, CSize size, visual_frontend_callback& callback);
+		direct2d1_frontend(HWND wnd, CSize size, visual_frontend_data& data);
 		~direct2d1_frontend();
 
 		void clear();
@@ -51,6 +52,7 @@ namespace wave
 		void on_state_changed(state s);
 
 	private:
+		void bind_handlers();
 		void regenerate_brushes();
 		void trigger_texture_update(service_ptr_t<waveform> wf, CSize size);
 		void update_data();
@@ -62,8 +64,10 @@ namespace wave
 		shared_ptr<image_cache> cache;
 		palette colors;
 
+		float seek_x, play_x;
+
 		brush_set brushes;
 
-		visual_frontend_callback& callback;
+		visual_frontend_data& data;
 	};
 }

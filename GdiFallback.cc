@@ -4,8 +4,8 @@
 
 namespace wave
 {
-	gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_callback& callback)
-		: wnd(wnd), callback(callback)
+	gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_data& data)
+		: wnd(wnd), data(data)
 	{
 		create_objects();
 		on_state_changed((state)~0);
@@ -23,14 +23,14 @@ namespace wave
 	{
 		if (CPaintDC dc = wnd)
 		{
-			CSize size = callback.get_size(), true_size = size;
+			CSize size = data.size, true_size = size;
 			back_dc->BitBlt(0, 0, size.cx, size.cy, *wave_dc, 0, 0, SRCCOPY);
 
-			bool vertical = callback.get_orientation() == config::orientation_vertical;
+			bool vertical = data.orientation == config::orientation_vertical;
 			if (vertical)
 				std::swap(size.cx, size.cy);
 
-			bool flip = callback.get_flip_display();
+			bool flip = data.flip_display;
 
 			auto draw_bar = [&](CPoint p1, CPoint p2)
 			{
@@ -44,12 +44,12 @@ namespace wave
 				back_dc->LineTo(orientate(p2));
 			};
 
-			auto pos = callback.get_playback_position();
-			auto len = callback.get_track_length();
+			auto pos = data.playback_position;
+			auto len = data.track_length;
 			
-			if (callback.get_shade_played())
+			if (data.shade_played)
 			{
-				color c = callback.get_color(config::color_highlight);
+				color c = data.highlight_color;
 				c.a = 0.3f;
 				CPoint p = orientate(CPoint((int)(pos * size.cx / len), size.cy));
 				BLENDFUNCTION bf = { AC_SRC_OVER, 0, 0x40, 0 };
@@ -69,15 +69,15 @@ namespace wave
 				}
 			}
 
-			if (callback.is_cursor_visible())
+			if (data.cursor_visible)
 			{
 				draw_bar(
 					CPoint((int)(pos * size.cx / len), 0),
 					CPoint((int)(pos * size.cx / len), size.cy));
 
-				if (callback.is_seeking())
+				if (data.seeking)
 				{
-					auto pos = callback.get_seek_position();
+					auto pos = data.seek_position;
 					draw_bar(
 						CPoint((int)(pos * size.cx / len), 0),
 						CPoint((int)(pos * size.cx / len), size.cy));
@@ -113,29 +113,21 @@ namespace wave
 
 	void gdi_fallback_frontend::create_objects()
 	{
-		auto pen_from_color = [&](config::color color, scoped_ptr<CPen>& out)
-		{
-			auto c = callback.get_color(color);
-			out.reset(new CPen);
-			out->CreatePen(PS_SOLID, 0, color_to_xbgr(c));
-		};
-		auto solid_brush_from_color = [&](config::color color, scoped_ptr<CBrush>& out)
-		{
-			auto c = callback.get_color(color);
-			out.reset(new CBrush);
-			out->CreateSolidBrush(color_to_xbgr(c));
-		};
-		pen_from_color(config::color_foreground, pen_foreground);
-		pen_from_color(config::color_highlight, pen_highlight);
-		pen_from_color(config::color_selection, pen_selection);
-		solid_brush_from_color(config::color_background, brush_background);
+#define PEN_FROM_COLOR(Name) { auto c = data.##Name##_color; pen_##Name.reset(new CPen); pen_##Name->CreatePen(PS_SOLID, 0, color_to_xbgr(c)); }
+#define SOLID_BRUSH_FROM_COLOR(Name) { auto c = data.##Name##_color; brush_##Name.reset(new CBrush); brush_##Name->CreateSolidBrush(color_to_xbgr(c)); }
+		PEN_FROM_COLOR(foreground);
+		PEN_FROM_COLOR(highlight);
+		PEN_FROM_COLOR(selection);
+		SOLID_BRUSH_FROM_COLOR(background);
+#undef PEN_FROM_COLOR
+#undef SOLID_BRUSH_FROM_COLOR
 		
 		if (!shade_dc)
 		{
 			CClientDC dc(wnd);
 			shade_dc.reset(new mem_dc(dc, CSize(1, 1)));
 		}
-		color c = callback.get_color(config::color_highlight);
+		color c = data.highlight_color;
 		shade_dc->SetPixel(0, 0, color_to_xbgr(c));
 	}
 
@@ -158,7 +150,7 @@ namespace wave
 
 	void gdi_fallback_frontend::update_data()
 	{
-		CSize size = callback.get_size();
+		CSize size = data.size;
 
 		{
 			CClientDC win_dc(wnd);
@@ -168,20 +160,20 @@ namespace wave
 
 		wave_dc->FillRect(CRect(0, 0, size.cx, size.cy), *brush_background);
 
-		bool vertical = callback.get_orientation() == config::orientation_vertical;
+		bool vertical = data.orientation == config::orientation_vertical;
 		if (vertical)
 			std::swap(size.cx, size.cy);
 
-		bool flip = callback.get_flip_display();
-
+		bool flip = data.flip_display;
+		
 		service_ptr_t<waveform> w;
-		if (callback.get_waveform(w))
+		if (w = data.waveform, w.is_valid())
 		{
-			if (callback.get_downmix_display())
+			if (data.downmix_display)
 				w = downmix_waveform(w);
 
 			pfc::list_t<channel_info> infos;
-			callback.get_channel_infos(infos);
+			data.get_channel_infos(infos);
 
 			auto channel_numbers = expand_flags(w->get_channel_map());
 			pfc::list_t<int> channel_indices;
@@ -208,8 +200,8 @@ namespace wave
 				w->get_field("rms", index, avg_rms);
 				wave_dc->SelectPen(*pen_foreground);
 
-				color bg = callback.get_color(config::color_background);
-				color txt = callback.get_color(config::color_foreground);
+				color bg = data.background_color;
+				color txt = data.foreground_color;
 				D3DXVECTOR4 backgroundColor(bg.r, bg.g, bg.b, bg.a);
 				D3DXVECTOR4 textColor(txt.r, txt.g, txt.b, txt.a);
 				D3DXVECTOR2 tc;
@@ -265,7 +257,7 @@ namespace wave
 
 	CPoint gdi_fallback_frontend::orientate(CPoint p)
 	{
-		if (callback.get_orientation() == config::orientation_vertical)
+		if (data.orientation == config::orientation_vertical)
 			return CPoint(p.y, p.x);
 		return p;
 	}

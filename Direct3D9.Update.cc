@@ -10,8 +10,8 @@ namespace wave
 		{
 		#define UPDATE_COLOR(Name)                 \
 			{                                      \
-				color c = callback.get_color(config::color_##Name);  \
-				D3DXCOLOR d(c.r, c.g, c.b, c.a);                     \
+				color c = data.Name##_color;   \
+				D3DXCOLOR d(c.r, c.g, c.b, c.a);                             \
 				effect_params.set(parameters::Name##_color, D3DXVECTOR4(d)); \
 			}
 
@@ -24,19 +24,19 @@ namespace wave
 
 		void frontend_impl::update_effect_cursor()
 		{
-			effect_params.set(parameters::cursor_position, (float)(callback.get_playback_position() / callback.get_track_length()));
-			effect_params.set(parameters::cursor_visible, callback.is_cursor_visible());
-			effect_params.set(parameters::seek_position, (float)(callback.get_seek_position() / callback.get_track_length()));
-			effect_params.set(parameters::seeking, callback.is_seeking());
+			effect_params.set(parameters::cursor_position, (float)(data.playback_position / data.track_length));
+			effect_params.set(parameters::cursor_visible, data.cursor_visible);
+			effect_params.set(parameters::seek_position, (float)(data.seek_position / data.track_length));
+			effect_params.set(parameters::seeking, data.seeking);
 			effect_params.set(parameters::viewport_size, D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0, 0));
 		}
 
 		void frontend_impl::update_data()
 		{
 			service_ptr_t<waveform> w;
-			if (callback.get_waveform(w))
+			if (w = data.waveform, w.is_valid())
 			{
-				if (callback.get_downmix_display() && w->get_channel_map() != audio_chunk::channel_config_mono)
+				if (data.downmix_display && w->get_channel_map() != audio_chunk::channel_config_mono)
 				{
 					w = downmix_waveform(w);
 				}
@@ -44,7 +44,7 @@ namespace wave
 
 				channel_order.clear();
 				pfc::list_t<channel_info> infos;
-				callback.get_channel_infos(infos);
+				data.get_channel_infos(infos);
 				infos.enumerate([this, &w](channel_info const& info)
 				{
 					if (!info.enabled)
@@ -140,35 +140,35 @@ namespace wave
 		void frontend_impl::update_replaygain()
 		{
 			effect_params.set(parameters::replaygain, D3DXVECTOR4(
-					callback.get_replaygain(visual_frontend_callback::replaygain_album_gain),
-					callback.get_replaygain(visual_frontend_callback::replaygain_track_gain),
-					callback.get_replaygain(visual_frontend_callback::replaygain_album_peak),
-					callback.get_replaygain(visual_frontend_callback::replaygain_track_peak)
+					data.get_replaygain(config::replaygain_album_gain),
+					data.get_replaygain(config::replaygain_track_gain),
+					data.get_replaygain(config::replaygain_album_peak),
+					data.get_replaygain(config::replaygain_track_peak)
 					));
 		}
 
 		void frontend_impl::update_orientation()
 		{
 			effect_params.set(parameters::orientation, 
-				config::orientation_horizontal == callback.get_orientation());
+				config::orientation_horizontal == data.orientation);
 		}
 
 		void frontend_impl::update_flipped()
 		{
 			effect_params.set(parameters::flipped,
-				callback.get_flip_display());
+				data.flip_display);
 		}
 
 		void frontend_impl::update_shade_played()
 		{
 			effect_params.set(parameters::shade_played,
-				callback.get_shade_played());
+				data.shade_played);
 		}
 
 		void frontend_impl::update_size()
 		{
 			release_default_resources();
-			CSize size = callback.get_size();
+			CSize size = data.size;
 			pp.BackBufferWidth = size.cx;
 			pp.BackBufferHeight = size.cy;
 			HRESULT hr = S_OK;

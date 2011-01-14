@@ -44,8 +44,8 @@ namespace wave
 
 	namespace direct3d9
 	{
-		frontend_impl::frontend_impl(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
-			: mip_count(4), callback(callback), conf(conf), floating_point_texture(true)
+		frontend_impl::frontend_impl(HWND wnd, CSize client_size, visual_frontend_data& data, visual_frontend_config& conf)
+			: mip_count(4), data(data), conf(conf), floating_point_texture(true)
 		{
 			HRESULT hr = S_OK;
 
@@ -123,7 +123,7 @@ namespace wave
 		{
 			if (device_still_lost())
 				return;
-			color c = callback.get_color(config::color_background);
+			color c = data.background_color;
 			D3DXCOLOR bg(c.r, c.g, c.b, c.a);
 			dev->Clear(0, 0, D3DCLEAR_TARGET, bg, 1.0f, 0);
 		}
@@ -142,7 +142,7 @@ namespace wave
 
 				std::vector<float> buf;
 
-				if (callback.get_orientation() == config::orientation_horizontal)
+				if (this->data.orientation == config::orientation_horizontal)
 				{
 					viewport.y /= (float)n;
 					buf +=

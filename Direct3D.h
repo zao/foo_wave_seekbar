@@ -44,7 +44,7 @@ namespace wave
 		{
 			friend config_dialog;
 
-			frontend_impl(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
+			frontend_impl(HWND wnd, CSize client_size, visual_frontend_data& data, visual_frontend_config& conf);
 			virtual void clear();
 			virtual void draw();
 			virtual void present();
@@ -83,7 +83,7 @@ namespace wave
 			D3DPRESENT_PARAMETERS pp;
 
 		private: // Host references
-			visual_frontend_callback& callback;
+			visual_frontend_data& data;
 			visual_frontend_config& conf;
 
 		private: // Resources

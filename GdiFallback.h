@@ -29,7 +29,7 @@ namespace wave
 
 	struct gdi_fallback_frontend : visual_frontend
 	{
-		gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_callback& callback);
+		gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_data& data);
 		~gdi_fallback_frontend();
 
 		void clear();
@@ -51,6 +51,6 @@ namespace wave
 		scoped_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
 		scoped_ptr<CBrush> brush_background;
 
-		visual_frontend_callback& callback;
+		visual_frontend_data& data;
 	};
 }
