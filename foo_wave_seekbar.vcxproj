@@ -48,7 +48,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalOptions>/Zm256 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zm300 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_WAVE_SEEKBAR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -70,7 +70,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalOptions>/Zm256 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zm300 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_WAVE_SEEKBAR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -106,6 +106,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="PlaceholderWaveform.cc" />
     <ClCompile Include="SeekbarWindow.cc" />
     <ClCompile Include="SeekbarWindow.ConfigDialog.cc" />
     <ClCompile Include="Direct2D1.cc" />
@@ -127,6 +128,7 @@
     <ClCompile Include="WaveformImpl.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ActiveData.h" />
     <ClInclude Include="BackingStore.h" />
     <ClInclude Include="Direct3D.Effects.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
@@ -137,11 +139,14 @@
     <ClInclude Include="PchSeekbar.h" />
     <ClInclude Include="PersistentSettings.h" />
     <ClInclude Include="PfcSpirit.h" />
+    <ClInclude Include="PlaceholderWaveform.h" />
+    <ClInclude Include="RememberPointers.h" />
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />
     <ClInclude Include="Direct2D.h" />
     <ClInclude Include="Direct3D.h" />
     <ClInclude Include="SeekCallback.h" />
+    <ClInclude Include="SeekTooltip.h" />
     <ClInclude Include="VisualFrontend.h" />
     <ClInclude Include="SeekbarCui.h" />
     <ClInclude Include="SeekbarDui.h" />

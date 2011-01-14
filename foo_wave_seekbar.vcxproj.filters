@@ -95,6 +95,10 @@
     <ClCompile Include="GdiFallback.cc">
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClCompile>
+    <ClCompile Include="MetaHooks.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="PlaceholderWaveform.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h">
@@ -166,6 +170,10 @@
       <Filter>Seekbar\Frontends\Direct3D</Filter>
     </ClInclude>
     <ClInclude Include="PfcSpirit.h" />
+    <ClInclude Include="ActiveData.h" />
+    <ClInclude Include="SeekTooltip.h" />
+    <ClInclude Include="PlaceholderWaveform.h" />
+    <ClInclude Include="RememberPointers.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc">
