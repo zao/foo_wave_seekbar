@@ -180,7 +180,7 @@ namespace wave
 			ci.brush.CreateSolidBrush(cc.rgbResult);
 			ci.box.InvalidateRect(0);
 			ci.color = xbgr_to_color(cc.rgbResult);
-			sw.set_color(idx, ci.color, true);
+			data.colors[idx] = ci.color;
 		}
 	}
 
@@ -328,8 +328,8 @@ namespace wave
 		}
 	}
 
-	seekbar_window::configuration_dialog::configuration_dialog(seekbar_window& sw) 
-		: sw(sw), initializing(true)
+	seekbar_window::configuration_dialog::configuration_dialog(seekbar_window& sw, configuration_data data) 
+		: sw(sw), data(data), initializing(true)
 	{}
 
 	void seekbar_window::configuration_dialog::OnFinalMessage(HWND wnd)
@@ -339,7 +339,7 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::mk_color_info(config::color what, UINT display_id, UINT use_id)
 	{
-		color c = sw.settings.colors[what];
+		color c = data.colors[what];
 		color_info& ci = colors[what];
 
 		ci.box = GetDlgItem(display_id);
