@@ -1,5 +1,6 @@
 #pragma once
 #include "SeekbarState.h"
+#include "ActiveData.h"
 
 namespace wave
 {
@@ -35,6 +36,14 @@ namespace wave
 			display_average,
 			display_minimum,
 			display_maximum
+		};
+				
+		enum replaygain_value
+		{
+			replaygain_album_gain,
+			replaygain_track_gain,
+			replaygain_album_peak,
+			replaygain_track_peak
 		};
 
 		__declspec(selectany) bool frontend_has_configuration[] =
@@ -141,51 +150,93 @@ namespace wave
 		virtual void close_configuration() { }
 	};
 
-	struct visual_frontend_callback
+	struct color_set
 	{
-		virtual ~visual_frontend_callback() {}
-		enum replaygain_value {
-			replaygain_album_gain, replaygain_track_gain, replaygain_album_peak, replaygain_track_peak
-		};
-		virtual double get_track_length() const = 0;
-		virtual double get_playback_position() const = 0;
-		virtual bool is_cursor_visible() const = 0;
-		virtual bool is_seeking() const = 0;
-		virtual double get_seek_position() const = 0;
-		virtual float get_replaygain(replaygain_value) const = 0;
-		virtual bool get_playable_location(playable_location&) const = 0;
-		virtual bool get_waveform(service_ptr_t<waveform>&) const = 0;
-		virtual color get_color(config::color) const = 0;
-		virtual CSize get_size() const = 0;
-		virtual config::orientation get_orientation() const = 0;
-		virtual bool get_shade_played() const = 0;
-		virtual config::display_mode get_display_mode() const = 0;
-		virtual bool get_downmix_display() const = 0;
-		virtual bool get_flip_display() const = 0;
-		virtual void get_channel_infos(pfc::list_t<channel_info>&) const = 0;
+		active_data<color> background_color, foreground_color, highlight_color, selection_color;
+
+		active_data<color> get_color(config::color which) const {
+			switch (which) {
+			case config::color_background: return background_color;
+			case config::color_foreground: return foreground_color;
+			case config::color_highlight: return highlight_color;
+			case config::color_selection: return selection_color;
+			default: throw std::runtime_error("invalid color enumerand for get_color");
+			}
+		}
+
+		active_data<color> operator [] (config::color which) const {
+			return get_color(which);
+		}
 	};
 
-	struct visual_frontend_callback_setter {
-		virtual ~visual_frontend_callback_setter() {}
-		// Setters
-		virtual void set_track_length(double v) = 0;
-		virtual void set_playback_position(double v) = 0;
-		virtual void set_cursor_visible(bool t) = 0;
-		virtual void set_seeking(bool t) = 0;
-		virtual void set_seek_position(double v) = 0;
-		virtual void set_replaygain(visual_frontend_callback::replaygain_value e, float v) = 0;
-		virtual void set_playable_location(playable_location const& loc) = 0;
-		virtual void set_waveform(service_ptr_t<waveform> const& w) = 0;
-		virtual void set_color(config::color e, color c) = 0;
-		virtual void set_size(CSize size) = 0;
-		virtual void set_orientation(config::orientation o) = 0;
-		virtual void set_shade_played(bool b) = 0;
-		virtual void set_display_mode(config::display_mode mode) = 0;
-		virtual void set_downmix_display(bool downmix) = 0;
-		virtual void set_flip_display(bool flip) = 0;
-		virtual void set_channel_infos(pfc::list_t<channel_info> const&) = 0;
+	struct add_item_impl
+	{
+		template <typename C, typename T>
+		struct result { typedef C& type; };
+
+		template <typename C, typename T>
+		C& operator () (C& c, T arg) const { c.add_item(arg); return c; }
+	};
+	
+	namespace { boost::phoenix::function<add_item_impl> add_item; }
+
+	struct display_data
+	{
+		virtual void get_channel_infos(pfc::list_t<channel_info>& out) const
+		{
+			using namespace boost::phoenix; using namespace boost::phoenix::arg_names;
+			out.remove_all();
+			channel_infos.enumerate(add_item(ref(out), arg1));
+		}
+
+		virtual void set_channel_infos(pfc::list_t<channel_info> const& in) { channel_infos = in; }
+
+		active_data<CSize> size;
+		active_data<config::orientation> orientation;
+		active_data<bool> shade_played;
+		active_data<config::display_mode> display_mode;
+		active_data<bool> downmix_display, flip_display;
+		pfc::list_t<active_data<channel_info>> channel_infos;
+
+		display_data()
+			: orientation(config::orientation_horizontal), shade_played(true), downmix_display(false), flip_display(false)
+		{}
 	};
 
+	struct replaygain_data
+	{
+		replaygain_data()
+			: rg_album_gain(0.0), rg_track_gain(0.0), rg_album_peak(0.0), rg_track_peak(0.0)
+		{}
+
+		active_data<float> rg_album_gain, rg_track_gain, rg_album_peak, rg_track_peak;
+
+		// Getters
+		active_data<float> get_replaygain(config::replaygain_value e) const {
+			switch(e) {
+			case config::replaygain_album_gain: return rg_album_gain;
+			case config::replaygain_track_gain: return rg_track_gain;
+			case config::replaygain_album_peak: return rg_album_peak;
+			case config::replaygain_track_peak: return rg_track_peak;
+			default: throw std::runtime_error("invalid enumerand for replaygain");
+			}
+		}
+	};
+
+	struct visual_frontend_data : color_set, display_data, replaygain_data
+	{		
+		visual_frontend_data()
+			: track_length(1.0), playback_position(0.0), cursor_visible(false), seeking(false)
+			, seek_position(0.0)
+		{}
+
+		active_data<bool> cursor_visible, seeking;
+		active_data<double> playback_position, seek_position, track_length;
+
+		active_data<playable_location_impl> location;
+		active_data<service_ptr_t<wave::waveform>> waveform;
+	};
+	
 	struct visual_frontend_config
 	{
 		virtual ~visual_frontend_config() {}
