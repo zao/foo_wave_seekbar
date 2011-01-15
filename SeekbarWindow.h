@@ -126,8 +126,24 @@ namespace wave
 		void on_playback_order_changed(t_size p_new_index);
 
 	protected:
+		struct set_color_impl
+		{
+			template <typename, typename, typename>
+			struct result { typedef void type; };
+
+			template <typename T>
+			void operator () (config::color i, T const& t, bool o) const
+			{
+				self->set_color_func(i, t, o);
+			}
+
+			set_color_impl(seekbar_window* self) : self(self) {}
+			seekbar_window* self;
+		};
+		boost::phoenix::function<set_color_impl> set_color;
+
 		void set_border_visibility(bool);
-		void set_color(config::color which, color what, bool override);
+		void set_color_func(config::color which, color what, bool override);
 		void set_color_override(config::color which, bool override);
 		void set_frontend(config::frontend kind);
 		void set_orientation(config::orientation);
@@ -152,7 +168,7 @@ namespace wave
 #define COLOR_USE_HANDLER(Name) COMMAND_HANDLER_EX(Name, BN_CLICKED, on_use_color_click)
 #define ACTIVE_BOOL_CLICK_HANDLER(Id, Variable) \
 	if (!initializing && uMsg == WM_COMMAND && BN_CLICKED == HIWORD(wParam) && Id == LOWORD(wParam)) { \
-	SetMsgHandled(TRUE); data.##Variable = !!IsDlgButtonChecked(Id); lResult = 0; return TRUE; }
+	SetMsgHandled(TRUE); data.##Variable.set(!!IsDlgButtonChecked(Id)); lResult = 0; return TRUE; }
 
 			BEGIN_MSG_MAP_EX(configuration_dialog)
 				MSG_WM_INITDIALOG(on_wm_init_dialog)

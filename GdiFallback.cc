@@ -23,14 +23,14 @@ namespace wave
 	{
 		if (CPaintDC dc = wnd)
 		{
-			CSize size = data.size, true_size = size;
+			CSize size = data.size.get(), true_size = size;
 			back_dc->BitBlt(0, 0, size.cx, size.cy, *wave_dc, 0, 0, SRCCOPY);
 
-			bool vertical = data.orientation == config::orientation_vertical;
+			bool vertical = data.orientation.get() == config::orientation_vertical;
 			if (vertical)
 				std::swap(size.cx, size.cy);
 
-			bool flip = data.flip_display;
+			bool flip = data.flip_display.get();
 
 			auto draw_bar = [&](CPoint p1, CPoint p2)
 			{
@@ -44,12 +44,12 @@ namespace wave
 				back_dc->LineTo(orientate(p2));
 			};
 
-			auto pos = data.playback_position;
-			auto len = data.track_length;
+			auto pos = data.playback_position.get();
+			auto len = data.track_length.get();
 			
-			if (data.shade_played)
+			if (data.shade_played.get())
 			{
-				color c = data.highlight_color;
+				color c = data.highlight_color.get();
 				c.a = 0.3f;
 				CPoint p = orientate(CPoint((int)(pos * size.cx / len), size.cy));
 				BLENDFUNCTION bf = { AC_SRC_OVER, 0, 0x40, 0 };
@@ -69,15 +69,15 @@ namespace wave
 				}
 			}
 
-			if (data.cursor_visible)
+			if (data.cursor_visible.get())
 			{
 				draw_bar(
 					CPoint((int)(pos * size.cx / len), 0),
 					CPoint((int)(pos * size.cx / len), size.cy));
 
-				if (data.seeking)
+				if (data.seeking.get())
 				{
-					auto pos = data.seek_position;
+					auto pos = data.seek_position.get();
 					draw_bar(
 						CPoint((int)(pos * size.cx / len), 0),
 						CPoint((int)(pos * size.cx / len), size.cy));
@@ -113,8 +113,8 @@ namespace wave
 
 	void gdi_fallback_frontend::create_objects()
 	{
-#define PEN_FROM_COLOR(Name) { auto c = data.##Name##_color; pen_##Name.reset(new CPen); pen_##Name->CreatePen(PS_SOLID, 0, color_to_xbgr(c)); }
-#define SOLID_BRUSH_FROM_COLOR(Name) { auto c = data.##Name##_color; brush_##Name.reset(new CBrush); brush_##Name->CreateSolidBrush(color_to_xbgr(c)); }
+#define PEN_FROM_COLOR(Name) { auto c = data.##Name##_color.get(); pen_##Name.reset(new CPen); pen_##Name->CreatePen(PS_SOLID, 0, color_to_xbgr(c)); }
+#define SOLID_BRUSH_FROM_COLOR(Name) { auto c = data.##Name##_color.get(); brush_##Name.reset(new CBrush); brush_##Name->CreateSolidBrush(color_to_xbgr(c)); }
 		PEN_FROM_COLOR(foreground);
 		PEN_FROM_COLOR(highlight);
 		PEN_FROM_COLOR(selection);
@@ -127,7 +127,7 @@ namespace wave
 			CClientDC dc(wnd);
 			shade_dc.reset(new mem_dc(dc, CSize(1, 1)));
 		}
-		color c = data.highlight_color;
+		color c = data.highlight_color.get();
 		shade_dc->SetPixel(0, 0, color_to_xbgr(c));
 	}
 
@@ -150,7 +150,7 @@ namespace wave
 
 	void gdi_fallback_frontend::update_data()
 	{
-		CSize size = data.size;
+		CSize size = data.size.get();
 
 		{
 			CClientDC win_dc(wnd);
@@ -160,16 +160,16 @@ namespace wave
 
 		wave_dc->FillRect(CRect(0, 0, size.cx, size.cy), *brush_background);
 
-		bool vertical = data.orientation == config::orientation_vertical;
+		bool vertical = data.orientation.get() == config::orientation_vertical;
 		if (vertical)
 			std::swap(size.cx, size.cy);
 
-		bool flip = data.flip_display;
+		bool flip = data.flip_display.get();
 		
 		service_ptr_t<waveform> w;
-		if (w = data.waveform, w.is_valid())
+		if (w = data.waveform.get(), w.is_valid())
 		{
-			if (data.downmix_display)
+			if (data.downmix_display.get())
 				w = downmix_waveform(w);
 
 			pfc::list_t<channel_info> infos;
@@ -200,8 +200,8 @@ namespace wave
 				w->get_field("rms", index, avg_rms);
 				wave_dc->SelectPen(*pen_foreground);
 
-				color bg = data.background_color;
-				color txt = data.foreground_color;
+				color bg = data.background_color.get();
+				color txt = data.foreground_color.get();
 				D3DXVECTOR4 backgroundColor(bg.r, bg.g, bg.b, bg.a);
 				D3DXVECTOR4 textColor(txt.r, txt.g, txt.b, txt.a);
 				D3DXVECTOR2 tc;
@@ -257,7 +257,7 @@ namespace wave
 
 	CPoint gdi_fallback_frontend::orientate(CPoint p)
 	{
-		if (data.orientation == config::orientation_vertical)
+		if (data.orientation.get() == config::orientation_vertical)
 			return CPoint(p.y, p.x);
 		return p;
 	}

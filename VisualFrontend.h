@@ -185,7 +185,7 @@ namespace wave
 		virtual void get_channel_infos(pfc::list_t<channel_info>& out) const
 		{
 			using boost::phoenix::ref; using boost::phoenix::arg_names::arg1;
-			pfc::list_t<channel_info> const& infos = channel_infos;
+			pfc::list_t<channel_info> const& infos = channel_infos.get();
 			out.remove_all();
 			infos.enumerate(add_item(ref(out), arg1));
 		}
@@ -193,10 +193,10 @@ namespace wave
 		virtual void set_channel_infos(pfc::list_t<channel_info> const& in)
 		{
 			using boost::phoenix::ref; using boost::phoenix::arg_names::arg1;
-			pfc::list_t<channel_info> infos = channel_infos;
+			pfc::list_t<channel_info> infos = channel_infos.get();
 			infos.remove_all();
 			in.enumerate(add_item(ref(infos), arg1));
-			channel_infos = infos;
+			channel_infos.set(infos);
 		}
 
 		active_data<CSize> size;

@@ -123,7 +123,7 @@ namespace wave
 		{
 			if (device_still_lost())
 				return;
-			color c = data.background_color;
+			color c = data.background_color.get();
 			D3DXCOLOR bg(c.r, c.g, c.b, c.a);
 			dev->Clear(0, 0, D3DCLEAR_TARGET, bg, 1.0f, 0);
 		}
@@ -142,7 +142,7 @@ namespace wave
 
 				std::vector<float> buf;
 
-				if (this->data.orientation == config::orientation_horizontal)
+				if (this->data.orientation.get() == config::orientation_horizontal)
 				{
 					viewport.y /= (float)n;
 					buf +=

@@ -180,7 +180,7 @@ namespace wave
 			ci.brush.CreateSolidBrush(cc.rgbResult);
 			ci.box.InvalidateRect(0);
 			ci.color = xbgr_to_color(cc.rgbResult);
-			data.colors[idx] = ci.color;
+			data.colors[idx].set(ci.color);
 		}
 	}
 
@@ -325,7 +325,7 @@ namespace wave
 
 	void seekbar_window::configuration_dialog::mk_color_info(config::color what, UINT display_id, UINT use_id)
 	{
-		color c = data.colors[what];
+		color c = data.colors[what].get();
 		color_info& ci = colors[what];
 
 		ci.box = GetDlgItem(display_id);

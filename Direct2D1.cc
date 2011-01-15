@@ -86,16 +86,16 @@ namespace wave
 
 	void direct2d1_frontend::draw()
 	{
-		bool vertical = data.orientation == config::orientation_vertical;
-		bool flip = data.flip_display;
+		bool vertical = data.orientation.get() == config::orientation_vertical;
+		bool flip = data.flip_display.get();
 
 		D2D1_SIZE_F size = rt->GetSize();
 		if (vertical) std::swap(size.width, size.height);
 		
 		rt->BeginDraw();
 		rt->Clear(color_to_d2d1_color(colors.background));
-		float seek_x = (float)(size.width * data.seek_position / data.track_length);
-		float play_x = (float)(size.width * data.playback_position / data.track_length);
+		float seek_x = (float)(size.width * data.seek_position.get() / data.track_length.get());
+		float play_x = (float)(size.width * data.playback_position.get() / data.track_length.get());
 
 		if (flip)
 		{
@@ -112,10 +112,10 @@ namespace wave
 			}
 		}
 
-		if (data.seeking)
+		if (data.seeking.get())
 			rt->DrawLine(D2D1::Point2F(seek_x), D2D1::Point2F(seek_x, size.height), brushes.selection_brush, 2.5f);
 
-		if (data.shade_played)
+		if (data.shade_played.get())
 		{
 			D2D1_COLOR_F hi = brushes.highlight_brush->GetColor();
 			CComPtr<ID2D1SolidColorBrush> overlay_brush;
@@ -137,10 +137,10 @@ namespace wave
 
 	void direct2d1_frontend::update_size()
 	{
-		CSize size = data.size;
+		CSize size = data.size.get();
 		rt->Resize(D2D1::SizeU(size.cx, size.cy));
 		service_ptr_t<waveform> wf;
-		if (wf = data.waveform, wf.is_valid())
+		if (wf = data.waveform.get(), wf.is_valid())
 		{
 			trigger_texture_update(wf, size);
 		}
@@ -150,14 +150,14 @@ namespace wave
 	{
 		boost::mutex::scoped_lock sl(cache->mutex);
 		++cache->jobs;
-		if (data.downmix_display)
+		if (data.downmix_display.get())
 			wf = downmix_waveform(wf);
 		pfc::list_t<channel_info> infos;
 		data.get_channel_infos(infos);
 		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
 			, D2D1::SizeF((float)size.cx, (float)size.cy)
-			, data.orientation == config::orientation_vertical
-			, data.flip_display));
+			, data.orientation.get() == config::orientation_vertical
+			, data.flip_display.get()));
 	}
 
 	void direct2d1_frontend::on_state_changed(state s) {
@@ -334,9 +334,9 @@ namespace wave
 	{
 		D2D1_SIZE_F size = rt->GetSize();
 		service_ptr_t<waveform> wf;
-		if (wf = data.waveform, wf.is_valid())
+		if (wf = data.waveform.get(), wf.is_valid())
 		{
-			trigger_texture_update(wf, data.size);
+			trigger_texture_update(wf, data.size.get());
 		}
 	}
 
@@ -344,10 +344,10 @@ namespace wave
 	{
 		palette p =
 		{
-			data.get_color(config::color_background),
-			data.get_color(config::color_foreground),
-			data.get_color(config::color_highlight),
-			data.get_color(config::color_selection)
+			data.get_color(config::color_background).get(),
+			data.get_color(config::color_foreground).get(),
+			data.get_color(config::color_highlight).get(),
+			data.get_color(config::color_selection).get()
 		};
 		colors = p;
 		boost::mutex::scoped_lock sl(cache->mutex);

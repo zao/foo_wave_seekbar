@@ -10,7 +10,7 @@ namespace wave
 		{
 		#define UPDATE_COLOR(Name)                 \
 			{                                      \
-				color c = data.Name##_color;   \
+				color c = data.Name##_color.get();   \
 				D3DXCOLOR d(c.r, c.g, c.b, c.a);                             \
 				effect_params.set(parameters::Name##_color, D3DXVECTOR4(d)); \
 			}
@@ -24,19 +24,19 @@ namespace wave
 
 		void frontend_impl::update_effect_cursor()
 		{
-			effect_params.set(parameters::cursor_position, (float)(data.playback_position / data.track_length));
-			effect_params.set(parameters::cursor_visible, data.cursor_visible);
-			effect_params.set(parameters::seek_position, (float)(data.seek_position / data.track_length));
-			effect_params.set(parameters::seeking, data.seeking);
+			effect_params.set(parameters::cursor_position, (float)(data.playback_position.get() / data.track_length.get()));
+			effect_params.set(parameters::cursor_visible, data.cursor_visible.get());
+			effect_params.set(parameters::seek_position, (float)(data.seek_position.get() / data.track_length.get()));
+			effect_params.set(parameters::seeking, data.seeking.get());
 			effect_params.set(parameters::viewport_size, D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0, 0));
 		}
 
 		void frontend_impl::update_data()
 		{
 			service_ptr_t<waveform> w;
-			if (w = data.waveform, w.is_valid())
+			if (w = data.waveform.get(), w.is_valid())
 			{
-				if (data.downmix_display && w->get_channel_map() != audio_chunk::channel_config_mono)
+				if (data.downmix_display.get() && w->get_channel_map() != audio_chunk::channel_config_mono)
 				{
 					w = downmix_waveform(w);
 				}
@@ -140,35 +140,35 @@ namespace wave
 		void frontend_impl::update_replaygain()
 		{
 			effect_params.set(parameters::replaygain, D3DXVECTOR4(
-					data.get_replaygain(config::replaygain_album_gain),
-					data.get_replaygain(config::replaygain_track_gain),
-					data.get_replaygain(config::replaygain_album_peak),
-					data.get_replaygain(config::replaygain_track_peak)
+					data.get_replaygain(config::replaygain_album_gain).get(),
+					data.get_replaygain(config::replaygain_track_gain).get(),
+					data.get_replaygain(config::replaygain_album_peak).get(),
+					data.get_replaygain(config::replaygain_track_peak).get()
 					));
 		}
 
 		void frontend_impl::update_orientation()
 		{
 			effect_params.set(parameters::orientation, 
-				config::orientation_horizontal == data.orientation);
+				config::orientation_horizontal == data.orientation.get());
 		}
 
 		void frontend_impl::update_flipped()
 		{
 			effect_params.set(parameters::flipped,
-				data.flip_display);
+				data.flip_display.get());
 		}
 
 		void frontend_impl::update_shade_played()
 		{
 			effect_params.set(parameters::shade_played,
-				data.shade_played);
+				data.shade_played.get());
 		}
 
 		void frontend_impl::update_size()
 		{
 			release_default_resources();
-			CSize size = data.size;
+			CSize size = data.size.get();
 			pp.BackBufferWidth = size.cx;
 			pp.BackBufferHeight = size.cy;
 			HRESULT hr = S_OK;
