@@ -5,6 +5,7 @@ namespace wave
 {
 	bool has_direct3d9();
 	bool has_direct2d1();
+	bool has_direct3d11();
 
 	LRESULT seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM lparam)
 	{
@@ -13,6 +14,7 @@ namespace wave
 		std::wstring d3d = L"Direct3D 9.0c";
 		std::wstring d2d = L"Direct2D 1.0";
 		std::wstring gdi = L"GDI";
+		std::wstring d3d11 = L"Direct3D 11.0";
 		
 		auto add_frontend_string = [&cb](config::frontend frontend)
 		{
@@ -24,6 +26,8 @@ namespace wave
 		if (has_direct2d1())
 			add_frontend_string(config::frontend_direct2d1);
 		add_frontend_string(config::frontend_gdi);
+		if (has_direct3d11())
+			add_frontend_string(config::frontend_direct3d11);
 
 		auto select_frontend_string = [&cb](config::frontend frontend)
 		{

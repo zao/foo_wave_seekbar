@@ -358,8 +358,8 @@ namespace wave
 				fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
 				present_interval = 50;
 				break;
-			case config::frontend_directx11:
-				console::info("Seekbar: taking DirectX 11 path.");
+			case config::frontend_direct3d11:
+				console::info("Seekbar: taking Direct3D 11 path.");
 				fe->frontend.reset(new direct3d11::frontend_impl(*this, client_rect.Size(), *fe->callback, *fe->conf));
 				present_interval = 10;
 				break;

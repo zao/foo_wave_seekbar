@@ -29,9 +29,6 @@
     <Filter Include="Seekbar\Frontends\GDI">
       <UniqueIdentifier>{7f9faa07-f528-4c6c-a34e-c626d5a97717}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Seekbar\Frontends\DirectX11">
-      <UniqueIdentifier>{5979ee56-7ba5-49bb-bf7c-bd4998cc40c2}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CacheImpl.cc">
