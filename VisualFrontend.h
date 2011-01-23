@@ -25,7 +25,8 @@ namespace wave
 			frontend_direct3d9,
 			frontend_direct3d10,
 			frontend_direct2d1,
-			frontend_gdi
+			frontend_gdi,
+			frontend_directx11
 		};
 		enum display_mode
 		{
@@ -46,7 +47,7 @@ namespace wave
 		{
 			__declspec(selectany) wchar_t const* frontend[] =
 			{
-				L"Direct3D 9.0c", L"Direct3D 10.0", L"Direct2D 1.0", L"GDI"
+				L"Direct3D 9.0c", L"Direct3D 10.0", L"Direct2D 1.0", L"GDI", L"DirectX 11"
 			};
 			__declspec(selectany) wchar_t const* display_mode[] =
 			{
