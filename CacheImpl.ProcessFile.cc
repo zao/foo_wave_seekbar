@@ -79,6 +79,7 @@ namespace wave
 	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
 		service_ptr_t<waveform> out;
+
 		// Check for priority jobs.
 		if (user_requested)
 		{
@@ -98,7 +99,7 @@ namespace wave
 		}
 
 		if (regex_match(loc.get_path(), boost::regex("(random|record):.*", boost::regex::perl | boost::regex::icase)) ||
-			regex_match(loc.get_path(), boost::regex("(http|https|mms|lastfm|foo_lastfm_radio)://.*", boost::regex::perl | boost::regex::icase)) ||
+			regex_match(loc.get_path(), boost::regex("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*", boost::regex::perl | boost::regex::icase)) ||
 			regex_match(loc.get_path(), boost::regex("(cdda)://.*", boost::regex::perl | boost::regex::icase)) && !user_requested)
 		{
 			console::formatter() << "Wave cache: skipping location " << loc;
@@ -181,6 +182,9 @@ namespace wave
 				}
 				t_int64 sample_count = info.info_get_length_samples();
 				t_int64 chunk_size = sample_count / 2047;
+				
+				if (sample_count == 0)
+					return out;
 
 				pfc::list_hybrid_t<pfc::list_t<float>, 2048> minimum, maximum, rms;
 				minimum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
