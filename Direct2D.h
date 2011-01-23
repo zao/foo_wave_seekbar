@@ -1,5 +1,5 @@
 #pragma once
-#include "Direct3D.h"
+#include "VisualFrontend.h"
 #include <D2D1.h>
 #include <D2D1Helper.h>
 #include <wincodec.h>
