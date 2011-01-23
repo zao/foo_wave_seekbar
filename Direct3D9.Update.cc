@@ -1,5 +1,5 @@
 #include "PchSeekbar.h"
-#include "Direct3D.h"
+#include "Direct3D9.h"
 #include "Helpers.h"
 
 namespace wave

@@ -1,6 +1,6 @@
 #include "PchSeekbar.h"
-#include "Direct3D.h"
-#include "Direct3D.Effects.h"
+#include "Direct3D9.h"
+#include "Direct3D9.Effects.h"
 #include "Helpers.h"
 #include "resource.h"
 

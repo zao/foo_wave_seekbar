@@ -95,6 +95,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BackingStore.cc" />
+    <ClCompile Include="Direct3D11.cc" />
     <ClCompile Include="Direct3D9.ConfigDialog.cc" />
     <ClCompile Include="Direct3D9.Effects.cc" />
     <ClCompile Include="Direct3D9.Resources.cc" />
@@ -128,7 +129,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
-    <ClInclude Include="Direct3D.Effects.h" />
+    <ClInclude Include="Direct3D11.h" />
+    <ClInclude Include="Direct3D9.Effects.h" />
+    <ClInclude Include="Direct3D9.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="FrontendConfigImpl.h" />
     <ClInclude Include="GdiFallback.h" />
@@ -140,7 +143,6 @@
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />
     <ClInclude Include="Direct2D.h" />
-    <ClInclude Include="Direct3D.h" />
     <ClInclude Include="SeekCallback.h" />
     <ClInclude Include="VisualFrontend.h" />
     <ClInclude Include="SeekbarCui.h" />

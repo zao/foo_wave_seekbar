@@ -1,7 +1,7 @@
 #include "PchSeekbar.h"
 #include "SeekbarCui.h"
 #include "SeekbarDui.h"
-#include "Direct3D.h"
+#include "Direct3D9.h"
 #include "Direct2D.h"
 
 static service_factory_t<ui_element_impl<wave::seekbar_dui>> g_asdf_d3d9;

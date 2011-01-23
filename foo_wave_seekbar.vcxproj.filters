@@ -29,6 +29,9 @@
     <Filter Include="Seekbar\Frontends\GDI">
       <UniqueIdentifier>{7f9faa07-f528-4c6c-a34e-c626d5a97717}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Seekbar\Frontends\DirectX11">
+      <UniqueIdentifier>{5979ee56-7ba5-49bb-bf7c-bd4998cc40c2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CacheImpl.cc">
@@ -95,6 +98,12 @@
     <ClCompile Include="GdiFallback.cc">
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClCompile>
+    <ClCompile Include="MetaHooks.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D11.cc">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h">
@@ -156,16 +165,19 @@
     <ClInclude Include="Direct2D.h">
       <Filter>Seekbar\Frontends\Direct2D</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3D.h">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClInclude>
     <ClInclude Include="GdiFallback.h">
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3D.Effects.h">
+    <ClInclude Include="PfcSpirit.h" />
+    <ClInclude Include="Direct3D11.h">
       <Filter>Seekbar\Frontends\Direct3D</Filter>
     </ClInclude>
-    <ClInclude Include="PfcSpirit.h" />
+    <ClInclude Include="Direct3D9.h">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D9.Effects.h">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc">
