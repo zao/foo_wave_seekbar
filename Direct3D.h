@@ -1,5 +1,5 @@
 #pragma once
-#include "VisualFrontend.h"
+#include "frontend_sdk/VisualFrontend.h"
 #include <map>
 #include "resource.h"
 #include <boost/fusion/include/adapted.hpp>
@@ -94,8 +94,6 @@ namespace wave
 			void release_default_resources();
 
 			bool device_still_lost();
-
-			seekbar_state state_copy;
 
 			bool device_lost;
 			UINT mip_count;

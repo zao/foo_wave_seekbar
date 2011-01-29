@@ -52,7 +52,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_WAVE_SEEKBAR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PchSeekbar.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
@@ -61,7 +61,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>d3d9.dll;d3dx9_43.dll;dxgi.dll;d3d10.dll;d3dx10_43.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -71,10 +71,10 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalOptions>/Zm256 %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_WAVE_SEEKBAR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PchSeekbar.h</PrecompiledHeaderFile>
@@ -84,7 +84,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;d2d1.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>d3d9.dll;d3dx9_43.dll;dxgi.dll;d3d10.dll;d3dx10_43.dll;d2d1.dll;windowscodecs.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -108,7 +108,6 @@
     </ClCompile>
     <ClCompile Include="SeekbarWindow.cc" />
     <ClCompile Include="SeekbarWindow.ConfigDialog.cc" />
-    <ClCompile Include="Direct2D1.cc" />
     <ClCompile Include="Direct3D9.cc" />
     <ClCompile Include="SeekbarCui.cc" />
     <ClCompile Include="SeekbarDui.cc" />
@@ -123,8 +122,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Waveform.cc" />
-    <ClCompile Include="WaveformImpl.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
@@ -139,10 +136,8 @@
     <ClInclude Include="PfcSpirit.h" />
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />
-    <ClInclude Include="Direct2D.h" />
     <ClInclude Include="Direct3D.h" />
     <ClInclude Include="SeekCallback.h" />
-    <ClInclude Include="VisualFrontend.h" />
     <ClInclude Include="SeekbarCui.h" />
     <ClInclude Include="SeekbarDui.h" />
     <ClInclude Include="Cache.h" />
@@ -150,8 +145,6 @@
     <ClInclude Include="ProcessingContext.h" />
     <ClInclude Include="sqlite3.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="Waveform.h" />
-    <ClInclude Include="WaveformImpl.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc" />
@@ -180,6 +173,9 @@
     <ProjectReference Include="..\vc9\columns_ui-sdk.vcxproj">
       <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="waveform_sdk\waveform_sdk.vcxproj">
+      <Project>{83bce727-32c9-42b7-9d51-bb50b85b039b}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

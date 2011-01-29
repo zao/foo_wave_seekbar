@@ -20,9 +20,6 @@
     <Filter Include="Seekbar\Resources">
       <UniqueIdentifier>{6a680fc1-a5cb-4223-9a73-754c8d0c9d61}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Seekbar\Frontends\Direct2D">
-      <UniqueIdentifier>{b2ffa99e-67d1-484c-a27d-07cbe667e423}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Seekbar\Frontends\Direct3D">
       <UniqueIdentifier>{e34abdab-1aeb-4123-8569-ddbe3c58d0b8}</UniqueIdentifier>
     </Filter>
@@ -65,13 +62,7 @@
     <ClCompile Include="sqlite3.c">
       <Filter>Cache</Filter>
     </ClCompile>
-    <ClCompile Include="Waveform.cc">
-      <Filter>Cache</Filter>
-    </ClCompile>
     <ClCompile Include="BackingStore.cc">
-      <Filter>Cache</Filter>
-    </ClCompile>
-    <ClCompile Include="WaveformImpl.cc">
       <Filter>Cache</Filter>
     </ClCompile>
     <ClCompile Include="Direct3D9.cc">
@@ -89,11 +80,11 @@
     <ClCompile Include="Direct3D9.Resources.cc">
       <Filter>Seekbar\Frontends\Direct3D</Filter>
     </ClCompile>
-    <ClCompile Include="Direct2D1.cc">
-      <Filter>Seekbar\Frontends\Direct2D</Filter>
-    </ClCompile>
     <ClCompile Include="GdiFallback.cc">
       <Filter>Seekbar\Frontends\GDI</Filter>
+    </ClCompile>
+    <ClCompile Include="MetaHooks.cc">
+      <Filter>Seekbar</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -129,19 +120,10 @@
     <ClInclude Include="sqlite3.h">
       <Filter>Cache</Filter>
     </ClInclude>
-    <ClInclude Include="VisualFrontend.h">
-      <Filter>Seekbar\Frontends</Filter>
-    </ClInclude>
     <ClInclude Include="BackingStore.h">
       <Filter>Cache</Filter>
     </ClInclude>
     <ClInclude Include="Job.h">
-      <Filter>Cache</Filter>
-    </ClInclude>
-    <ClInclude Include="Waveform.h">
-      <Filter>Cache</Filter>
-    </ClInclude>
-    <ClInclude Include="WaveformImpl.h">
       <Filter>Cache</Filter>
     </ClInclude>
     <ClInclude Include="SeekCallback.h">
@@ -152,9 +134,6 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Seekbar\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="Direct2D.h">
-      <Filter>Seekbar\Frontends\Direct2D</Filter>
     </ClInclude>
     <ClInclude Include="Direct3D.h">
       <Filter>Seekbar\Frontends\Direct3D</Filter>

@@ -1,6 +1,7 @@
 #include "PchSeekbar.h"
 #include "GdiFallback.h"
 #include "Helpers.h"
+#include "frontend_sdk/FrontendHelpers.h"
 
 namespace wave
 {
@@ -23,7 +24,7 @@ namespace wave
 	{
 		if (CPaintDC dc = wnd)
 		{
-			CSize size = callback.get_size(), true_size = size;
+			auto size = callback.get_size(), true_size = size;
 			back_dc->BitBlt(0, 0, size.cx, size.cy, *wave_dc, 0, 0, SRCCOPY);
 
 			bool vertical = callback.get_orientation() == config::orientation_vertical;
@@ -133,7 +134,7 @@ namespace wave
 		if (!shade_dc)
 		{
 			CClientDC dc(wnd);
-			shade_dc.reset(new mem_dc(dc, CSize(1, 1)));
+			shade_dc.reset(new mem_dc(dc, wave::size(1, 1)));
 		}
 		color c = callback.get_color(config::color_highlight);
 		shade_dc->SetPixel(0, 0, color_to_xbgr(c));
@@ -158,7 +159,7 @@ namespace wave
 
 	void gdi_fallback_frontend::update_data()
 	{
-		CSize size = callback.get_size();
+		auto size = callback.get_size();
 
 		{
 			CClientDC win_dc(wnd);

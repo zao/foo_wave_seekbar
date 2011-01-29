@@ -1,5 +1,5 @@
 #pragma once
-#include "VisualFrontend.h"
+#include "frontend_sdk/VisualFrontend.h"
 
 namespace wave
 {
@@ -14,11 +14,10 @@ namespace wave
 			CreateCompatibleDC(src_dc);
 		}
 
-		mem_dc(HDC src_dc, CSize size)
-			: size(size)
+		mem_dc(HDC src_dc, wave::size s)
 		{
 			CreateCompatibleDC(src_dc);
-			bmp.CreateCompatibleBitmap(src_dc, size.cx, size.cy);
+			bmp.CreateCompatibleBitmap(src_dc, s.cx, s.cy);
 			old_bmp = SelectBitmap(bmp);
 		}
 		~mem_dc()

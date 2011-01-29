@@ -1,7 +1,8 @@
 #include "PchSeekbar.h"
 #include "CacheImpl.h"
 #include "BackingStore.h"
-#include "WaveformImpl.h"
+#include "waveform_sdk/WaveformImpl.h"
+#include "waveform_sdk/Downmix.h"
 #include "Helpers.h"
 
 #include <boost/regex.hpp>

@@ -4,7 +4,7 @@
 namespace wave
 {
 	bool has_direct3d9();
-	bool has_direct2d1();
+	bool has_direct2d1() { return true; }
 
 	LRESULT seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM lparam)
 	{
