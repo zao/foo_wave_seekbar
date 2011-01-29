@@ -1,6 +1,6 @@
 #pragma once
 #include "Job.h"
-#include "Waveform.h"
+#include "waveform_sdk/Waveform.h"
 
 namespace wave
 {

@@ -1,6 +1,6 @@
 #include "PchSeekbar.h"
 #include "BackingStore.h"
-#include "WaveformImpl.h"
+#include "waveform_sdk/WaveformImpl.h"
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 #include "Helpers.h"

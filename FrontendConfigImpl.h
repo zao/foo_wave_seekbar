@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VisualFrontend.h"
+#include "frontend_sdk/VisualFrontend.h"
 
 namespace wave
 {

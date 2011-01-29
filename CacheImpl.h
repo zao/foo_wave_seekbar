@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cache.h"
-#include "Waveform.h"
+#include "waveform_sdk/Waveform.h"
 #include "Job.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}

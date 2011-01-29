@@ -44,7 +44,6 @@ inline void SetThreadName( DWORD dwThreadID, char const* threadName)
 	}
 }
 
-
 template <typename F>
 void in_main_thread(F f)
 {
@@ -60,50 +59,6 @@ void in_main_thread(F f)
 	};
 
 	static_api_ptr_t<main_thread_callback_manager>()->add_callback(new service_impl_t<in_main>(f));
-}
-
-inline float downmix(pfc::list_t<float> const& frame)
-{
-	const audio_sample sqrt_half = audio_sample(0.70710678118654752440084436210485);
-	pfc::list_t<float> data = frame;
-	switch (data.get_size())
-	{
-	case 8:
-		data[0] += frame[6] * sqrt_half;
-		data[1] += frame[7] * sqrt_half;
-	case 6:
-		data[0] += frame[2] * sqrt_half + frame[4] * sqrt_half + frame[3];
-		data[1] += frame[2] * sqrt_half + frame[5] * sqrt_half + frame[3];
-	case 2:
-		data[0] += frame[1];
-		data[0] /= 2.0;
-		break;
-	case 4:
-		data[0] += frame[1] + frame[2] + frame[3];
-		data[0] /= 4.0;
-	}
-	return data[0];
-}
-
-inline unsigned count_bits_set(unsigned v)
-{
-	v = v - ((v >> 1) & 0x55555555);                       // reuse input as temporary
-	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);        // temp
-	return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
-}
-
-template <typename T>
-inline std::vector<T> expand_flags(T map)
-{
-	std::vector<T> ret;
-	size_t N = sizeof(T) * 8;
-	for (unsigned shift = 0; shift < N; ++shift)
-	{
-		T flag = 1 << shift;
-		if (map & flag)
-			ret += flag;
-	}
-	return ret;
 }
 
 template <typename T>
@@ -158,6 +113,12 @@ inline pfc::string get_program_directory()
 	return pfc::string("file://") + exe_name.subString(0, exe_name.lastIndexOf('\\'));
 }
 
+inline unsigned count_bits_set(unsigned v)
+{
+	v = v - ((v >> 1) & 0x55555555);                       // reuse input as temporary
+	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);        // temp
+	return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
+}
 
 template <typename T>
 T clamp(T v, T a, T b)

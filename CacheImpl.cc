@@ -118,7 +118,9 @@ namespace wave
 			{
 				std::string name = (boost::format("wave-processing-%d/%d") % (i+1) % n).str();
 				::SetThreadName(-1, name.c_str());
+				CoInitialize(nullptr);
 				this->io.run();
+				CoUninitialize();
 			}));
 			if (!i)
 			{

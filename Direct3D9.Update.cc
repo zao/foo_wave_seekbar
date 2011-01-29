@@ -1,6 +1,7 @@
 #include "PchSeekbar.h"
 #include "Direct3D.h"
 #include "Helpers.h"
+#include "frontend_sdk/FrontendHelpers.h"
 
 namespace wave
 {
@@ -168,7 +169,7 @@ namespace wave
 		void frontend_impl::update_size()
 		{
 			release_default_resources();
-			CSize size = callback.get_size();
+			auto size = callback.get_size();
 			pp.BackBufferWidth = size.cx;
 			pp.BackBufferHeight = size.cy;
 			HRESULT hr = S_OK;

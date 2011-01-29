@@ -34,7 +34,7 @@ namespace wave
 			default: return color(1.0f, 105/255.f, 180/255.f);
 			}
 		}
-		virtual CSize get_size() const { return size; }
+		virtual size get_size() const { return this->size; }
 		virtual config::orientation get_orientation() const { return orientation; }
 		virtual bool get_shade_played() const { return shade_played; }
 		virtual config::display_mode get_display_mode() const { return display_mode; }
@@ -69,13 +69,18 @@ namespace wave
 			case config::color_selection: selection_color = c; break;
 			}
 		}
-		virtual void set_size(CSize s) { size = s; }
+		virtual void set_size(size s) { this->size = s; }
 		virtual void set_orientation(config::orientation o) { orientation = o; }
 		virtual void set_shade_played(bool b) { shade_played = b; }
 		virtual void set_display_mode(config::display_mode mode) { display_mode = mode; }
 		virtual void set_downmix_display(bool b) { downmix_display = b; }
 		virtual void set_flip_display(bool b) { flip_display = b; }
 		virtual void set_channel_infos(pfc::list_t<channel_info> const& in) { channel_infos = in; }
+
+		virtual void run_in_main_thread(boost::function<void ()> f) const
+		{
+			in_main_thread(f);
+		}
 
 		double track_length;
 		double playback_position;
@@ -86,7 +91,7 @@ namespace wave
 		playable_location_impl location;
 		service_ptr_t<waveform> wf;
 		color background_color, highlight_color, selection_color, text_color;
-		CSize size;
+		size size;
 		config::orientation orientation;
 		bool shade_played;
 		config::display_mode display_mode;
