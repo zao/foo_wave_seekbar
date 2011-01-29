@@ -1,8 +1,11 @@
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
 #include "Direct3D.h"
-#include "Direct2D.h"
+//#include "Direct2D.h"
 #include "GdiFallback.h"
+
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
@@ -128,10 +131,43 @@ namespace wave
 		fe->callback.reset(new frontend_callback_impl);
 		fe->conf.reset(new frontend_config_impl(settings));
 		fe->callback->set_waveform(placeholder_waveform);
+
+		load_frontend_modules();
 	}
 
 	seekbar_window::~seekbar_window()
 	{
+	}
+
+	frontend_module::frontend_module(boost::shared_ptr<bex::shared_library> lib, boost::shared_ptr<bex::type_map> types)
+		: library(lib), types(types), factory_map(types->get())
+	{
+	}
+
+	void seekbar_window::load_frontend_modules()
+	{
+		namespace fs = boost::filesystem;
+		boost::filesystem::path path = core_api::get_my_full_path();
+		path = path.remove_filename();
+		fs::directory_iterator I = fs::directory_iterator(path), last;
+		while (I != last)
+		{
+			auto lib = boost::make_shared<bex::shared_library>(I->string(), true);
+			if (lib && lib->open())
+			{
+				auto types = boost::make_shared<bex::type_map>();
+				if (lib->call(*types))
+				{
+					frontend_module::map_type& m = types->get();
+					if (!m.empty())
+					{
+						auto mod = boost::make_shared<frontend_module>(lib, types);
+						frontend_modules.push_back(mod);
+					}
+				}
+			}
+			++I;
+		}
 	}
 
 	void seekbar_window::repaint()
@@ -319,6 +355,30 @@ namespace wave
 		cb.set_channel_infos(infos);
 	}
 
+	shared_ptr<visual_frontend> frontend_module::instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback)
+	{
+		shared_ptr<visual_frontend> ret;
+		auto facI = factory_map.find(id);
+		if (facI != factory_map.end())
+		{
+			auto p = facI->second.create(wnd, size, callback);
+			ret = shared_ptr<visual_frontend>(p);
+		}
+		return ret;
+	}
+
+	shared_ptr<visual_frontend> seekbar_window::create_frontend(config::frontend id)
+	{
+		shared_ptr<visual_frontend> ret;
+		for (auto I = frontend_modules.begin(); I != frontend_modules.end(); ++I)
+		{
+			auto sz = client_rect.Size();
+			if (ret = (*I)->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback))
+				return ret;
+		}
+		return ret;
+	}
+
 	void seekbar_window::initialize_frontend()
 	{		
 		scoped_lock sl(fe->mutex);
@@ -349,14 +409,16 @@ namespace wave
 				break;
 			case config::frontend_direct2d1:
 				console::info("Seekbar: taking Direct2D1 path.");
-				fe->frontend.reset(new direct2d1_frontend(*this, client_rect.Size(), *fe->callback));
-				present_interval = 25;
+				fe->frontend = create_frontend(config::frontend_direct2d1);
+				present_interval = fe->frontend->get_present_interval();
 				break;
 			case config::frontend_gdi:
 				console::info("Seekbar: taking GDI path.");
 				fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
 				present_interval = 50;
 				break;
+			default:
+				throw std::runtime_error("invalid frontend stored");
 			}
 			console::info("Seekbar: Frontend initialized.");
 			initializing_graphics = true;
@@ -416,7 +478,7 @@ namespace wave
 			: config::orientation_vertical);
 		
 		scoped_lock sl(fe->mutex);
-		fe->callback->set_size(size);
+		fe->callback->set_size(wave::size(size.cx, size.cy));
 		if (fe->frontend)
 			fe->frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
 		repaint();

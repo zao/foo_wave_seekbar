@@ -1,12 +1,17 @@
 #pragma once
 #include "SeekbarState.h"
-#include "VisualFrontend.h"
+#include "frontend_sdk/VisualFrontend.h"
 #include "resource.h"
 #include "PersistentSettings.h"
 #include "FrontendCallbackImpl.h"
 #include "FrontendConfigImpl.h"
 #include "Helpers.h"
 #include "SeekCallback.h"
+#include <boost/extension/factory.hpp>
+#include <boost/extension/shared_library.hpp>
+#include <boost/extension/type_map.hpp>
+
+namespace bex = boost::extensions;
 
 namespace wave
 {
@@ -23,6 +28,18 @@ namespace wave
 		scoped_ptr<frontend_config_impl> conf;
 		shared_ptr<visual_frontend> frontend;
 		uint32_t auto_get_serial;
+	};
+
+	struct frontend_module
+	{
+		frontend_module(boost::shared_ptr<bex::shared_library>, boost::shared_ptr<bex::type_map>);
+		boost::shared_ptr<visual_frontend> instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback);
+
+		typedef std::map<config::frontend, bex::factory<visual_frontend, HWND, wave::size, visual_frontend_callback&>> map_type;
+
+		boost::shared_ptr<bex::shared_library> library;
+		boost::shared_ptr<bex::type_map> types;
+		map_type& factory_map;
 	};
 
 	struct seekbar_window : CWindowImpl<seekbar_window>, play_callback_impl_base, playlist_callback_impl_base, noncopyable
@@ -78,6 +95,10 @@ namespace wave
 		void toggle_orientation(frontend_callback_impl& cb, persistent_settings& s);
 		virtual bool forward_rightclick() { return false; }
 
+		void load_frontend_modules();
+		boost::shared_ptr<visual_frontend> create_frontend(config::frontend id);
+
+		std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
 		service_ptr_t<waveform> placeholder_waveform;
 
 		shared_ptr<frontend_data> fe;
