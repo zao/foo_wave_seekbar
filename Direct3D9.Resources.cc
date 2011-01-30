@@ -45,20 +45,20 @@ namespace wave
 			HRESULT hr = S_OK;
 			abort_callback_dummy cb;
 
-			service_ptr_t<effect_compiler> compiler;
+			shared_ptr<effect_compiler> compiler;
 			get_effect_compiler(compiler);
 
-			auto build_effect = [compiler](pfc::string body) -> service_ptr_t<effect_handle>
+			auto build_effect = [compiler](std::string body) -> shared_ptr<effect_handle>
 			{
-				service_ptr_t<effect_handle> fx;
-				pfc::list_t<effect_compiler::diagnostic_entry> errors;
+				shared_ptr<effect_handle> fx;
+				std::deque<effect_compiler::diagnostic_entry> errors;
 				bool success = compiler->compile_fragment(fx, errors, body);
 
 				if (!success)
 				{
 					console::formatter() << "Seekbar: Direct3D: effect compile failed.";
-					pfc::string text = simple_diagnostic_format(errors);
-					console::formatter() << "Seekbar: Direct3D: " << text.get_ptr();
+					std::string text = simple_diagnostic_format(errors);
+					console::formatter() << "Seekbar: Direct3D: " << text.c_str();
 				}
 				return fx;
 			};
@@ -67,21 +67,20 @@ namespace wave
 			{
 				std::vector<char> fx_body;
 				get_resource_contents(fx_body, IDR_DEFAULT_FX_BODY);
-				pfc::string stored_body;
-				stored_body.set_string(&fx_body[0], fx_body.size());
+				std::string stored_body(fx_body.begin(), fx_body.end());
 				auto fx = build_effect(stored_body);
-				if (fx.is_valid())
+				if (fx)
 					effect_stack.push(fx);
 			}
 
 			// Compile current stored effect
 			{
-				pfc::string stored_body;
+				std::string stored_body;
 				if (conf.get_configuration_string(guid_fx_string, stored_body))
 				{
-					service_ptr_t<effect_handle> fx;
+					shared_ptr<effect_handle> fx;
 					fx = build_effect(stored_body);
-					if (fx.is_valid())
+					if (fx)
 						effect_stack.push(fx);
 				}
 			}
@@ -92,8 +91,8 @@ namespace wave
 
 		void frontend_impl::release_default_resources()
 		{
-			effect_stack = std::stack<service_ptr_t<effect_handle>>();
-			effect_override.release();
+			effect_stack = std::stack<shared_ptr<effect_handle>>();
+			effect_override.reset();
 		}
 	}
 }

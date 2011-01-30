@@ -18,7 +18,7 @@ namespace wave
 
 		namespace parameters
 		{
-			extern pfc::string const background_color, foreground_color, highlight_color, selection_color,
+			extern std::string const background_color, foreground_color, highlight_color, selection_color,
 				cursor_position, cursor_visible,
 				seek_position, seeking,
 				viewport_size, replaygain,
@@ -29,12 +29,12 @@ namespace wave
 		struct effect_parameters
 		{
 			typedef boost::variant<float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9*> attribute;
-			pfc::map_t<pfc::string, attribute> attributes;
+			std::map<std::string, attribute> attributes;
 
 			template <typename T>
-			void set(pfc::string what, T const& t)
+			void set(std::string what, T const& t)
 			{
-				attributes.set(what, t);
+				attributes[what] = t;
 			}
 
 			void apply_to(CComPtr<ID3DXEffect> fx);
@@ -44,7 +44,7 @@ namespace wave
 		{
 			friend config_dialog;
 
-			frontend_impl(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
+			frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
 			virtual void clear();
 			virtual void draw();
 			virtual void present();
@@ -70,8 +70,8 @@ namespace wave
 			std::vector<unsigned> channel_numbers;
 			std::vector<channel_info> channel_order;
 
-			std::stack<service_ptr_t<effect_handle>> effect_stack;
-			service_ptr_t<effect_handle> effect_override;
+			std::stack<shared_ptr<effect_handle>> effect_stack;
+			shared_ptr<effect_handle> effect_override;
 
 			CComPtr<IDirect3DVertexBuffer9> vb;
 			CComPtr<IDirect3DVertexDeclaration9> decl;
@@ -103,8 +103,8 @@ namespace wave
 		private: // Configuration
 			scoped_ptr<config_dialog> config;
 
-			void get_effect_compiler(service_ptr_t<effect_compiler>& out);
-			void set_effect(service_ptr_t<effect_handle> effect, bool permanent);
+			void get_effect_compiler(shared_ptr<effect_compiler>& out);
+			void set_effect(shared_ptr<effect_handle> effect, bool permanent);
 		};
 
 		struct config_dialog : CDialogImpl<config_dialog>
@@ -134,14 +134,14 @@ namespace wave
 			virtual void OnFinalMessage(HWND);
 
 			weak_ptr<frontend_impl> fe;
-			service_ptr_t<effect_compiler> compiler;
+			shared_ptr<effect_compiler> compiler;
 			CFont mono_font;
 			CEdit code_box, error_box;
 			CButton apply_button, default_button, reset_button;
-			service_ptr_t<effect_handle> fx;
+			shared_ptr<effect_handle> fx;
 		};
 
-		struct NOVTABLE effect_compiler : service_base
+		struct NOVTABLE effect_compiler : noncopyable
 		{
 			struct diagnostic_entry
 			{
@@ -156,10 +156,10 @@ namespace wave
 			};
 
 			virtual ~effect_compiler() {}
-			virtual bool compile_fragment(service_ptr_t<effect_handle>& effect, pfc::list_t<diagnostic_entry>& output, pfc::string const& data) = 0;
+			virtual bool compile_fragment(shared_ptr<effect_handle>& effect, std::deque<diagnostic_entry>& output, std::string const& data) = 0;
 		};
 
-		struct NOVTABLE effect_handle : service_base
+		struct NOVTABLE effect_handle : noncopyable
 		{
 			virtual ~effect_handle() {}
 			virtual CComPtr<ID3DXEffect> get_effect() const = 0;
