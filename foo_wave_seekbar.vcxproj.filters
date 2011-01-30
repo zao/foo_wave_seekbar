@@ -135,16 +135,16 @@
     <ClInclude Include="resource.h">
       <Filter>Seekbar\Resources</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3D.h">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClInclude>
     <ClInclude Include="GdiFallback.h">
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3D.Effects.h">
+    <ClInclude Include="PfcSpirit.h" />
+    <ClInclude Include="Direct3D9.Effects.h">
       <Filter>Seekbar\Frontends\Direct3D</Filter>
     </ClInclude>
-    <ClInclude Include="PfcSpirit.h" />
+    <ClInclude Include="Direct3D9.h">
+      <Filter>Seekbar\Frontends\Direct3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc">
