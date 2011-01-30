@@ -410,6 +410,10 @@ namespace wave
 			case config::frontend_direct2d1:
 				console::info("Seekbar: taking Direct2D1 path.");
 				fe->frontend = create_frontend(config::frontend_direct2d1);
+				if (!fe->frontend)
+				{
+					throw std::runtime_error("unavailable frontend");
+				}
 				present_interval = fe->frontend->get_present_interval();
 				break;
 			case config::frontend_gdi:
