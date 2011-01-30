@@ -1,6 +1,6 @@
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
-#include "Direct3D.h"
+#include "Direct3D9.h"
 //#include "Direct2D.h"
 #include "GdiFallback.h"
 

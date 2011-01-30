@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Direct3D.h"
+#include "Direct3D9.h"
 
 namespace wave
 {
