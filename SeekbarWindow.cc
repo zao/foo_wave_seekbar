@@ -404,7 +404,10 @@ namespace wave
 #endif
 			case config::frontend_direct3d9:
 				console::info("Seekbar: taking Direct3D9 path.");
-				fe->frontend.reset(new direct3d9::frontend_impl(*this, client_rect.Size(), *fe->callback, *fe->conf));
+				{
+					auto sz = client_rect.Size();
+					fe->frontend.reset(new direct3d9::frontend_impl(*this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf));
+				}
 				present_interval = 10;
 				break;
 			case config::frontend_direct2d1:

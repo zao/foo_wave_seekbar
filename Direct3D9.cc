@@ -44,7 +44,7 @@ namespace wave
 
 	namespace direct3d9
 	{
-		frontend_impl::frontend_impl(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
+		frontend_impl::frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
 			: mip_count(4), callback(callback), conf(conf), floating_point_texture(true)
 		{
 			HRESULT hr = S_OK;
@@ -207,7 +207,7 @@ namespace wave
 
 		CComPtr<ID3DXEffect> frontend_impl::select_effect()
 		{
-			if (effect_override.is_valid())
+			if (effect_override)
 				return effect_override->get_effect();
 			return effect_stack.top()->get_effect();
 		}
@@ -262,12 +262,12 @@ namespace wave
 			}
 		}
 
-		void frontend_impl::get_effect_compiler(service_ptr_t<effect_compiler>& out)
+		void frontend_impl::get_effect_compiler(shared_ptr<effect_compiler>& out)
 		{
-			out = new service_impl_t<effect_compiler_impl>(dev);
+			out.reset(new effect_compiler_impl(dev));
 		}
 
-		void frontend_impl::set_effect(service_ptr_t<effect_handle> in, bool permanent)
+		void frontend_impl::set_effect(shared_ptr<effect_handle> in, bool permanent)
 		{
 			if (permanent)
 			{
@@ -281,7 +281,7 @@ namespace wave
 
 		namespace parameters
 		{
-			pfc::string const
+			std::string const
 				background_color = "BACKGROUNDCOLOR",
 				foreground_color = "TEXTCOLOR",
 				highlight_color = "HIGHLIGHTCOLOR",
@@ -306,10 +306,10 @@ namespace wave
 		struct attribute_setter : boost::static_visitor<void>
 		{
 			CComPtr<ID3DXEffect> const& fx;
-			pfc::string const& key;
-			explicit attribute_setter(CComPtr<ID3DXEffect> const& fx, pfc::string const& key) : fx(fx), key(key) {}
+			std::string const& key;
+			explicit attribute_setter(CComPtr<ID3DXEffect> const& fx, std::string const& key) : fx(fx), key(key) {}
 
-			D3DXHANDLE get() { return fx->GetParameterBySemantic(nullptr, key.get_ptr()); }
+			D3DXHANDLE get() { return fx->GetParameterBySemantic(nullptr, key.c_str()); }
 
 			// <float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9>
 			void operator () (float const& f)
@@ -340,11 +340,12 @@ namespace wave
 
 		void effect_parameters::apply_to(CComPtr<ID3DXEffect> fx)
 		{
-			attributes.enumerate([fx](pfc::string const& key, attribute& value)
-			{
-				attribute_setter vtor(fx, key);
-				boost::apply_visitor(vtor, value);
-			});
+			std::for_each(attributes.begin(), attributes.end(),
+				[fx](std::pair<std::string const, attribute>& value)
+				{
+					attribute_setter vtor(fx, value.first);
+					boost::apply_visitor(vtor, value.second);
+				});
 		}
 	}
 }

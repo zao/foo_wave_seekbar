@@ -200,8 +200,8 @@ namespace wave
 	{
 		virtual ~visual_frontend_config() {}
 		
-		virtual bool get_configuration_string(GUID key, pfc::string& out) const = 0;
-		virtual void set_configuration_string(GUID key, pfc::string const& value) = 0;
+		virtual bool get_configuration_string(GUID key, std::string& out) const = 0;
+		virtual void set_configuration_string(GUID key, std::string const& value) = 0;
 	};
 
 	struct visual_frontend_factory

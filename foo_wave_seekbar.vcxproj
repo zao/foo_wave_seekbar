@@ -125,7 +125,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
-    <ClInclude Include="Direct3D.Effects.h" />
+    <ClInclude Include="Direct3D9.Effects.h" />
+    <ClInclude Include="Direct3D9.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="FrontendConfigImpl.h" />
     <ClInclude Include="GdiFallback.h" />
@@ -136,7 +137,6 @@
     <ClInclude Include="PfcSpirit.h" />
     <ClInclude Include="SeekbarState.h" />
     <ClInclude Include="SeekbarWindow.h" />
-    <ClInclude Include="Direct3D.h" />
     <ClInclude Include="SeekCallback.h" />
     <ClInclude Include="SeekbarCui.h" />
     <ClInclude Include="SeekbarDui.h" />
