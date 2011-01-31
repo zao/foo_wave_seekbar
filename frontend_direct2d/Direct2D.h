@@ -58,7 +58,7 @@ namespace wave
 
 	struct direct2d1_frontend : visual_frontend
 	{
-		direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback);
+		direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&);
 		~direct2d1_frontend();
 
 		void clear();

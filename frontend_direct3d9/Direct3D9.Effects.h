@@ -9,7 +9,7 @@ namespace wave
 		struct effect_compiler_impl : effect_compiler
 		{
 			explicit effect_compiler_impl(CComPtr<IDirect3DDevice9> dev);
-			virtual bool compile_fragment(service_ptr_t<effect_handle>& effect, pfc::list_t<diagnostic_entry>& output, pfc::string const& source);
+			virtual bool compile_fragment(shared_ptr<effect_handle>& effect, std::deque<diagnostic_entry>& output, std::string const& source);
 
 		private:
 			CComPtr<IDirect3DDevice9> dev;
@@ -25,6 +25,6 @@ namespace wave
 			CComPtr<ID3DXEffect> fx;
 		};
 
-		pfc::string simple_diagnostic_format(pfc::list_t<effect_compiler::diagnostic_entry> const& entries);
+		std::string simple_diagnostic_format(std::deque<effect_compiler::diagnostic_entry> const& entries);
 	}
 }

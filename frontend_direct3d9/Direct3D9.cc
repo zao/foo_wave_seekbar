@@ -1,12 +1,17 @@
-#include "PchSeekbar.h"
+#include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
-#include "SeekbarState.h"
-#include "Helpers.h"
+#include "../frontend_sdk/FrontendHelpers.h"
 #include "resource.h"
 
 namespace wave
 {
+	template <typename T>
+	inline T lerp(T a, T b, float n)
+	{
+		return (1.0f - n)*a + n*b;
+	}
+
 	struct create_d3d9_func
 	{
 		IDirect3D9* operator() () const
@@ -25,38 +30,17 @@ namespace wave
 		}
 	};
 
-	struct test_d3dx10_func
-	{
-		bool operator() () const
-		{
-			D3DX10CheckVersion(D3D10_SDK_VERSION, D3DX10_SDK_VERSION);
-			return true;
-		}
-	};
-
-	bool has_direct3d9() {
-		CComPtr<IDirect3D9> d3d;
-		d3d.Attach(try_module_call(create_d3d9_func()));
-		bool has_d3dx9 = try_module_call(test_d3dx9_func());
-		bool has_d3dx10 = try_module_call(test_d3dx10_func());
-		return d3d && has_d3dx9 && has_d3dx10;
-	}
-
 	namespace direct3d9
 	{
-		frontend_impl::frontend_impl(HWND wnd, CSize client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
+		frontend_impl::frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
 			: mip_count(4), callback(callback), conf(conf), floating_point_texture(true)
 		{
 			HRESULT hr = S_OK;
 
-			d3d.Attach(try_module_call(create_d3d9_func()));
-			bool has_d3dx9 = try_module_call(test_d3dx9_func());
-			bool has_d3dx10 = try_module_call(test_d3dx10_func());
+			d3d.Attach(create_d3d9_func()());
 
-			if (!d3d || !has_d3dx9 || !has_d3dx10)
+			if (!d3d)
 			{
-				if (has_d3dx9 && !has_d3dx10 || !has_d3dx9 && has_d3dx10)
-					throw std::runtime_error("Found only half of the required D3DX DLLs. If you've added such DLLs manually, don't do that. Install the proper redist already.");
 				throw std::runtime_error("DirectX redistributable not found. Run the DirectX August 2009 web setup or later.");
 			}
 
@@ -136,6 +120,7 @@ namespace wave
 			//D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
 			auto draw_quad = [this](int idx, int ch, int n)
 			{
+				using namespace boost::assign;
 				D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
 				D3DXVECTOR4 viewport = D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0.0f, 0.0f);
 				sides /= (float)n;
@@ -207,7 +192,7 @@ namespace wave
 
 		CComPtr<ID3DXEffect> frontend_impl::select_effect()
 		{
-			if (effect_override.is_valid())
+			if (effect_override)
 				return effect_override->get_effect();
 			return effect_stack.top()->get_effect();
 		}
@@ -241,7 +226,7 @@ namespace wave
 			return device_lost;
 		}
 
-		void frontend_impl::show_configuration(CWindow parent)
+		void frontend_impl::show_configuration(HWND parent)
 		{
 			if (config)
 				config->BringWindowToTop();
@@ -262,12 +247,12 @@ namespace wave
 			}
 		}
 
-		void frontend_impl::get_effect_compiler(service_ptr_t<effect_compiler>& out)
+		void frontend_impl::get_effect_compiler(shared_ptr<effect_compiler>& out)
 		{
-			out = new service_impl_t<effect_compiler_impl>(dev);
+			out.reset(new effect_compiler_impl(dev));
 		}
 
-		void frontend_impl::set_effect(service_ptr_t<effect_handle> in, bool permanent)
+		void frontend_impl::set_effect(shared_ptr<effect_handle> in, bool permanent)
 		{
 			if (permanent)
 			{
@@ -281,7 +266,7 @@ namespace wave
 
 		namespace parameters
 		{
-			pfc::string const
+			std::string const
 				background_color = "BACKGROUNDCOLOR",
 				foreground_color = "TEXTCOLOR",
 				highlight_color = "HIGHLIGHTCOLOR",
@@ -306,10 +291,10 @@ namespace wave
 		struct attribute_setter : boost::static_visitor<void>
 		{
 			CComPtr<ID3DXEffect> const& fx;
-			pfc::string const& key;
-			explicit attribute_setter(CComPtr<ID3DXEffect> const& fx, pfc::string const& key) : fx(fx), key(key) {}
+			std::string const& key;
+			explicit attribute_setter(CComPtr<ID3DXEffect> const& fx, std::string const& key) : fx(fx), key(key) {}
 
-			D3DXHANDLE get() { return fx->GetParameterBySemantic(nullptr, key.get_ptr()); }
+			D3DXHANDLE get() { return fx->GetParameterBySemantic(nullptr, key.c_str()); }
 
 			// <float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9>
 			void operator () (float const& f)
@@ -340,11 +325,12 @@ namespace wave
 
 		void effect_parameters::apply_to(CComPtr<ID3DXEffect> fx)
 		{
-			attributes.enumerate([fx](pfc::string const& key, attribute& value)
-			{
-				attribute_setter vtor(fx, key);
-				boost::apply_visitor(vtor, value);
-			});
+			std::for_each(attributes.begin(), attributes.end(),
+				[fx](std::pair<std::string const, attribute>& value)
+				{
+					attribute_setter vtor(fx, value.first);
+					boost::apply_visitor(vtor, value.second);
+				});
 		}
 	}
 }

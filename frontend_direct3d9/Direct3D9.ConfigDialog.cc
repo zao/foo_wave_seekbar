@@ -1,7 +1,7 @@
-#include "PchSeekbar.h"
+#include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
-#include "Helpers.h"
+#include "../frontend_sdk/FrontendHelpers.h"
 
 namespace wave
 {
@@ -59,7 +59,7 @@ namespace wave
 
 				ATL::CString source;
 				code_box.GetWindowTextW(source);
-				front->conf.set_configuration_string(guid_fx_string, pfc::stringcvt::string_utf8_from_wide(source, source.GetLength()));
+				front->conf.set_configuration_string(guid_fx_string, pfc::stringcvt::string_utf8_from_wide(source, source.GetLength()).get_ptr());
 				apply_button.EnableWindow(FALSE);
 				reset_button.EnableWindow(FALSE);
 			}
@@ -80,11 +80,11 @@ namespace wave
 			if (auto front = fe.lock())
 			{
 				// read up effect contents
-				pfc::string fx_data;
+				std::string fx_data;
 				front->conf.get_configuration_string(guid_fx_string, fx_data);
 		
 				// set effect box text
-				code_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(fx_data.get_ptr()).get_ptr());
+				code_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(fx_data.c_str()).get_ptr());
 				PostMessage(WM_USER_CLEAR_EFFECT_SELECTION);
 			}
 			apply_button.EnableWindow(FALSE);
@@ -105,23 +105,23 @@ namespace wave
 			ATL::CString source;
 			control.GetWindowTextW(source);
 
-			pfc::list_t<effect_compiler::diagnostic_entry> output;
-			bool success = compiler->compile_fragment(fx, output, pfc::stringcvt::string_utf8_from_wide(source));
+			std::deque<effect_compiler::diagnostic_entry> output;
+			bool success = compiler->compile_fragment(fx, output, pfc::stringcvt::string_utf8_from_wide(source).get_ptr());
 			if (success)
 			{
 				error_box.SetWindowTextW(L"No errors.\n");
 			}
 			else
 			{
-				pfc::string errors = simple_diagnostic_format(output);
-				error_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(errors.get_ptr()));
+				std::string errors = simple_diagnostic_format(output);
+				error_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(errors.c_str()));
 			}
 			error_box.SetSelNone(FALSE);
 
 			if (auto front = fe.lock())
 			{
 				front->set_effect(fx, false);
-				bool ok = fx.is_valid();
+				bool ok = fx;
 				apply_button.EnableWindow(ok);
 				reset_button.EnableWindow(TRUE);
 			}

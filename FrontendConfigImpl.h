@@ -11,21 +11,21 @@ namespace wave
 		{
 		}
 
-		virtual bool get_configuration_string(GUID key, pfc::string& out) const
+		virtual bool get_configuration_string(GUID key, std::string& out) const
 		{
 			auto& gs = settings.generic_strings;
 			auto I = gs.find(key);
 			if (gs.end() != I)
 			{
-				out.set_string(I->second.c_str(), I->second.size());
+				out = I->second;
 				return true;
 			}
 			return false;
 		}
 		
-		virtual void set_configuration_string(GUID key, pfc::string const& value)
+		virtual void set_configuration_string(GUID key, std::string const& value)
 		{
-			settings.generic_strings[key] = value.get_ptr();
+			settings.generic_strings[key] = value;
 		}
 
 	private:

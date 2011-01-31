@@ -13,3 +13,14 @@ inline std::vector<T> expand_flags(T map)
 	}
 	return ret;
 }
+
+template <typename Cont>
+void get_resource_contents(Cont& out, WORD id)
+{
+	auto module = (HMODULE)&__ImageBase;
+	auto res_info = FindResource(module, MAKEINTRESOURCE(id), RT_RCDATA);
+	auto res = LoadResource(module, res_info);
+	auto size = SizeofResource(module, res_info);
+	auto p = (char*)LockResource(res);
+	std::copy(p, p + size, std::back_inserter(out));
+}
