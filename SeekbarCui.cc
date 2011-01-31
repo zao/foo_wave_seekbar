@@ -1,7 +1,6 @@
 #include "PchSeekbar.h"
 #include "SeekbarCui.h"
 #include "Cache.h"
-#include "Direct3D9.h"
 
 namespace wave
 {

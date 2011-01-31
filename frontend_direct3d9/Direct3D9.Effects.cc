@@ -1,17 +1,24 @@
-#include "PchSeekbar.h"
+#include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
-#include "Helpers.h"
 #include "resource.h"
 
-#include "PfcSpirit.h"
 #include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/karma.hpp>
 
 namespace qi = boost::spirit::qi;
 
 namespace ascii = boost::spirit::ascii;
 namespace karma = boost::spirit::karma;
 namespace qi = boost::spirit::qi;
+
+template <typename Cont, typename Pred>
+typename Cont::size_type nuke_if(Cont& c, Pred p)
+{
+	auto count = c.size();
+	c.erase(std::remove_if(begin(c), end(c), p), end(c));
+	return count - c.size();
+}
 
 namespace wave
 {

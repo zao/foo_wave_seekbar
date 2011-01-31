@@ -1,10 +1,24 @@
-#include "PchSeekbar.h"
+#include "PchDirect3D9.h"
 #include "Direct3D9.h"
-#include "Helpers.h"
-#include "frontend_sdk/FrontendHelpers.h"
+#include "../frontend_sdk/FrontendHelpers.h"
 
 namespace wave
 {
+	inline void reduce_by_two(pfc::list_base_t<float>& data, UINT n)
+	{
+		for (UINT i = 0; i < n; i += 2)
+		{
+			float avg = (data[i] + data[i + 1]) / 2.0f;
+			data.replace_item(i >> 1, avg);
+		}
+	}
+
+	template <typename T>
+	T clamp(T v, T a, T b)
+	{
+		return std::max(a, std::min(b, v));
+	}
+
 	namespace direct3d9
 	{
 		void frontend_impl::update_effect_colors()
@@ -58,8 +72,8 @@ namespace wave
 						HRESULT hr = S_OK;
 						if (!channel_textures.count(info.channel))
 							channel_textures[info.channel] = create_waveform_texture();
-
-						channel_order += info;
+						
+						channel_order.push_back(info);
 
 						int idx = std::distance(first, I);
 

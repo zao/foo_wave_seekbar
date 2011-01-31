@@ -1,6 +1,6 @@
-#include "PchSeekbar.h"
+#include "PchDirect3D9.h"
 #include "Direct3D9.h"
-#include "Helpers.h"
+#include "../frontend_sdk/FrontendHelpers.h"
 #include "resource.h"
 #include "Direct3D9.Effects.h"
 
@@ -43,7 +43,6 @@ namespace wave
 		void frontend_impl::create_default_resources()
 		{
 			HRESULT hr = S_OK;
-			abort_callback_dummy cb;
 
 			shared_ptr<effect_compiler> compiler;
 			get_effect_compiler(compiler);
@@ -56,9 +55,10 @@ namespace wave
 
 				if (!success)
 				{
-					console::formatter() << "Seekbar: Direct3D: effect compile failed.";
-					std::string text = simple_diagnostic_format(errors);
-					console::formatter() << "Seekbar: Direct3D: " << text.c_str();
+					// TODO: propagate errors to parent DLL
+					//console::formatter() << "Seekbar: Direct3D: effect compile failed.";
+					//std::string text = simple_diagnostic_format(errors);
+					//console::formatter() << "Seekbar: Direct3D: " << text.c_str();
 				}
 				return fx;
 			};

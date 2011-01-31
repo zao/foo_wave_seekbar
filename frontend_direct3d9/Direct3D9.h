@@ -1,5 +1,5 @@
 #pragma once
-#include "frontend_sdk/VisualFrontend.h"
+#include "../frontend_sdk/VisualFrontend.h"
 #include <map>
 #include "resource.h"
 #include <boost/fusion/include/adapted.hpp>
@@ -49,7 +49,7 @@ namespace wave
 			virtual void draw();
 			virtual void present();
 			virtual void on_state_changed(state s);
-			virtual void show_configuration(CWindow parent);
+			virtual void show_configuration(HWND parent);
 			virtual void close_configuration();
 
 		private: // Update

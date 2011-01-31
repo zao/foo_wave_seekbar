@@ -77,17 +77,6 @@ inline DWORD xbgr_to_argb(COLORREF c, BYTE a = 0xFFU)
 	return (a << 24) | (GetRValue(c) << 16) | (GetGValue(c) << 8) | (GetBValue(c));
 }
 
-template <typename Cont>
-void get_resource_contents(Cont& out, WORD id)
-{
-	auto module = core_api::get_my_instance();
-	auto res_info = FindResource(module, MAKEINTRESOURCE(id), RT_RCDATA);
-	auto res = LoadResource(module, res_info);
-	auto size = SizeofResource(module, res_info);
-	auto p = (char*)LockResource(res);
-	std::copy(p, p + size, std::back_inserter(out));
-}
-
 template <typename Cont, typename Pred>
 typename Cont::size_type nuke_if(Cont& c, Pred p)
 {
