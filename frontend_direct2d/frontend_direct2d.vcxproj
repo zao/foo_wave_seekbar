@@ -82,11 +82,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Direct2D1.cc" />
-    <ClCompile Include="ExtensionEntrypoint.cc" />
+    <ClCompile Include="EntrypointD2D.cc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\pfc\pfc.vcxproj">
       <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\frontend_sdk\frontend_sdk.vcxproj">
+      <Project>{f75576db-81f0-4bf5-8732-656f66c6035e}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\waveform_sdk\waveform_sdk.vcxproj">
       <Project>{83bce727-32c9-42b7-9d51-bb50b85b039b}</Project>

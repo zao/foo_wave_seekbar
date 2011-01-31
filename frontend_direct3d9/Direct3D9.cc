@@ -1,12 +1,17 @@
-#include "PchSeekbar.h"
+#include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
-#include "SeekbarState.h"
-#include "Helpers.h"
+#include "../frontend_sdk/FrontendHelpers.h"
 #include "resource.h"
 
 namespace wave
 {
+	template <typename T>
+	inline T lerp(T a, T b, float n)
+	{
+		return (1.0f - n)*a + n*b;
+	}
+
 	struct create_d3d9_func
 	{
 		IDirect3D9* operator() () const
@@ -25,23 +30,6 @@ namespace wave
 		}
 	};
 
-	struct test_d3dx10_func
-	{
-		bool operator() () const
-		{
-			D3DX10CheckVersion(D3D10_SDK_VERSION, D3DX10_SDK_VERSION);
-			return true;
-		}
-	};
-
-	bool has_direct3d9() {
-		CComPtr<IDirect3D9> d3d;
-		d3d.Attach(try_module_call(create_d3d9_func()));
-		bool has_d3dx9 = try_module_call(test_d3dx9_func());
-		bool has_d3dx10 = try_module_call(test_d3dx10_func());
-		return d3d && has_d3dx9 && has_d3dx10;
-	}
-
 	namespace direct3d9
 	{
 		frontend_impl::frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
@@ -49,14 +37,10 @@ namespace wave
 		{
 			HRESULT hr = S_OK;
 
-			d3d.Attach(try_module_call(create_d3d9_func()));
-			bool has_d3dx9 = try_module_call(test_d3dx9_func());
-			bool has_d3dx10 = try_module_call(test_d3dx10_func());
+			d3d.Attach(create_d3d9_func()());
 
-			if (!d3d || !has_d3dx9 || !has_d3dx10)
+			if (!d3d)
 			{
-				if (has_d3dx9 && !has_d3dx10 || !has_d3dx9 && has_d3dx10)
-					throw std::runtime_error("Found only half of the required D3DX DLLs. If you've added such DLLs manually, don't do that. Install the proper redist already.");
 				throw std::runtime_error("DirectX redistributable not found. Run the DirectX August 2009 web setup or later.");
 			}
 
@@ -136,6 +120,7 @@ namespace wave
 			//D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
 			auto draw_quad = [this](int idx, int ch, int n)
 			{
+				using namespace boost::assign;
 				D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
 				D3DXVECTOR4 viewport = D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0.0f, 0.0f);
 				sides /= (float)n;
@@ -241,7 +226,7 @@ namespace wave
 			return device_lost;
 		}
 
-		void frontend_impl::show_configuration(CWindow parent)
+		void frontend_impl::show_configuration(HWND parent)
 		{
 			if (config)
 				config->BringWindowToTop();

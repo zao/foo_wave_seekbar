@@ -61,7 +61,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>d3d9.dll;d3dx9_43.dll;dxgi.dll;d3d10.dll;d3dx10_43.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -84,7 +84,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dxerr.lib;dxgi.lib;d3d10.lib;d3dx10.lib;d3d9.lib;d3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>d3d9.dll;d3dx9_43.dll;dxgi.dll;d3d10.dll;d3dx10_43.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -95,10 +95,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BackingStore.cc" />
-    <ClCompile Include="Direct3D9.ConfigDialog.cc" />
-    <ClCompile Include="Direct3D9.Effects.cc" />
-    <ClCompile Include="Direct3D9.Resources.cc" />
-    <ClCompile Include="Direct3D9.Update.cc" />
     <ClCompile Include="GdiFallback.cc" />
     <ClCompile Include="MainSeekbar.cc" />
     <ClCompile Include="MetaHooks.cc" />
@@ -108,7 +104,6 @@
     </ClCompile>
     <ClCompile Include="SeekbarWindow.cc" />
     <ClCompile Include="SeekbarWindow.ConfigDialog.cc" />
-    <ClCompile Include="Direct3D9.cc" />
     <ClCompile Include="SeekbarCui.cc" />
     <ClCompile Include="SeekbarDui.cc" />
     <ClCompile Include="CacheImpl.cc" />
@@ -125,8 +120,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
-    <ClInclude Include="Direct3D9.Effects.h" />
-    <ClInclude Include="Direct3D9.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="FrontendConfigImpl.h" />
     <ClInclude Include="GdiFallback.h" />

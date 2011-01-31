@@ -20,9 +20,6 @@
     <Filter Include="Seekbar\Resources">
       <UniqueIdentifier>{6a680fc1-a5cb-4223-9a73-754c8d0c9d61}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Seekbar\Frontends\Direct3D">
-      <UniqueIdentifier>{e34abdab-1aeb-4123-8569-ddbe3c58d0b8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Seekbar\Frontends\GDI">
       <UniqueIdentifier>{7f9faa07-f528-4c6c-a34e-c626d5a97717}</UniqueIdentifier>
     </Filter>
@@ -64,21 +61,6 @@
     </ClCompile>
     <ClCompile Include="BackingStore.cc">
       <Filter>Cache</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct3D9.cc">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct3D9.Update.cc">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct3D9.ConfigDialog.cc">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct3D9.Effects.cc">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Direct3D9.Resources.cc">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
     </ClCompile>
     <ClCompile Include="GdiFallback.cc">
       <Filter>Seekbar\Frontends\GDI</Filter>
@@ -139,12 +121,6 @@
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClInclude>
     <ClInclude Include="PfcSpirit.h" />
-    <ClInclude Include="Direct3D9.Effects.h">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Direct3D9.h">
-      <Filter>Seekbar\Frontends\Direct3D</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc">

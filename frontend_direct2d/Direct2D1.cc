@@ -56,7 +56,7 @@ namespace wave
 		pump_thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, pump)));
 	}
 
-	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback)
+	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)
 		: callback(callback)
 	{
 		in_main_thread = boost::bind(&visual_frontend_callback::run_in_main_thread, &callback, _1);

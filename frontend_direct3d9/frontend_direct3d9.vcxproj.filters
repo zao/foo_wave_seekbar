@@ -2,8 +2,20 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="PchDirect3D9.h" />
+    <ClInclude Include="Direct3D9.Effects.h" />
+    <ClInclude Include="Direct3D9.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PchDirect3D9.cc" />
+    <ClCompile Include="Direct3D9.ConfigDialog.cc" />
+    <ClCompile Include="Direct3D9.Effects.cc" />
+    <ClCompile Include="Direct3D9.Resources.cc" />
+    <ClCompile Include="Direct3D9.Update.cc" />
+    <ClCompile Include="Direct3D9.cc" />
+    <ClCompile Include="EntrypointD3D9.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="frontend_direct3d9.rc" />
   </ItemGroup>
 </Project>

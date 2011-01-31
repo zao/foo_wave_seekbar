@@ -1,7 +1,7 @@
-#include "PchSeekbar.h"
+#include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
-#include "Helpers.h"
+#include "../frontend_sdk/FrontendHelpers.h"
 
 namespace wave
 {

@@ -5,6 +5,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Direct2D1.cc" />
-    <ClCompile Include="ExtensionEntrypoint.cc" />
+    <ClCompile Include="EntrypointD2D.cc" />
   </ItemGroup>
 </Project>

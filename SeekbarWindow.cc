@@ -1,6 +1,6 @@
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
-#include "Direct3D9.h"
+//#include "Direct3D9.h"
 //#include "Direct2D.h"
 #include "GdiFallback.h"
 
@@ -355,13 +355,13 @@ namespace wave
 		cb.set_channel_infos(infos);
 	}
 
-	shared_ptr<visual_frontend> frontend_module::instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback)
+	shared_ptr<visual_frontend> frontend_module::instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf)
 	{
 		shared_ptr<visual_frontend> ret;
 		auto facI = factory_map.find(id);
 		if (facI != factory_map.end())
 		{
-			auto p = facI->second.create(wnd, size, callback);
+			auto p = facI->second.create(wnd, size, callback, conf);
 			ret = shared_ptr<visual_frontend>(p);
 		}
 		return ret;
@@ -373,7 +373,7 @@ namespace wave
 		for (auto I = frontend_modules.begin(); I != frontend_modules.end(); ++I)
 		{
 			auto sz = client_rect.Size();
-			if (ret = (*I)->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback))
+			if (ret = (*I)->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf))
 				return ret;
 		}
 		return ret;
@@ -393,31 +393,17 @@ namespace wave
 			bool seven_and_up = (osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1) || (osv.dwMajorVersion >= 7);
 
 			apply_settings();
-				
+			
+			bool dynamic_frontend = false;
 			switch (settings.active_frontend_kind)
 			{
-#if 0
-			case persistent_settings::frontend_direct3d10:
-				console::info("Seekbar: taking Direct3D10 path.");
-				frontend.reset(new direct3d10_frontend(*this, client_rect.Size(), *frontend_callback));
-				break;
-#endif
 			case config::frontend_direct3d9:
 				console::info("Seekbar: taking Direct3D9 path.");
-				{
-					auto sz = client_rect.Size();
-					fe->frontend.reset(new direct3d9::frontend_impl(*this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf));
-				}
-				present_interval = 10;
+				dynamic_frontend = true;
 				break;
 			case config::frontend_direct2d1:
 				console::info("Seekbar: taking Direct2D1 path.");
-				fe->frontend = create_frontend(config::frontend_direct2d1);
-				if (!fe->frontend)
-				{
-					throw std::runtime_error("unavailable frontend");
-				}
-				present_interval = fe->frontend->get_present_interval();
+				dynamic_frontend = true;
 				break;
 			case config::frontend_gdi:
 				console::info("Seekbar: taking GDI path.");
@@ -427,6 +413,16 @@ namespace wave
 			default:
 				throw std::runtime_error("invalid frontend stored");
 			}
+			if (dynamic_frontend)
+			{
+				fe->frontend = create_frontend(settings.active_frontend_kind);
+				if (!fe->frontend)
+				{
+					throw std::runtime_error("unavailable frontend");
+				}
+				present_interval = fe->frontend->get_present_interval();
+			}
+
 			console::info("Seekbar: Frontend initialized.");
 			initializing_graphics = true;
 		}
