@@ -139,7 +139,7 @@ namespace wave
 	{
 	}
 
-	frontend_module::frontend_module(boost::shared_ptr<bex::shared_library> lib, boost::shared_ptr<bex::type_map> types)
+	frontend_module::frontend_module(boost::shared_ptr<bex::shared_library<std::wstring>> lib, boost::shared_ptr<bex::type_map> types)
 		: library(lib), types(types), factory_map(types->get())
 	{
 	}
@@ -152,7 +152,7 @@ namespace wave
 		fs::directory_iterator I = fs::directory_iterator(path), last;
 		while (I != last)
 		{
-			auto lib = boost::make_shared<bex::shared_library>(I->string(), true);
+			auto lib = boost::make_shared<bex::shared_library<std::wstring>>(I->path().native(), true);
 			if (lib && lib->open())
 			{
 				auto types = boost::make_shared<bex::type_map>();
@@ -725,26 +725,24 @@ namespace wave
 
 	void seekbar_window::save_settings(persistent_settings const& settings, std::vector<char>& out)
 	{
-		TRACK_CALL(save_settings);
-		scoped_ptr<uCallStackTracker> t;
 		out.clear();
-		t.reset(new uCallStackTracker("ostream"));
-		io::filtering_ostream os(std::back_inserter(out));
-		t.reset(new uCallStackTracker("oarchive"));
-		boost::archive::xml_oarchive ar(os);
-		t.reset(new uCallStackTracker("save"));
-		ar & BOOST_SERIALIZATION_NVP(settings);
+		std::ostringstream os;
+		{
+			boost::archive::xml_oarchive ar(os);
+			ar & BOOST_SERIALIZATION_NVP(settings);
+		}
+
+		std::string s = os.str();
+		std::copy(s.begin(), s.end(), std::back_inserter(out));
 	}
 
 	void seekbar_window::load_settings(persistent_settings& settings, std::vector<char> const& in)
 	{
-		TRACK_CALL(load_settings);
-		scoped_ptr<uCallStackTracker> t(new uCallStackTracker("istream"));
-		io::filtering_istream is(boost::make_iterator_range(in));
-		t.reset(new uCallStackTracker("iarchive"));
-		boost::archive::xml_iarchive ar(is);
-		t.reset(new uCallStackTracker("load"));
-		ar & BOOST_SERIALIZATION_NVP(settings);
+		std::istringstream is(std::string(in.begin(), in.end()));
+		{
+			boost::archive::xml_iarchive ar(is);
+			ar & BOOST_SERIALIZATION_NVP(settings);
+		}
 	}
 
 	void seekbar_window::flush_frontend()

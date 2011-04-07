@@ -34,12 +34,7 @@ using boost::uint64_t;
 
 using boost::function;
 
-#pragma warning(push)
-#pragma warning(disable: 4244)
-#include <boost/iostreams/filtering_stream.hpp>
-#pragma warning(pop)
 #include <boost/range/iterator_range.hpp>
-namespace io = boost::iostreams;
 namespace karma = boost::spirit::karma;
 
 #include <algorithm>

@@ -1,9 +1,8 @@
 #include "PchSeekbar.h"
 #include "BackingStore.h"
 #include "waveform_sdk/WaveformImpl.h"
-#include <boost/iostreams/device/back_inserter.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
 #include "Helpers.h"
+#include "Pack.h"
 
 namespace wave
 {
@@ -101,6 +100,7 @@ namespace wave
 
 	bool backing_store::get(service_ptr_t<waveform>& out, playable_location const& file)
 	{
+		out = NULL;
 		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
 			"SELECT w.min, w.max, w.rms, w.channels, w.compression "
 			"FROM file AS f NATURAL JOIN wave AS w "
@@ -126,7 +126,7 @@ namespace wave
 		unsigned channel_count = channels ? count_bits_set(*channels) : 1;
 
 		service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
-		auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col)
+		auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col) -> bool
 		{
 			pfc::list_t<pfc::list_t<float>> list;
 			
@@ -135,18 +135,30 @@ namespace wave
 
 			if (compression)
 			{
-				std::vector<float> dst(2048*channel_count);
+				std::vector<char> dst;
+				dst.reserve(2048 * channel_count * sizeof(float));
 				if (*compression == 0)
 				{
+#if 0
 					io::filtering_ostream out;
 					out.push(io::zlib_decompressor());
 					out.push(io::array_sink((char*)&dst[0], dst.size() * sizeof(float)));
 					out.write((char const*)data, count * sizeof(float));
+#endif
+					if (!pack::z_unpack(data, count * sizeof(float), std::back_inserter(dst)))
+					{
+						return false;
+					}
 				}
+
+				if (dst.size() != channel_count * 2048 * sizeof(float))
+					return false;
+
 				for (unsigned c = 0; c < channel_count; ++c)
 				{
 					pfc::list_hybrid_t<float, 2048> channel;
-					channel.add_items_fromptr(&dst[2048*c], 2048);
+					float const * fs = (float*)&dst[2048 * c * sizeof(float)];
+					channel.add_items_fromptr(fs, 2048);
 					list.add_item(channel);
 				}
 			}
@@ -160,16 +172,22 @@ namespace wave
 				}
 			}
 			w->fields[name] = list;
+			return true;
 		};
 
-		clear_and_set("minimum", 0);
-		clear_and_set("maximum", 1);
-		clear_and_set("rms", 2);
+		if (clear_and_set("minimum", 0) && 
+			clear_and_set("maximum", 1) &&
+			clear_and_set("rms", 2))
+		{
+			w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
 
-		w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
-
-		out = w;
-		return true;
+			out = w;
+		}
+		else
+		{
+			remove(file); // it's corrupt, and thus useless
+		}
+		return out.is_valid();
 	}
 
 	void backing_store::put(service_ptr_t<waveform> const& w, playable_location const& file)
@@ -191,15 +209,15 @@ namespace wave
 #		define BIND_LIST(Member, Idx) \
 			std::vector<char> Member; \
 			{ \
-				io::filtering_ostream out( \
-					io::zlib_compressor(9) | \
-					io::back_inserter(Member)); \
+				std::vector<float> src_buf; \
 				for (size_t c = 0; c < w->get_channel_count(); ++c) \
 				{ \
 					pfc::list_t<float> channel; \
 					w->get_field(#Member, c, channel); \
-					out.write((char*)channel.get_ptr(), channel.get_size() * sizeof(float)); \
+					float * p = (float *)channel.get_ptr(); \
+					std::copy(p, p + channel.get_size(), std::back_inserter(src_buf)); \
 				} \
+				pack::z_pack(&src_buf[0], src_buf.size() * sizeof(float), std::back_inserter(Member)); \
 			} \
 			sqlite3_bind_blob(stmt.get(), Idx, &Member[0], Member.size(), SQLITE_STATIC)
 			

@@ -154,7 +154,8 @@ namespace wave
 			, callback.get_flip_display()));
 	}
 
-	void direct2d1_frontend::on_state_changed(state s) {
+	void direct2d1_frontend::on_state_changed(state s)
+	{
 		if (s & (state_size | state_orientation))
 			update_size();
 		if (s & state_color)

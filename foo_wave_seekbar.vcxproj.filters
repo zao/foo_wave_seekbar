@@ -23,6 +23,12 @@
     <Filter Include="Seekbar\Frontends\GDI">
       <UniqueIdentifier>{7f9faa07-f528-4c6c-a34e-c626d5a97717}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Packing">
+      <UniqueIdentifier>{1cad518c-f5f8-447b-a629-6d1984eac049}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packing\zlib">
+      <UniqueIdentifier>{7ce21893-2fbb-48ec-85ed-d1c163b3ef84}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CacheImpl.cc">
@@ -67,6 +73,39 @@
     </ClCompile>
     <ClCompile Include="MetaHooks.cc">
       <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\adler32.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\compress.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\crc32.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\deflate.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\infback.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inffast.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inflate.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inftrees.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\trees.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\uncompr.c">
+      <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\zutil.c">
+      <Filter>Packing\zlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +160,40 @@
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClInclude>
     <ClInclude Include="PfcSpirit.h" />
+    <ClInclude Include="InstanceTracker.h" />
+    <ClInclude Include="zlib\zlib.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="Pack.h">
+      <Filter>Packing</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zconf.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\deflate.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zutil.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\crc32.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inffast.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inflate.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inftrees.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\trees.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inffixed.h">
+      <Filter>Packing\zlib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc">
