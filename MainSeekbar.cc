@@ -7,5 +7,5 @@ static service_factory_t<ui_element_impl<wave::seekbar_dui>> g_asdf;
 static uie::window_factory<wave::seekbar_uie> g_sadf;
 
 
-DECLARE_COMPONENT_VERSION("Waveform seekbar", "0.2.13", "Zao")
+DECLARE_COMPONENT_VERSION("Waveform seekbar", "0.2.13.1", "Zao")
 VALIDATE_COMPONENT_FILENAME("foo_wave_seekbar.dll")
