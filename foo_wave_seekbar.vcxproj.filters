@@ -29,6 +29,9 @@
     <Filter Include="Packing\zlib">
       <UniqueIdentifier>{7ce21893-2fbb-48ec-85ed-d1c163b3ef84}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Packing\lzma">
+      <UniqueIdentifier>{3804cdb1-29cc-4a30-835f-1a025b895589}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CacheImpl.cc">
@@ -106,6 +109,33 @@
     </ClCompile>
     <ClCompile Include="zlib\zutil.c">
       <Filter>Packing\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="Pack.cc">
+      <Filter>Packing</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzFind.c">
+      <Filter>Packing\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzFindMt.c">
+      <Filter>Packing\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaDec.c">
+      <Filter>Packing\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaEnc.c">
+      <Filter>Packing\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\MtCoder.c">
+      <Filter>Packing\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\Threads.c">
+      <Filter>Packing\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma2Dec.c">
+      <Filter>Packing\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma2Enc.c">
+      <Filter>Packing\lzma</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

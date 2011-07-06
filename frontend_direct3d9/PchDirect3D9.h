@@ -8,6 +8,7 @@ using std::min; using std::max;
 
 #include <boost/assign.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/range/algorithm/for_each.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/variant.hpp>

@@ -44,7 +44,7 @@ namespace wave
 
 	unsigned seekbar_uie::get_type() const
 	{
-		return uie::type_panel;
+		return uie::type_panel | uie::type_toolbar;
 	}
 
 	seekbar_uie::color_callback::color_callback(seekbar_uie& parent)
@@ -74,9 +74,12 @@ namespace wave
 	{
 		try
 		{
-			std::vector<char> v(p_size);
-			p_reader->read(&v[0], p_size, p_abort);
-			load_settings(settings, v);
+      if (p_size)
+      {
+			  std::vector<char> v(p_size);
+			  p_reader->read(&v[0], p_size, p_abort);
+			  load_settings(settings, v);
+      }
 			fe->frontend.reset();
 		}
 		catch (std::exception&)

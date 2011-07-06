@@ -19,7 +19,7 @@ namespace wave
 
 	struct backing_store;
 
-	struct cache_impl : cache_v2
+	struct cache_impl : cache_v3
 	{
 		cache_impl();
 		~cache_impl();
@@ -33,6 +33,8 @@ namespace wave
 
 		bool has_waveform(playable_location const& loc) override;
 		void remove_waveform(playable_location const& loc) override;
+
+		void compression_bench() override;
 
 	private:
 		void open_store();

@@ -4,6 +4,23 @@
 #include "Helpers.h"
 #include "Pack.h"
 
+namespace
+{
+	void lzma_length(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+	{
+		uint8_t const* blob = (uint8_t const*)sqlite3_value_blob(argv[0]);
+		auto cb = sqlite3_value_bytes(argv[0]);
+
+		std::vector<uint8_t> raw, lzma;
+		pack::z_unpack(blob, cb, std::back_inserter(raw));
+		pack::lzma_pack(&raw[0], raw.size(), std::back_inserter(lzma));
+				
+		sqlite3_result_double(ctx, cb / (double)lzma.size());
+		return;		
+		sqlite3_result_null(ctx);
+	}
+}
+
 namespace wave
 {
 	backing_store::backing_store(pfc::string const& cache_filename)
@@ -302,6 +319,23 @@ namespace wave
 	{
 		sqlite3_exec(backing_db.get(), "VACUUM", 0, 0, 0);
 		console::info("Waveform cache: compacted the database.");
+	}
+
+	void backing_store::bench()
+	{
+		sqlite3_create_function(
+			backing_db.get(),
+			"zlib_to_lzma_gain", 1, SQLITE_ANY, 0,
+			&lzma_length, 0, 0);
+		shared_ptr<sqlite3_stmt> stmt = prepare_statement("SELECT avg(zlib_to_lzma_gain(w.min)), avg(zlib_to_lzma_gain(w.max)), avg(zlib_to_lzma_gain(w.rms)) FROM (SELECT min, max, rms FROM wave) AS w");
+		while (SQLITE_ROW == sqlite3_step(stmt.get()))
+		{
+			std::ostringstream oss;
+			oss << "Min: " << (sqlite3_column_double(stmt.get(), 0) - 1.0) * 100 << ", "
+			    << "Max: " << (sqlite3_column_double(stmt.get(), 1) - 1.0) * 100 << ", "
+			    << "RMS: " << (sqlite3_column_double(stmt.get(), 2) - 1.0) * 100 << "\n";
+			console::info(oss.str().c_str());
+		}
 	}
 
 	void backing_store::get_all(pfc::list_t<playable_location_impl>& out)

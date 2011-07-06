@@ -2,181 +2,255 @@
 #include "../frontend_sdk/VisualFrontend.h"
 #include <map>
 #include "resource.h"
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/fusion/include/adapted.hpp>
+#include <boost/optional.hpp>
+#include "Scintilla.h"
 
 namespace wave
 {
-	bool has_direct3d9();
+  bool has_direct3d9();
 
-	namespace direct3d9
-	{
-		struct config_dialog;
-		struct effect_compiler;
-		struct effect_handle;
+  namespace direct3d9
+  {
+    struct config_dialog;
+    struct effect_compiler;
+    struct effect_handle;
 
-		extern const GUID guid_fx_string;
+    extern const GUID guid_fx_string;
 
-		namespace parameters
-		{
-			extern std::string const background_color, foreground_color, highlight_color, selection_color,
-				cursor_position, cursor_visible,
-				seek_position, seeking,
-				viewport_size, replaygain,
-				orientation, flipped, shade_played,
-				waveform_data;
-		};
+    namespace parameters
+    {
+      extern std::string const background_color, foreground_color, highlight_color, selection_color,
+        cursor_position, cursor_visible,
+        seek_position, seeking,
+        viewport_size, replaygain,
+        orientation, flipped, shade_played,
+        waveform_data;
+    };
 
-		struct effect_parameters
-		{
-			typedef boost::variant<float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9*> attribute;
-			std::map<std::string, attribute> attributes;
+    struct effect_parameters
+    {
+      typedef boost::variant<float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9*> attribute;
+      std::map<std::string, attribute> attributes;
 
-			template <typename T>
-			void set(std::string what, T const& t)
-			{
-				attributes[what] = t;
-			}
+      template <typename T>
+      void set(std::string what, T const& t)
+      {
+        attributes[what] = t;
+      }
 
-			void apply_to(CComPtr<ID3DXEffect> fx);
-		};
+      void apply_to(CComPtr<ID3DXEffect> fx);
+    };
 
-		struct frontend_impl : visual_frontend
-		{
-			friend config_dialog;
+    struct frontend_impl : visual_frontend
+    {
+      friend config_dialog;
 
-			frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
-			virtual void clear();
-			virtual void draw();
-			virtual void present();
-			virtual void on_state_changed(state s);
-			virtual void show_configuration(HWND parent);
-			virtual void close_configuration();
+      frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
+      virtual void clear();
+      virtual void draw();
+      virtual void present();
+      virtual void on_state_changed(state s);
+      virtual void show_configuration(HWND parent);
+      virtual void close_configuration();
 
-		private: // Update
-			void update_effect_colors();
-			void update_effect_cursor();
-			void update_replaygain();
-			void update_data();
-			void update_size();
-			void update_orientation();
-			void update_flipped();
-			void update_shade_played();
+    private: // Update
+      void update_effect_colors();
+      void update_effect_cursor();
+      void update_replaygain();
+      void update_data();
+      void update_size();
+      void update_orientation();
+      void update_flipped();
+      void update_shade_played();
 
-		private: // Misc state
-			CComPtr<IDirect3D9> d3d;
-			CComPtr<IDirect3DDevice9> dev;
+    private: // Misc state
+      CComPtr<IDirect3D9> d3d;
+      CComPtr<IDirect3DDevice9> dev;
 
-			std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
-			std::vector<unsigned> channel_numbers;
-			std::vector<channel_info> channel_order;
+      std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
+      std::vector<unsigned> channel_numbers;
+      std::vector<channel_info> channel_order;
 
-			std::stack<shared_ptr<effect_handle>> effect_stack;
-			shared_ptr<effect_handle> effect_override;
+      std::stack<shared_ptr<effect_handle>> effect_stack;
+      shared_ptr<effect_handle> effect_override;
 
-			CComPtr<IDirect3DVertexBuffer9> vb;
-			CComPtr<IDirect3DVertexDeclaration9> decl;
+      CComPtr<IDirect3DVertexBuffer9> vb;
+      CComPtr<IDirect3DVertexDeclaration9> decl;
 
-			effect_parameters effect_params;
+      effect_parameters effect_params;
 
-			CComPtr<ID3DXEffect> select_effect();
+      CComPtr<ID3DXEffect> select_effect();
 
-			D3DPRESENT_PARAMETERS pp;
+      D3DPRESENT_PARAMETERS pp;
 
-		private: // Host references
-			visual_frontend_callback& callback;
-			visual_frontend_config& conf;
+    private: // Host references
+      visual_frontend_callback& callback;
+      visual_frontend_config& conf;
 
-		private: // Resources
-			CComPtr<IDirect3DTexture9> create_waveform_texture();
-			void create_vertex_resources();
-			void release_vertex_resources();
-			void create_default_resources();
-			void release_default_resources();
+    private: // Resources
+      CComPtr<IDirect3DTexture9> create_waveform_texture();
+      void create_vertex_resources();
+      void release_vertex_resources();
+      void create_default_resources();
+      void release_default_resources();
 
-			bool device_still_lost();
+      bool device_still_lost();
 
-			bool device_lost;
-			UINT mip_count;
-			D3DFORMAT texture_format;
-			bool floating_point_texture;
+      bool device_lost;
+      UINT mip_count;
+      D3DFORMAT texture_format;
+      bool floating_point_texture;
 
-		private: // Configuration
-			scoped_ptr<config_dialog> config;
+    private: // Configuration
+      scoped_ptr<config_dialog> config;
 
-			void get_effect_compiler(shared_ptr<effect_compiler>& out);
-			void set_effect(shared_ptr<effect_handle> effect, bool permanent);
-		};
+      void get_effect_compiler(shared_ptr<effect_compiler>& out);
+      void set_effect(shared_ptr<effect_handle> effect, bool permanent);
+    };
 
-		struct config_dialog : CDialogImpl<config_dialog>
-		{
-			enum { IDD = IDD_CONFIG_D3D, WM_USER_CLEAR_EFFECT_SELECTION = WM_USER + 0x1 };
-			config_dialog(weak_ptr<frontend_impl> fe);
+    struct config_dialog : CDialogImpl<config_dialog>
+    {
+      enum { IDD = IDD_CONFIG_D3D };
+      config_dialog(weak_ptr<frontend_impl> fe);
 
-			BEGIN_MSG_MAP_EX(config_dialog)
-				MSG_WM_INITDIALOG(on_wm_init_dialog)
-				MSG_WM_CLOSE(on_wm_close)
-				COMMAND_HANDLER_EX(IDC_EFFECT_APPLY, BN_CLICKED, on_effect_apply_click)
-				COMMAND_HANDLER_EX(IDC_EFFECT_DEFAULT, BN_CLICKED, on_effect_default_click)
-				COMMAND_HANDLER_EX(IDC_EFFECT_RESET, BN_CLICKED, on_effect_reset_click)
-				MESSAGE_HANDLER(WM_USER_CLEAR_EFFECT_SELECTION, on_clear_effect_selection)
-				COMMAND_HANDLER_EX(IDC_EFFECT_SOURCE, EN_CHANGE, on_effect_source_change)
-			END_MSG_MAP()
+      BEGIN_MSG_MAP_EX(config_dialog)
+        MSG_WM_INITDIALOG(on_wm_init_dialog)
+        MSG_WM_CLOSE(on_wm_close)
+        COMMAND_HANDLER_EX(IDC_EFFECT_APPLY, BN_CLICKED, on_effect_apply_click)
+        COMMAND_HANDLER_EX(IDC_EFFECT_DEFAULT, BN_CLICKED, on_effect_default_click)
+        COMMAND_HANDLER_EX(IDC_EFFECT_RESET, BN_CLICKED, on_effect_reset_click)
+        NOTIFY_HANDLER_EX(IDC_EFFECT_SOURCE, SCN_MODIFIED, on_effect_source_modified)
+        COMMAND_HANDLER_EX(9001, EN_CHANGE, on_effect_source_change)
+      END_MSG_MAP()
 
-		private:
-			LRESULT on_wm_init_dialog(CWindow focus, LPARAM lparam);
-			void on_wm_close();
-			void on_effect_apply_click(UINT, int, CWindow);
-			void on_effect_default_click(UINT, int, CWindow);
-			void on_effect_reset_click(UINT, int, CWindow);
-			LRESULT on_clear_effect_selection(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-			void on_effect_source_change(UINT, int, CEdit);
+    private:
+      LRESULT on_wm_init_dialog(CWindow focus, LPARAM lparam);
+      void on_wm_close();
+      void on_effect_apply_click(UINT, int, CWindow);
+      void on_effect_default_click(UINT, int, CWindow);
+      void on_effect_reset_click(UINT, int, CWindow);
+      void on_effect_source_change(UINT, int, CEdit = 0);
+      LRESULT on_effect_source_modified(NMHDR* hdr);
 
-			virtual void OnFinalMessage(HWND);
+      virtual void OnFinalMessage(HWND);
 
-			weak_ptr<frontend_impl> fe;
-			shared_ptr<effect_compiler> compiler;
-			CFont mono_font;
-			CEdit code_box, error_box;
-			CButton apply_button, default_button, reset_button;
-			shared_ptr<effect_handle> fx;
-		};
+      struct scintilla_func
+      {
+        int send (int cmd, int a1 = 0, int a2 = 0) const { return f(cmd, a1, a2); }
+        
+        template <class A1>
+        int send (int cmd, A1 a1) const { return f(cmd, (int)a1); }
 
-		struct NOVTABLE effect_compiler : noncopyable
-		{
-			struct diagnostic_entry
-			{
-				struct location
-				{
-					int row, col;
-				};
-				location loc;
-				std::string type;
-				std::string code;
-				std::string message;
-			};
+        template <class A1, class A2>
+        int send (int cmd, A1 a1, A2 a2) const { return f(cmd, (int)a1, (int)a2); }
 
-			virtual ~effect_compiler() {}
-			virtual bool compile_fragment(shared_ptr<effect_handle>& effect, std::deque<diagnostic_entry>& output, std::string const& data) = 0;
-		};
+        void get_all(std::string& out)
+        {
+          out.clear();
+          auto cb = send(SCI_GETTEXTLENGTH);
+          if (!cb)
+            return;
 
-		struct NOVTABLE effect_handle : noncopyable
-		{
-			virtual ~effect_handle() {}
-			virtual CComPtr<ID3DXEffect> get_effect() const = 0;
-		};
-	}
+          out.resize(cb);
+          send(SCI_GETTEXT, out.size()+1, &out[0]);
+        }
+
+        void get_all(pfc::string8& out)
+        {
+          std::string tmp;
+          get_all(tmp);
+          out.reset();
+          out.add_string(tmp.c_str(), tmp.size());
+        }
+
+        void reset(std::string const& text)
+        {
+          send(SCI_CLEARALL);
+          send(EM_EMPTYUNDOBUFFER);
+          send(SCI_ADDTEXT, text.size(), &text[0]);
+          send(SCI_GOTOPOS, 0);
+        }
+
+        void reset(std::vector<char> const& text)
+        {
+          send(SCI_CLEARALL);
+          send(EM_EMPTYUNDOBUFFER);
+          send(SCI_ADDTEXT, text.size(), &text[0]);
+          send(SCI_GOTOPOS, 0);
+        }
+
+        void clear_annotations()
+        {
+          annotations.clear();
+          send(SCI_ANNOTATIONCLEARALL);
+        }
+
+        void add_annotation(int line, std::string text)
+        {
+          if (line < 0)
+            return;
+          boost::algorithm::trim(text);
+          std::string& s = annotations[line];
+          if (!s.empty())
+            s += '\n';
+          s += text;
+          boost::algorithm::trim(s);
+          send(SCI_ANNOTATIONSETTEXT, line, s.c_str());
+          send(SCI_ANNOTATIONSETVISIBLE, 2);
+        }
+
+        std::map<int, std::string> annotations;
+
+        void init(HWND wnd);
+        std::function<int (int, int, int)> f;
+      };
+
+      weak_ptr<frontend_impl> fe;
+      shared_ptr<effect_compiler> compiler;
+      CFont mono_font;
+      scintilla_func code_box;
+      CEdit error_box;
+      CButton apply_button, default_button, reset_button;
+      shared_ptr<effect_handle> fx;
+    };
+
+    struct NOVTABLE effect_compiler : noncopyable
+    {
+      struct diagnostic_entry
+      {
+        struct location
+        {
+          int row, col;
+        };
+
+        boost::optional<location> loc;
+        std::string type, code, message;
+      };
+
+      virtual ~effect_compiler() {}
+      virtual bool compile_fragment(shared_ptr<effect_handle>& effect, std::deque<diagnostic_entry>& output, std::string const& data) = 0;
+    };
+
+    struct NOVTABLE effect_handle : noncopyable
+    {
+      virtual ~effect_handle() {}
+      virtual CComPtr<ID3DXEffect> get_effect() const = 0;
+    };
+  }
 }
 
 BOOST_FUSION_ADAPT_STRUCT(
-	wave::direct3d9::effect_compiler::diagnostic_entry::location,
-	(int, row)
-	(int, col)
-)
+  wave::direct3d9::effect_compiler::diagnostic_entry::location,
+  (int, row)
+  (int, col)
+  )
 
 BOOST_FUSION_ADAPT_STRUCT(
-	wave::direct3d9::effect_compiler::diagnostic_entry,
-	(wave::direct3d9::effect_compiler::diagnostic_entry::location, loc)
-	(std::string, type)
-	(std::string, code)
-	(std::string, message)
-)
+  wave::direct3d9::effect_compiler::diagnostic_entry,
+  (boost::optional<wave::direct3d9::effect_compiler::diagnostic_entry::location>, loc)
+  (std::string, type)
+  (std::string, code)
+  (std::string, message)
+  )

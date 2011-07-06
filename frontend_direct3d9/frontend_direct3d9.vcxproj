@@ -90,6 +90,7 @@
     <ClInclude Include="Direct3D9.h" />
     <ClInclude Include="PchDirect3D9.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Scintilla.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Direct3D9.cc">
@@ -123,6 +124,12 @@
     <ProjectReference Include="..\waveform_sdk\waveform_sdk.vcxproj">
       <Project>{83bce727-32c9-42b7-9d51-bb50b85b039b}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="seekbar_body.fx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="D:\Apps\foobar2000devel\user-components\foo_wave_seekbar\SciLexer.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

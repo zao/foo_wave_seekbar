@@ -219,6 +219,17 @@ namespace wave
 		}
 	}
 
+	void cache_impl::compression_bench()
+	{
+		if (store)
+		{
+			io.post([this]()
+			{
+				store->bench();
+			});
+		}
+	}
+
 	bool cache_impl::has_waveform(playable_location const& loc)
 	{
 		if (store)

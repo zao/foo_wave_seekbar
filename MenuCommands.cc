@@ -8,7 +8,7 @@ static GUID const guid_cache_group =
 
 struct cache_commands : mainmenu_commands
 {
-	virtual t_uint32 get_command_count() { return 3; }
+	virtual t_uint32 get_command_count() { return 4; }
 	virtual GUID get_command(t_uint32 index)
 	{
 		// {C001F96F-62D2-4248-A50A-E26846D7CCEC}
@@ -23,7 +23,11 @@ struct cache_commands : mainmenu_commands
 		static const GUID rescan_guid = 
 		{ 0x89b0f429, 0xc749, 0x4027, { 0xbe, 0xed, 0xd9, 0xbe, 0x7, 0xfc, 0x67, 0xc5 } };
 
-		GUID const* guids[] = { &purge_guid, &compact_guid, &rescan_guid };
+		// {6EDECEEE-9509-48C9-BED7-C1A850C4CE95}
+		static const GUID bench_guid = 
+		{ 0x6edeceee, 0x9509, 0x48c9, { 0xbe, 0xd7, 0xc1, 0xa8, 0x50, 0xc4, 0xce, 0x95 } };
+
+		GUID const* guids[] = { &purge_guid, &compact_guid, &rescan_guid, &bench_guid };
 		return *guids[index];
 	}
 	virtual void get_name(t_uint32 index, pfc::string_base& out)
@@ -33,6 +37,7 @@ struct cache_commands : mainmenu_commands
 			case 0: out = "Remove Dead Waveforms"; break;
 			case 1: out = "Compact Waveform Database"; break;
 			case 2: out = "Rescan All Waveforms"; break;
+			case 3: out = "Compression Benchmarking"; break;
 		}
 	}
 	virtual bool get_description(t_uint32 index, pfc::string_base& out)
@@ -42,13 +47,14 @@ struct cache_commands : mainmenu_commands
 			case 0: out = "Removes dead waveforms from the Waveform Cache database."; break;
 			case 1: out = "Compacts the waveform database, may take a while."; break;
 			case 2: out = "Enqueue all waveforms in the database for signature extraction."; break;
+			case 3: out = "Test different compression schemes."; break;
 		}
 		return true;
 	}
 	virtual GUID get_parent() { return guid_cache_group; }
 	virtual void execute(t_uint32 index, service_ptr_t<service_base> callback)
 	{
-		static_api_ptr_t<wave::cache> c;
+		static_api_ptr_t<wave::cache_v3> c;
 		switch (index)
 		{
 			case 0:
@@ -64,6 +70,11 @@ struct cache_commands : mainmenu_commands
 			case 2:
 			{
 				c->rescan_waveforms();
+				break;
+			}
+			case 3:
+			{
+				c->compression_bench();
 				break;
 			}
 		}

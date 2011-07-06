@@ -15,6 +15,7 @@ namespace wave
 		void put(service_ptr_t<waveform> const& in, playable_location const& file);
 		void remove_dead();
 		void compact();
+		void bench();
 
 		void get_jobs(std::deque<job>&);
 		void put_jobs(std::deque<job> const&);
