@@ -194,7 +194,7 @@ namespace clipboard
 	{
 		if (end - beginning > MaxCopyDuration)
 		{
-			console::warning("Seekbar: Cowardly refusing to copy more than 10 minutes.")
+			console::warning("Seekbar: Cowardly refusing to copy more than 10 minutes.");
 			return false;
 		}
 
@@ -240,16 +240,10 @@ namespace clipboard
 			}
 
 			HGLOBAL mem = clip_storage->transfer();
-			void* p = GlobalLock(mem);
-			{
-				std::ofstream os("C:\\tmp.wav", std::ios::binary);
-				os.write((char const*)p, GlobalSize(mem));
-			}
-			GlobalUnlock(mem);
-			bool opened = OpenClipboard(0);
-			bool emptied = EmptyClipboard();
-			bool success = SetClipboardData(CF_WAVE, mem);
-			bool closed = CloseClipboard();
+			bool opened = !!OpenClipboard(0);
+			bool emptied = !!EmptyClipboard();
+			bool success = !!SetClipboardData(CF_WAVE, mem);
+			bool closed = !!CloseClipboard();
 			return true;
 		}
 	}
