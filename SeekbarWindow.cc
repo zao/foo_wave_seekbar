@@ -131,7 +131,7 @@ namespace wave
 	seekbar_window::seekbar_window()
 		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 		, placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
-		, seek_in_progress(false), possible_next_enqueued(false), repaint_timer_id(0)
+		, drag_state(MouseDragNone), possible_next_enqueued(false), repaint_timer_id(0)
 	{
 		fe->callback.reset(new frontend_callback_impl);
 		fe->conf.reset(new frontend_config_impl(settings));
@@ -198,6 +198,7 @@ namespace wave
 
 	void seekbar_window::on_wm_lbuttondown(UINT wparam, CPoint point)
 	{
+		drag_state = (wparam & MK_CONTROL) ? MouseDragSelection : MouseDragSeeking;
 		if (!tooltip)
 		{
 			tooltip.reset(new seek_tooltip(*this));
@@ -205,18 +206,25 @@ namespace wave
 		}
 
 		scoped_lock sl(fe->mutex);
-		seek_in_progress = true;
-		fe->callback->set_seeking(true);
-
-		for each(auto cb in seek_callbacks)
-			if (auto p = cb.lock())
-				p->on_seek_begin();
-
-		set_seek_position(point);
-		if (fe->frontend)
+		if (drag_state == MouseDragSeeking)
 		{
-			fe->frontend->on_state_changed(visual_frontend::state_position);
+			fe->callback->set_seeking(true);
+
+			for each(auto cb in seek_callbacks)
+				if (auto p = cb.lock())
+					p->on_seek_begin();
+
+			set_seek_position(point);
+			if (fe->frontend)
+			{
+				fe->frontend->on_state_changed(visual_frontend::state_position);
+			}
 		}
+		else
+		{
+			drag_data.to = drag_data.from = compute_position(point);
+		}
+
 		SetCapture();
 		repaint();
 	}
@@ -224,22 +232,30 @@ namespace wave
 	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 	{
 		scoped_lock sl(fe->mutex);
-		seek_in_progress = false;
 		ReleaseCapture();
-		bool completed = fe->callback->is_seeking();
-		if (completed)
+		if (drag_state == MouseDragSeeking)
 		{
-			fe->callback->set_seeking(false);
-			set_seek_position(point);
-			if (fe->frontend)
-				fe->frontend->on_state_changed(visual_frontend::state_position);
-			repaint();
-			static_api_ptr_t<playback_control> pc;
-			pc->playback_seek(fe->callback->get_seek_position());
+			bool completed = fe->callback->is_seeking();
+			if (completed)
+			{
+				fe->callback->set_seeking(false);
+				set_seek_position(point);
+				if (fe->frontend)
+					fe->frontend->on_state_changed(visual_frontend::state_position);
+				repaint();
+				static_api_ptr_t<playback_control> pc;
+				pc->playback_seek(fe->callback->get_seek_position());
+			}
+			for each(auto cb in seek_callbacks)
+				if (auto p = cb.lock())
+					p->on_seek_end(!completed);
 		}
-		for each(auto cb in seek_callbacks)
-			if (auto p = cb.lock())
-				p->on_seek_end(!completed);
+		else
+		{
+			drag_data.to = compute_position(point);
+			// render_to_clipboard(std::min(drag_data.from, drag_data.to), std::max(drag_data.from, drag_data.to));
+		}
+		drag_state = MouseDragNone;
 	}
 
 	struct menu_item_info
@@ -312,7 +328,7 @@ namespace wave
 
 	void seekbar_window::on_wm_mousemove(UINT wparam, CPoint point)
 	{
-		if (seek_in_progress)
+		if (drag_state != MouseDragNone)
 		{
 			if (last_seek_point == point)
 				return;
@@ -325,14 +341,27 @@ namespace wave
 			int const N = 40;
 			bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
 
-			fe->callback->set_seeking(!is_outside(point, r, N, horizontal));
-
-			set_seek_position(point);
-			if (fe->frontend)
+			bool outside = is_outside(point, r, N, horizontal);
+			if (outside)
 			{
-				fe->frontend->on_state_changed(visual_frontend::state_position);
+				drag_state = MouseDragNone;
 			}
-			repaint();
+
+			if (drag_state == MouseDragSeeking)
+			{
+				fe->callback->set_seeking(!outside);
+
+				set_seek_position(point);
+				if (fe->frontend)
+				{
+					fe->frontend->on_state_changed(visual_frontend::state_position);
+				}
+				repaint();
+			}
+			else if (drag_state = MouseDragSelection)
+			{
+				drag_state.to = compute_position(point);
+			}
 		}
 	}
 
@@ -664,7 +693,8 @@ namespace wave
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
-	void seekbar_window::set_seek_position(CPoint point)
+	// time from window coordinates
+	double seekbar_window::compute_position(CPoint point)
 	{
 		scoped_lock sl(fe->mutex);
 		double track_length = fe->callback->get_track_length();
@@ -676,7 +706,13 @@ namespace wave
 		if (fe->callback->get_flip_display())
 			position = track_length - position;
 		
-		position = std::max(0.0, std::min(track_length, position));
+		return std::max(0.0, std::min(track_length, position));
+	}
+
+	void seekbar_window::set_seek_position(CPoint point)
+	{
+		scoped_lock sl(fe->mutex);
+		auto position = compute_position();
 
 		for each(auto cb in seek_callbacks)
 			if (auto p = cb.lock())

@@ -47,6 +47,18 @@ namespace wave
 		map_type& factory_map;
 	};
 
+	enum mouse_drag_state
+	{
+		MouseDragNone, MouseDragSeeking, MouseDragSelection
+	};
+
+	struct mouse_drag_data
+	{
+		double from, to;
+
+		mouse_drag_data() : from(0.0), to(0.0) {}
+	};
+
 	struct seekbar_window : CWindowImpl<seekbar_window>, play_callback_impl_base, playlist_callback_impl_base, noncopyable
 	{
 		seekbar_window();
@@ -91,6 +103,7 @@ namespace wave
 	protected:
 		void set_cursor_position(float f);
 		void set_cursor_visibility(bool b);
+		double compute_position(CPoint point);
 		void set_seek_position(CPoint point);
 
 		persistent_settings settings;
@@ -109,7 +122,8 @@ namespace wave
 		shared_ptr<frontend_data> fe;
 
 		bool initializing_graphics;
-		bool seek_in_progress;
+		mouse_drag_state drag_state;
+		mouse_drag_data drag_data;
 		bool possible_next_enqueued;
 		seekbar_state state;
 		color global_colors[config::color_count];
