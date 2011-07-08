@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BackingStore.cc" />
+    <ClCompile Include="Clipboard.cc" />
     <ClCompile Include="GdiFallback.cc" />
     <ClCompile Include="lzma\LzFind.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
@@ -148,6 +149,8 @@
     <ClCompile Include="MainCache.cc" />
     <ClCompile Include="MenuCommands.cc" />
     <ClCompile Include="ProcessingContext.cc" />
+    <ClCompile Include="SeekbarWindow.Callbacks.cc" />
+    <ClCompile Include="SeekbarWindow.Events.cc" />
     <ClCompile Include="sqlite3.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -201,6 +204,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
+    <ClInclude Include="Clipboard.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="FrontendConfigImpl.h" />
     <ClInclude Include="GdiFallback.h" />
@@ -219,6 +223,7 @@
     <ClInclude Include="Cache.h" />
     <ClInclude Include="CacheImpl.h" />
     <ClInclude Include="ProcessingContext.h" />
+    <ClInclude Include="SeekTooltip.h" />
     <ClInclude Include="sqlite3.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="zlib\crc32.h" />

@@ -32,6 +32,7 @@ namespace wave
 		scoped_ptr<frontend_callback_impl> callback;
 		scoped_ptr<frontend_config_impl> conf;
 		shared_ptr<visual_frontend> frontend;
+		metadb_handle_ptr displayed_song;
 		uint32_t auto_get_serial;
 	};
 
@@ -59,6 +60,7 @@ namespace wave
 		mouse_drag_data() : from(0.0), to(0.0) {}
 	};
 
+	enum { REPAINT_TIMER_ID = 0x4242 };
 	struct seekbar_window : CWindowImpl<seekbar_window>, play_callback_impl_base, playlist_callback_impl_base, noncopyable
 	{
 		seekbar_window();

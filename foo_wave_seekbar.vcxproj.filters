@@ -137,6 +137,15 @@
     <ClCompile Include="lzma\Lzma2Enc.c">
       <Filter>Packing\lzma</Filter>
     </ClCompile>
+    <ClCompile Include="Clipboard.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.Callbacks.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.Events.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h">
@@ -223,6 +232,12 @@
     </ClInclude>
     <ClInclude Include="zlib\inffixed.h">
       <Filter>Packing\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="Clipboard.h">
+      <Filter>Seekbar</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekTooltip.h">
+      <Filter>Seekbar</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

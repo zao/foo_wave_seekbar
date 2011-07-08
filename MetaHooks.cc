@@ -31,7 +31,9 @@ struct waveform_hooks : metadb_display_field_provider
 			shared_ptr<int> channel_count = make_shared<int>();
 			req->completion_handler = [channel_count](shared_ptr<wave::get_response> resp)
 			{
-				*channel_count = resp->waveform->get_channel_count();
+				*channel_count = resp->waveform.is_valid()
+					? resp->waveform->get_channel_count()
+					: 0;
 			};
 
 			c->get_waveform(req);
