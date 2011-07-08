@@ -9,6 +9,8 @@
 //#include "Direct2D.h"
 #include "GdiFallback.h"
 
+#include "Clipboard.h"
+
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -253,7 +255,11 @@ namespace wave
 		else
 		{
 			drag_data.to = compute_position(point);
-			// render_to_clipboard(std::min(drag_data.from, drag_data.to), std::max(drag_data.from, drag_data.to));
+			metadb_handle_ptr source;
+			auto from = std::min(drag_data.from, drag_data.to);
+			auto to = std::max(drag_data.from, drag_data.to);
+
+			clipboard::render_audio(source, from, to);
 		}
 		drag_state = MouseDragNone;
 	}
