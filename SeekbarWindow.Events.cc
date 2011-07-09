@@ -161,10 +161,10 @@ namespace wave
 				if (auto p = cb.lock())
 					p->on_seek_end(!completed);
 		}
-		else
+		else if (drag_state == MouseDragSelection)
 		{
 			auto source = fe->displayed_song;
-			if (source.is_valid())
+			if (source.is_valid() && drag_data.to >= 0)
 			{
 				drag_data.to = compute_position(point);
 
@@ -175,6 +175,43 @@ namespace wave
 			}
 		}
 		drag_state = MouseDragNone;
+	}
+
+	void seekbar_window::on_wm_mousemove(UINT wparam, CPoint point)
+	{
+		if (drag_state != MouseDragNone)
+		{
+			if (last_seek_point == point)
+				return;
+
+			last_seek_point = point;
+
+			scoped_lock sl(fe->mutex);
+			CRect r;
+			GetWindowRect(r);
+			int const N = 40;
+			bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
+
+			bool outside = is_outside(point, r, N, horizontal);
+
+			if (drag_state == MouseDragSeeking)
+			{
+				fe->callback->set_seeking(!outside);
+
+				set_seek_position(point);
+				if (fe->frontend)
+				{
+					fe->frontend->on_state_changed(visual_frontend::state_position);
+				}
+				repaint();
+			}
+			else if (drag_state = MouseDragSelection)
+			{
+				drag_data.to = outside
+					? -1.0f
+					: compute_position(point);
+			}
+		}
 	}
 
 	void seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
@@ -204,45 +241,6 @@ namespace wave
 			break;
 		default:
 			return;
-		}
-	}
-
-	void seekbar_window::on_wm_mousemove(UINT wparam, CPoint point)
-	{
-		if (drag_state != MouseDragNone)
-		{
-			if (last_seek_point == point)
-				return;
-
-			last_seek_point = point;
-
-			scoped_lock sl(fe->mutex);
-			CRect r;
-			GetWindowRect(r);
-			int const N = 40;
-			bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
-
-			bool outside = is_outside(point, r, N, horizontal);
-			if (outside)
-			{
-				drag_state = MouseDragNone;
-			}
-
-			if (drag_state == MouseDragSeeking)
-			{
-				fe->callback->set_seeking(!outside);
-
-				set_seek_position(point);
-				if (fe->frontend)
-				{
-					fe->frontend->on_state_changed(visual_frontend::state_position);
-				}
-				repaint();
-			}
-			else if (drag_state = MouseDragSelection)
-			{
-				drag_data.to = compute_position(point);
-			}
 		}
 	}
 }
