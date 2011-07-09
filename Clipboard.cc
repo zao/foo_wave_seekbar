@@ -243,6 +243,8 @@ namespace clipboard
 			bool opened = !!OpenClipboard(0);
 			bool emptied = !!EmptyClipboard();
 			bool success = !!SetClipboardData(CF_WAVE, mem);
+			if (!success)
+				GlobalFree(mem);
 			bool closed = !!CloseClipboard();
 			return true;
 		}
