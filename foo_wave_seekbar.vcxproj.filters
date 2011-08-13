@@ -242,7 +242,6 @@
     <ClInclude Include="SeekTooltip.h">
       <Filter>Seekbar</Filter>
     </ClInclude>
-    <ClInclude Include="CodeCvt.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc">

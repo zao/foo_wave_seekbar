@@ -209,7 +209,6 @@
   <ItemGroup>
     <ClInclude Include="BackingStore.h" />
     <ClInclude Include="Clipboard.h" />
-    <ClInclude Include="CodeCvt.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="FrontendConfigImpl.h" />
     <ClInclude Include="GdiFallback.h" />
