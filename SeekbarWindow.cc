@@ -79,34 +79,54 @@ namespace wave
 	{
 	}
 
-	frontend_module::frontend_module(boost::shared_ptr<bex::shared_library<std::wstring>> lib, boost::shared_ptr<bex::type_map> types)
+	frontend_module::frontend_module(boost::shared_ptr<bex::shared_library> lib, boost::shared_ptr<bex::type_map> types)
 		: library(lib), types(types), factory_map(types->get())
 	{
 	}
 
+	boost::filesystem::path file_location_to_path(char const* fb2k_file)
+	{
+		assert(boost::algorithm::starts_with(fb2k_file, "file://"));
+		fb2k_file += 7;
+		std::deque<char> out;
+		for (; *fb2k_file; ++fb2k_file)
+		{
+			char const& c = *fb2k_file;
+			out.push_back((c == '/') ? '\\' : c);
+		}
+		return boost::filesystem::path(out.begin(), out.end(), utf8::utf8_codecvt_facet());
+	}
+
 	void seekbar_window::load_frontend_modules()
 	{
-		namespace fs = boost::filesystem;
-		boost::filesystem::path path = core_api::get_my_full_path();
-		path = path.remove_filename();
-		fs::directory_iterator I = fs::directory_iterator(path), last;
-		while (I != last)
+		try
 		{
-			auto lib = boost::make_shared<bex::shared_library<std::wstring>>(I->path().native(), true);
-			if (lib && lib->open())
+			namespace fs = boost::filesystem;
+			boost::filesystem::path path = file_location_to_path(core_api::get_my_full_path());
+			path = path.remove_filename();
+			fs::directory_iterator I = fs::directory_iterator(path), last;
+			while (I != last)
 			{
-				auto types = boost::make_shared<bex::type_map>();
-				if (lib->call(*types))
+				auto lib = boost::make_shared<bex::shared_library>(I->path(), true);
+				if (lib && lib->open())
 				{
-					frontend_module::map_type& m = types->get();
-					if (!m.empty())
+					auto types = boost::make_shared<bex::type_map>();
+					if (lib->call(*types))
 					{
-						auto mod = boost::make_shared<frontend_module>(lib, types);
-						frontend_modules.push_back(mod);
+						frontend_module::map_type& m = types->get();
+						if (!m.empty())
+						{
+							auto mod = boost::make_shared<frontend_module>(lib, types);
+							frontend_modules.push_back(mod);
+						}
 					}
 				}
+				++I;
 			}
-			++I;
+		}
+		catch (std::exception& e)
+		{
+			console::complain("Seekbar: couldn't load optional frontends", e);
 		}
 	}
 

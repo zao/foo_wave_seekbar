@@ -38,12 +38,12 @@ namespace wave
 
 	struct frontend_module
 	{
-		frontend_module(boost::shared_ptr<bex::shared_library<std::wstring>>, boost::shared_ptr<bex::type_map>);
+		frontend_module(boost::shared_ptr<bex::shared_library>, boost::shared_ptr<bex::type_map>);
 		boost::shared_ptr<visual_frontend> instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf);
 
 		typedef std::map<config::frontend, bex::factory<visual_frontend, HWND, wave::size, visual_frontend_callback&, visual_frontend_config&>> map_type;
 
-		boost::shared_ptr<bex::shared_library<std::wstring>> library;
+		boost::shared_ptr<bex::shared_library> library;
 		boost::shared_ptr<bex::type_map> types;
 		map_type& factory_map;
 	};

@@ -146,6 +146,9 @@
     <ClCompile Include="SeekbarWindow.Events.cc">
       <Filter>Seekbar</Filter>
     </ClCompile>
+    <ClCompile Include="utf8_codecvt_facet.cpp">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h">
@@ -239,6 +242,7 @@
     <ClInclude Include="SeekTooltip.h">
       <Filter>Seekbar</Filter>
     </ClInclude>
+    <ClInclude Include="CodeCvt.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc">
