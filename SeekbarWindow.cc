@@ -86,15 +86,23 @@ namespace wave
 
 	boost::filesystem::path file_location_to_path(char const* fb2k_file)
 	{
-		assert(boost::algorithm::starts_with(fb2k_file, "file://"));
-		fb2k_file += 7;
-		std::deque<char> out;
-		for (; *fb2k_file; ++fb2k_file)
+		pfc::string8 native;
+
+		// foobar2000_io::extract_native_path() can strip out file://, but will
+		// currently (2011-08-14) break if fed a native path, thus this test.
+		if (boost::algorithm::starts_with(fb2k_file, "file://"))
 		{
-			char const& c = *fb2k_file;
-			out.push_back((c == '/') ? '\\' : c);
+			foobar2000_io::extract_native_path(fb2k_file, native);
 		}
-		return boost::filesystem::path(out.begin(), out.end(), utf8::utf8_codecvt_facet());
+		else
+		{
+			native = fb2k_file;
+		}
+
+		native.replace_byte('/', '\\', 0);
+
+		auto first = native.get_ptr(), last = first + native.get_length();		
+		return boost::filesystem::path(first, last, utf8::utf8_codecvt_facet());
 	}
 
 	void seekbar_window::load_frontend_modules()
