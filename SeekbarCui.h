@@ -60,29 +60,60 @@ namespace uie
 
 namespace wave
 {
-	struct seekbar_uie : uie::container_atl_window<seekbar_window>
+	struct seekbar_uie_base : uie::container_atl_window<seekbar_window>
 	{
-		seekbar_uie();
-		~seekbar_uie();
+		seekbar_uie_base();
+		~seekbar_uie_base();
 
 		virtual void set_config(stream_reader * p_reader, t_size p_size, abort_callback & p_abort);
 		virtual void get_config(stream_writer * p_writer, abort_callback & p_abort) const;
 
-		virtual const GUID& get_extension_guid() const;
 		virtual void get_name(pfc::string_base& out) const;
-		virtual void get_category(pfc::string_base& out) const;
-		unsigned get_type() const;
 
 		struct color_callback : cui::colours::common_callback
 		{
-			color_callback(seekbar_uie& parent);
+			color_callback(seekbar_uie_base& parent);
 
 			void on_colour_changed(t_size) const;
 			void on_bool_changed(t_size) const;
 
-			seekbar_uie& sb;
+			seekbar_uie_base& sb;
 		} color_cb;
 
-		static const GUID s_extension_guid;
+	};
+
+	extern const GUID s_panel_guid, s_toolbar_guid;
+	
+	template <uie::window_type_t WindowType>
+	struct seekbar_uie_t : seekbar_uie_base
+	{
+		virtual void get_category(pfc::string_base& out) const
+		{
+			switch (WindowType)
+			{
+			case uie::type_toolbar:
+				out.set_string("Toolbars"); return;
+			case uie::type_panel:
+			default:
+				out.set_string("Panels"); return;
+			}
+		}
+
+		virtual const GUID& get_extension_guid() const
+		{
+			switch (WindowType)
+			{
+			case uie::type_toolbar:
+				return s_toolbar_guid;
+			case uie::type_panel:
+			default:
+				return s_panel_guid;
+			}
+		}
+
+		virtual unsigned get_type() const
+		{
+			return WindowType;
+		}
 	};
 }
