@@ -28,7 +28,7 @@ namespace pack
 		deflate(&zs, Z_FINISH);
 		deflateEnd(&zs);
 
-		std::copy(out_buf.begin(), out_buf.end(), I);
+		std::copy_n(out_buf.begin(), zs.total_out, I);
 		return true;
 	}
 
@@ -99,7 +99,7 @@ namespace pack
 				auto self = (source*)p;
 				auto dst = (uint8_t*)buf;
 
-				size_t n = std::min(*size, self->cb);
+				size_t n = std::min(2048u, std::min(*size, self->cb));
 				std::copy(self->src, self->src + n, dst);
 
 				self->cb -= n;
@@ -166,6 +166,7 @@ namespace pack
 				props.fb = 128;
 				props.algo = 1;
 				props.numThreads = 1;
+				props.writeEndMark = 1;
 				Lzma2Enc_SetProps(p, &props2);
 			}
 
@@ -182,6 +183,8 @@ namespace pack
 		{
 			decoder(Byte prop)
 			{
+				CLzma2Dec _ = {}; dec = _;
+				Lzma2Dec_Construct(&dec);
 				Lzma2Dec_Allocate(&dec, prop, &mem_fns);
 				Lzma2Dec_Init(&dec);
 			}
@@ -230,21 +233,27 @@ namespace pack
 
 		Byte b;
 		size_t sz = 1;
-		is.Read(&is, &b, &bn);
+		is.Read(&is, &b, &sz);
 		if (sz != 1)
 			return false;
 
 		uint32_t cb_i;
 		sz = 4;
 		is.Read(&is, &cb_i, &sz);
-		if (sz != 4 || sz >= (1 << 20)) // needs more clever setup for streaming
+		if (sz != 4 || cb_i >= (1 << 20)) // needs more clever setup for streaming
 			return false;
 
-		std::vector<uint8_t> buf(sz);
+		std::vector<uint8_t> buf(cb_i);
 
-		decoder dec(b);
+		detail::decoder dec(b);
 		ELzmaStatus status = LZMA_STATUS_NOT_SPECIFIED;
-		SRes res = Lzma2Dec_DecodeToBuf(&dec.dec, &buf[0], buf.size(), src, cb, LZMA_FINISH_ANY, &status);
-		return res == SZ_OK && status == LZMA_STATUS_FINISHED_WITH_MARK;
+		cb -= 5;
+		SRes res = Lzma2Dec_DecodeToBuf(&dec.dec, &buf[0], &cb_i, (Byte const*)src + 5, &cb, LZMA_FINISH_END, &status);
+		if (res == SZ_OK && status == LZMA_STATUS_FINISHED_WITH_MARK)
+		{
+			os.Write(&os, &buf[0], cb_i);
+			return true;
+		}
+		return false;
 	}
 }
