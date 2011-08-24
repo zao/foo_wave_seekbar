@@ -9,22 +9,14 @@
 #include "Helpers.h"
 #include "Pack.h"
 
-namespace
-{
-	void lzma_length(sqlite3_context* ctx, int argc, sqlite3_value** argv)
-	{
-		uint8_t const* blob = (uint8_t const*)sqlite3_value_blob(argv[0]);
-		auto cb = sqlite3_value_bytes(argv[0]);
+#include <boost/range/algorithm.hpp>
+#include <boost/container/stable_vector.hpp>
+#include <boost/container/vector.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
 
-		std::vector<uint8_t> raw, lzma;
-		pack::z_unpack(blob, cb, std::back_inserter(raw));
-		pack::lzma_pack(&raw[0], raw.size(), std::back_inserter(lzma));
-				
-		sqlite3_result_double(ctx, cb / (double)lzma.size());
-		return;		
-		sqlite3_result_null(ctx);
-	}
-}
+namespace bacc = boost::accumulators;
+namespace boco = boost::container;
 
 namespace wave
 {
@@ -326,21 +318,92 @@ namespace wave
 		console::info("Waveform cache: compacted the database.");
 	}
 
+	struct accumulator
+	{
+		bacc::accumulator_set<long double, bacc::stats<bacc::tag::mean, bacc::tag::variance>> accs[3][2];
+		std::vector<uint8_t> scratch, frob;
+
+		accumulator()
+		{
+			scratch.reserve(1024*1024);
+			frob.reserve(1024*1024);
+		}
+
+		static void func(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+		{
+			static volatile int n = 0;
+			++n;
+			bool compressed = sqlite3_value_type(argv[0]) != SQLITE_NULL;
+			bool zlib_compressed = compressed && sqlite3_value_int(argv[0]) == 0;
+			auto self = (accumulator*)sqlite3_user_data(ctx);
+			auto& scratch = self->scratch;
+			auto& frob = self->frob;
+			for (int i = 0; i < 3; ++i)
+			{
+				auto cb = sqlite3_value_bytes(argv[i+1]);
+				auto bytes = (uint8_t*)sqlite3_value_blob(argv[i+1]);
+
+				scratch.clear();
+				if (zlib_compressed)
+				{
+					pack::z_unpack(bytes, cb, std::back_inserter(scratch));
+				}
+				else
+				{
+					std::copy(bytes, bytes + cb, scratch.begin());
+				}
+
+				frob.clear();
+				pack::z_pack(&scratch[0], scratch.size(), std::back_inserter(frob));
+				self->accs[i][0](frob.size());
+
+				frob.clear();
+				pack::lzma_pack(&scratch[0], scratch.size(), std::back_inserter(frob));
+				self->accs[i][1](frob.size());
+			}
+			sqlite3_result_null(ctx);
+		}
+
+		void resolve(long double* means, long double* stddevs)
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				means[0 + i*2] = bacc::mean(accs[i][0]);
+				means[1 + i*2] = bacc::mean(accs[i][1]);
+				stddevs[0 + i*2] = sqrt(bacc::variance(accs[i][0]));
+				stddevs[1 + i*2] = sqrt(bacc::variance(accs[i][1]));
+			}
+		}
+	};
+
 	void backing_store::bench()
 	{
+		 accumulator acc;
+
 		sqlite3_create_function(
 			backing_db.get(),
-			"zlib_to_lzma_gain", 1, SQLITE_ANY, 0,
-			&lzma_length, 0, 0);
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement("SELECT avg(zlib_to_lzma_gain(w.min)), avg(zlib_to_lzma_gain(w.max)), avg(zlib_to_lzma_gain(w.rms)) FROM (SELECT min, max, rms FROM wave) AS w");
-		while (SQLITE_ROW == sqlite3_step(stmt.get()))
-		{
-			std::ostringstream oss;
-			oss << "Min: " << (sqlite3_column_double(stmt.get(), 0) - 1.0) * 100 << ", "
-			    << "Max: " << (sqlite3_column_double(stmt.get(), 1) - 1.0) * 100 << ", "
-			    << "RMS: " << (sqlite3_column_double(stmt.get(), 2) - 1.0) * 100 << "\n";
-			console::info(oss.str().c_str());
-		}
+			"bench", 4, SQLITE_ANY, &acc,
+			&accumulator::func, 0, 0);
+
+		shared_ptr<sqlite3_stmt> stmt = prepare_statement("SELECT bench(w.compression, w.min, w.max, w.rms) FROM (SELECT compression, min, max, rms FROM wave) AS w");
+		while (SQLITE_ROW == sqlite3_step(stmt.get()));
+		
+		long double means[6], devs[6];
+		acc.resolve(means, devs);
+
+		char const* mu = "\xCE\xBC=";
+		char const* sigma = ",\xCF\x83=";
+
+		std::ostringstream oss;
+		oss << "zlib min/max/rms: "
+			<< mu << means[0] << sigma << devs[0] << " / "
+			<< mu << means[2] << sigma << devs[2] << " / "
+			<< mu << means[4] << sigma << devs[4] << "\n"
+			<< "lzma min/max/rms: "
+			<< mu << means[1] << sigma << devs[1] << " / "
+			<< mu << means[3] << sigma << devs[3] << " / "
+			<< mu << means[5] << sigma << devs[5] << "\n";
+		console::info(oss.str().c_str());
 	}
 
 	void backing_store::get_all(pfc::list_t<playable_location_impl>& out)
