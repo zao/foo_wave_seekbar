@@ -216,7 +216,7 @@ namespace wave
 
 		stmt = prepare_statement(
 			"REPLACE INTO wave (fid, min, max, rms, channels, compression) "
-			"SELECT f.fid, ?, ?, ?, ?, 0 "
+			"SELECT f.fid, ?, ?, ?, ?, ? "
 			"FROM file AS f "
 			"WHERE f.location = ? AND f.subsong = ?");
 
@@ -231,7 +231,7 @@ namespace wave
 					float * p = (float *)channel.get_ptr(); \
 					std::copy(p, p + channel.get_size(), std::back_inserter(src_buf)); \
 				} \
-				pack::z_pack(&src_buf[0], src_buf.size() * sizeof(float), std::back_inserter(Member)); \
+				pack::lzma_pack(&src_buf[0], src_buf.size() * sizeof(float), std::back_inserter(Member)); \
 			} \
 			sqlite3_bind_blob(stmt.get(), Idx, &Member[0], Member.size(), SQLITE_STATIC)
 			
@@ -242,13 +242,11 @@ namespace wave
 #		undef  BIND_LIST
 
 		sqlite3_bind_int(stmt.get(), 4, w->get_channel_map());
+		sqlite3_bind_int(stmt.get(), 5, 1); // LZMA compression
+		sqlite3_bind_text(stmt.get(), 6, file.get_path(), -1, SQLITE_STATIC);
+		sqlite3_bind_int(stmt.get(), 7, file.get_subsong());
 
-		sqlite3_bind_text(stmt.get(), 5, file.get_path(), -1, SQLITE_STATIC);
-		sqlite3_bind_int(stmt.get(), 6, file.get_subsong());
-
-		while (SQLITE_ROW == sqlite3_step(stmt.get()))
-		{
-		}
+		while (SQLITE_ROW == sqlite3_step(stmt.get()));
 	}
 
 	void backing_store::get_jobs(std::deque<job>& out)
