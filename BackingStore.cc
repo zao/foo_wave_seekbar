@@ -115,91 +115,99 @@ namespace wave
 	bool backing_store::get(service_ptr_t<waveform>& out, playable_location const& file)
 	{
 		out = NULL;
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
-			"SELECT w.min, w.max, w.rms, w.channels, w.compression "
-			"FROM file AS f NATURAL JOIN wave AS w "
-			"WHERE f.location = ? AND f.subsong = ?");
-
-		sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
-		sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
-
-		if (SQLITE_ROW != sqlite3_step(stmt.get())) {
-			return false;
-		}
-		
-		boost::optional<int> channels, compression;
-
-		if (sqlite3_column_type(stmt.get(), 3) != SQLITE_NULL)
-			channels = sqlite3_column_int(stmt.get(), 3);
-		if (sqlite3_column_type(stmt.get(), 4) != SQLITE_NULL)
-			compression = sqlite3_column_int(stmt.get(), 4);
-
-		if (compression && *compression > 0)
-			return false;
-
-		unsigned channel_count = channels ? count_bits_set(*channels) : 1;
-
-		service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
-		auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col) -> bool
+		boost::optional<int> compression;
 		{
-			pfc::list_t<pfc::list_t<float>> list;
-			
-			float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
-			t_size count = sqlite3_column_bytes(stmt.get(), col) / sizeof(float);
+			shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+				"SELECT w.min, w.max, w.rms, w.channels, w.compression "
+				"FROM file AS f NATURAL JOIN wave AS w "
+				"WHERE f.location = ? AND f.subsong = ?");
 
-			if (compression)
+			sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
+			sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
+
+			if (SQLITE_ROW != sqlite3_step(stmt.get())) {
+				return false;
+			}
+		
+			boost::optional<int> channels;
+
+			if (sqlite3_column_type(stmt.get(), 3) != SQLITE_NULL)
+				channels = sqlite3_column_int(stmt.get(), 3);
+			if (sqlite3_column_type(stmt.get(), 4) != SQLITE_NULL)
+				compression = sqlite3_column_int(stmt.get(), 4);
+
+			if (compression && *compression > 1)
+				return false;
+
+			unsigned channel_count = channels ? count_bits_set(*channels) : 1;
+
+			service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
+			auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col) -> bool
 			{
-				std::vector<char> dst;
-				dst.reserve(2048 * channel_count * sizeof(float));
-				if (*compression == 0)
+				pfc::list_t<pfc::list_t<float>> list;
+			
+				float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
+				t_size count = sqlite3_column_bytes(stmt.get(), col);
+
+				if (compression)
 				{
-#if 0
-					io::filtering_ostream out;
-					out.push(io::zlib_decompressor());
-					out.push(io::array_sink((char*)&dst[0], dst.size() * sizeof(float)));
-					out.write((char const*)data, count * sizeof(float));
-#endif
-					if (!pack::z_unpack(data, count * sizeof(float), std::back_inserter(dst)))
+					typedef std::back_insert_iterator<std::vector<char>> Iterator;
+					bool (*unpack_func)(void const*, size_t, Iterator) = 0;
+					if (*compression == 0)
+						unpack_func = &pack::z_unpack<Iterator>;
+					if (*compression == 1)
+						unpack_func = &pack::lzma_unpack<Iterator>;
+
+					std::vector<char> dst;
+					dst.reserve(2048 * channel_count * sizeof(float));
+					if (!unpack_func(data, count, std::back_inserter(dst)))
 					{
 						return false;
 					}
+
+					if (dst.size() != channel_count * 2048 * sizeof(float))
+					{
+						return false;
+					}
+
+					for (unsigned c = 0; c < channel_count; ++c)
+					{
+						pfc::list_hybrid_t<float, 2048> channel;
+						float const * fs = (float*)&dst[2048 * c * sizeof(float)];
+						channel.add_items_fromptr(fs, 2048);
+						list.add_item(channel);
+					}
 				}
-
-				if (dst.size() != channel_count * 2048 * sizeof(float))
-					return false;
-
-				for (unsigned c = 0; c < channel_count; ++c)
+				else
 				{
-					pfc::list_hybrid_t<float, 2048> channel;
-					float const * fs = (float*)&dst[2048 * c * sizeof(float)];
-					channel.add_items_fromptr(fs, 2048);
-					list.add_item(channel);
+					for (unsigned c = 0; c < channel_count; ++c)
+					{
+						pfc::list_hybrid_t<float, 2048> channel;
+						channel.add_items_fromptr(data + 2048*c, 2048);
+						list.add_item(channel);
+					}
 				}
+				w->fields[name] = list;
+				return true;
+			};
+
+			if (clear_and_set("minimum", 0) && 
+				clear_and_set("maximum", 1) &&
+				clear_and_set("rms", 2))
+			{
+				w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
+
+				out = w;
 			}
 			else
 			{
-				for (unsigned c = 0; c < channel_count; ++c)
-				{
-					pfc::list_hybrid_t<float, 2048> channel;
-					channel.add_items_fromptr(data + 2048*c, 2048);
-					list.add_item(channel);
-				}
+				remove(file); // it's corrupt, and thus useless
 			}
-			w->fields[name] = list;
-			return true;
-		};
-
-		if (clear_and_set("minimum", 0) && 
-			clear_and_set("maximum", 1) &&
-			clear_and_set("rms", 2))
-		{
-			w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
-
-			out = w;
 		}
-		else
+
+		if(!compression || *compression == 0)
 		{
-			remove(file); // it's corrupt, and thus useless
+			put(out, file);
 		}
 		return out.is_valid();
 	}
