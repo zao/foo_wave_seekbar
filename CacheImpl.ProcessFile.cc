@@ -82,9 +82,10 @@ namespace wave
 	{
 	};
 
-	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
+	waveform::data* cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
-		service_ptr_t<waveform> out;
+		delayed_call custodian;
+		waveform::data* out = NULL;
 
 		// Check for priority jobs.
 		if (user_requested)
@@ -273,16 +274,18 @@ namespace wave
 						channel_map = audio_chunk::channel_config_mono;
 					}
 
-					pfc::list_t<pfc::list_hybrid_t<float, 2048>> tr_minimum, tr_maximum, tr_rms;
+					pfc::list_t<pfc::list_t<float>> tr_minimum, tr_maximum, tr_rms;
 					transpose(tr_minimum, minimum);
 					transpose(tr_maximum, maximum);
 					transpose(tr_rms, rms);
 
-					service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
-					ret->fields.set("minimum", tr_minimum);
-					ret->fields.set("maximum", tr_maximum);
-					ret->fields.set("rms", tr_rms);
-					ret->channel_map = channel_map;
+					waveform::data* ret = waveform::create(channel_map);
+					for (unsigned channel = 0; channel < get_channel_count(ret); ++channel)
+					{
+						std::copy_n(tr_minimum[channel].get_ptr(), 2048, waveform::get_field(ret, channel, waveform::min_field));
+						std::copy_n(tr_maximum[channel].get_ptr(), 2048, waveform::get_field(ret, channel, waveform::max_field));
+						std::copy_n(tr_rms[channel].get_ptr(), 2048, waveform::get_field(ret, channel, waveform::rms_field));
+					}
 
 					out = ret;
 				}

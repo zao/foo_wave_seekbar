@@ -53,14 +53,14 @@ namespace wave
 
 		void frontend_impl::update_data()
 		{
-			service_ptr_t<waveform> w;
+			boost::shared_ptr<waveform::data> w;
 			if (callback.get_waveform(w))
 			{
-				if (callback.get_downmix_display() && w->get_channel_map() != audio_chunk::channel_config_mono)
+				if (callback.get_downmix_display() && waveform::get_channel_map(w.get()) != audio_chunk::channel_config_mono)
 				{
-					w = downmix_waveform(w);
+					w.reset(waveform::downmix(w.get()), &waveform::destroy);
 				}
-				channel_numbers = expand_flags(w->get_channel_map());
+				channel_numbers = expand_flags(get_channel_map(w.get()));
 
 				channel_order.clear();
 				pfc::list_t<channel_info> infos;
@@ -85,9 +85,9 @@ namespace wave
 						CComPtr<IDirect3DTexture9> tex = channel_textures[info.channel];
 					
 						pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
-						w->get_field("minimum", idx, avg_min);
-						w->get_field("maximum", idx, avg_max);
-						w->get_field("rms", idx, avg_rms);
+						avg_min.add_items_fromptr(waveform::get_field(w.get(), idx, waveform::min_field), 2048);
+						avg_max.add_items_fromptr(waveform::get_field(w.get(), idx, waveform::max_field), 2048);
+						avg_rms.add_items_fromptr(waveform::get_field(w.get(), idx, waveform::rms_field), 2048);
 
 						for (UINT mip = 0; mip < mip_count; ++mip)
 						{

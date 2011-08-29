@@ -46,7 +46,7 @@ namespace wave
 		~image_cache();
 		void start();
 
-		void update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip);
+		void update_texture_target(boost::shared_ptr<waveform::data> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip);
 
 		CComPtr<ID2D1Factory> factory;
 		boost::mutex mutex;
@@ -75,7 +75,7 @@ namespace wave
 
 	private:
 		void regenerate_brushes();
-		void trigger_texture_update(service_ptr_t<waveform> wf, wave::size size);
+		void trigger_texture_update(boost::shared_ptr<waveform::data> wf, wave::size size);
 		void update_data();
 		void update_size();
 

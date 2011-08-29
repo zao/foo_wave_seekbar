@@ -9,51 +9,96 @@
 
 #include <list>
 
+#include <boost/foreach.hpp>
+
 namespace wave
 {
-	service_ptr_t<waveform> downmix_waveform(service_ptr_t<waveform> const& w)
+	namespace waveform
 	{
-		typedef pfc::list_t<float> t_channel;
-		typedef pfc::list_t<float> t_frame;
-
-		auto channel_count = w->get_channel_count();
-
-		service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
-		ret->channel_map = audio_chunk::channel_config_mono;
-
-		std::list<pfc::string> field_names;
-		field_names.push_back("minimum");
-		field_names.push_back("maximum");
-		field_names.push_back("rms");
-
-		for (auto I = field_names.begin(); I != field_names.end(); ++I)
+		data* create(unsigned channel_map)
 		{
-			auto name = *I;
+			unsigned channel_count = audio_chunk::g_count_channels(channel_map);
+			auto ret = (data*)malloc(sizeof(data) + 2048 * sizeof(float) * 3 * channel_count);
+			ret->channel_count = channel_count;
+			ret->channel_map = channel_map;
+			return ret;
+		}
 
-			pfc::list_t<float> frame;
-			frame.set_count(channel_count);
+		void destroy(data* p)
+		{
+			if (p)
+				free(p);
+		}
 
-			pfc::list_t<t_channel> channels;
-			channels.set_count(channel_count);
+		float* get_field(data* p, unsigned channel_idx, field_tag tag)
+		{
+			auto channel_pitch = 2048;
+			auto field_pitch = get_channel_count(p) * channel_pitch;
+			auto ix = field_pitch * tag + channel_pitch * channel_idx;
+			return p->storage + ix;
+		}
 
-			t_channel mix;
-			mix.set_count(2048);
+		float const* get_field(data const* p, unsigned channel_idx, field_tag tag)
+		{
+			auto channel_pitch = 2048;
+			auto field_pitch = get_channel_count(p) * channel_pitch;
+			auto ix = field_pitch * tag + channel_pitch * channel_idx;
+			return p->storage + ix;
+		}
 
-			for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx)
+		unsigned get_channel_count(data const* p)
+		{
+			return p->channel_count;
+		}
+
+		unsigned get_channel_map(data const* p)
+		{
+			return p->channel_map;
+		}
+
+		data* downmix(data const* w)
+		{
+			typedef pfc::list_t<float> t_channel;
+
+			auto channel_count = get_channel_count(w);
+
+			data* ret = create(audio_chunk::channel_config_mono);
+
+			std::list<field_tag> field_tags;
+			field_tags.push_back(min_field);
+			field_tags.push_back(max_field);
+			field_tags.push_back(rms_field);
+
+			BOOST_FOREACH(field_tag tag, field_tags)
 			{
-				w->get_field(name, channel_idx, channels[channel_idx]);
-			}
+				pfc::list_t<float> frame;
+				frame.set_count(channel_count);
 
-			for (size_t sample_index = 0; sample_index < 2048; ++sample_index)
-			{
+				pfc::list_t<float const*> channels;
+				channels.set_count(channel_count);
+
+				float* mix = get_field(ret, 0, tag);
+
 				for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx)
 				{
-					frame[channel_idx] = channels[channel_idx][sample_index];
+					channels[channel_idx] = get_field(w, channel_idx, tag);
 				}
-				mix[sample_index] = downmix(frame);
+
+				for (size_t sample_index = 0; sample_index < 2048; ++sample_index)
+				{
+					for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx)
+					{
+						frame[channel_idx] = channels[channel_idx][sample_index];
+					}
+					mix[sample_index] = ::downmix(frame);
+				}
 			}
-			ret->fields[name].add_item(mix);
+			return ret;
 		}
-		return ret;
+
+		data* make_placeholder()
+		{
+			return create((1 << audio_chunk::defined_channel_count) - 1);
+		}
 	}
 }

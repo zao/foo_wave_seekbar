@@ -138,19 +138,19 @@ namespace wave
 	{
 		auto size = callback.get_size();
 		rt->Resize(D2D1::SizeU(size.cx, size.cy));
-		service_ptr_t<waveform> wf;
+		boost::shared_ptr<waveform::data> wf;
 		if (callback.get_waveform(wf))
 		{
 			trigger_texture_update(wf, size);
 		}
 	}
 
-	void direct2d1_frontend::trigger_texture_update(service_ptr_t<waveform> wf, wave::size size)
+	void direct2d1_frontend::trigger_texture_update(boost::shared_ptr<waveform::data> wf, wave::size size)
 	{
 		boost::mutex::scoped_lock sl(cache->mutex);
 		++cache->jobs;
 		if (callback.get_downmix_display())
-			wf = downmix_waveform(wf);
+			wf.reset(waveform::downmix(wf.get()), &waveform::destroy);
 		pfc::list_t<channel_info> infos;
 		callback.get_channel_infos(infos);
 		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
@@ -176,7 +176,7 @@ namespace wave
 		return p;
 	}
 
-	void image_cache::update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical, bool flip)
+	void image_cache::update_texture_target(boost::shared_ptr<waveform::data> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical, bool flip)
 	{
 		{
 			boost::mutex::scoped_lock sl(mutex);
@@ -189,7 +189,7 @@ namespace wave
 			std::swap(target_size.width, target_size.height);
 		}
 
-		auto channel_numbers = expand_flags(wf->get_channel_map());
+		auto channel_numbers = expand_flags(waveform::get_channel_map(wf.get()));
 		pfc::list_t<int> channel_indices;
 		infos.enumerate([&channel_indices, channel_numbers](channel_info const& info)
 		{
@@ -214,8 +214,8 @@ namespace wave
 		CComPtr<ID2D1RenderTarget> temp_target;
 		CComPtr<IWICBitmap> bm;
 		wic_factory->CreateBitmap((UINT)target_size.width, (UINT)target_size.height, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnDemand, &bm);
-        D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat()); //, dpi[0], dpi[1]);
-        factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
+				D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat()); //, dpi[0], dpi[1]);
+				factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
 
 		brush_set brushes = create_brush_set(temp_target, colors);
 
@@ -225,9 +225,9 @@ namespace wave
 		channel_indices.enumerate([&, fac, index_count](int index)
 		{
 			pfc::list_t<float> mini, maxi, rms;
-			wf->get_field("minimum", index, mini);
-			wf->get_field("maximum", index, maxi);
-			wf->get_field("rms", index, rms);
+			mini.add_items_fromptr(waveform::get_field(wf.get(), index, waveform::min_field), 2048);
+			maxi.add_items_fromptr(waveform::get_field(wf.get(), index, waveform::max_field), 2048);
+			rms.add_items_fromptr(waveform::get_field(wf.get(), index, waveform::rms_field), 2048);
 
 			CComPtr<ID2D1PathGeometry> wave_geometry, rms_geometry;
 			fac->CreatePathGeometry(&wave_geometry);
@@ -333,7 +333,7 @@ namespace wave
 	void direct2d1_frontend::update_data()
 	{
 		D2D1_SIZE_F size = rt->GetSize();
-		service_ptr_t<waveform> wf;
+		boost::shared_ptr<waveform::data> wf;
 		if (callback.get_waveform(wf))
 		{
 			trigger_texture_update(wf, callback.get_size());

@@ -145,18 +145,17 @@ namespace wave
 			delayed_init();
 		}
 
-		shared_ptr<get_response> response(new get_response);
+		get_response* response = NULL;
 		bool force_rescan = g_always_rescan_user.get();
-		if (!request->user_requested && store && store->get(response->waveform, request->location))
+		if (!request->user_requested && store && store->get(response, request->location))
 		{
-			request->completion_handler(response);
+			request->completion_handler(shared_ptr<get_response>(response, &waveform::destroy));
 		}
 		else
 		{
-			response->waveform = make_placeholder_waveform();
-			request->completion_handler(response);
+			response = waveform::make_placeholder();
+			request->completion_handler(shared_ptr<get_response>(response, &waveform::destroy));
 			
-			response.reset(new get_response);
 			if (!request->user_requested)
 			{
 				important_queue.push(request->location);
@@ -167,7 +166,7 @@ namespace wave
 				metadb_handle_ptr handle;
 				mdb->handle_create(handle, request->location);
 
-				response->waveform = process_file(request->location, request->user_requested);
+				shared_ptr<get_response> response(process_file(request->location, request->user_requested), &waveform::destroy);
 
 				in_main_thread([handle]
 				{

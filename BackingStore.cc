@@ -112,7 +112,7 @@ namespace wave
 		sqlite3_step(stmt.get());
 	}
 
-	bool backing_store::get(service_ptr_t<waveform>& out, playable_location const& file)
+	bool backing_store::get(waveform::data*& out, playable_location const& file)
 	{
 		out = NULL;
 		boost::optional<int> compression;
@@ -141,8 +141,10 @@ namespace wave
 
 			unsigned channel_count = channels ? count_bits_set(*channels) : 1;
 
-			service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
-			auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col) -> bool
+			delayed_call ward;
+			waveform::data* w = waveform::create(*channels);
+			ward.f = boost::bind(&waveform::destroy, w);
+			auto clear_and_set = [&stmt, compression, channel_count, &w](waveform::field_tag tag, size_t col) -> bool
 			{
 				pfc::list_t<pfc::list_t<float>> list;
 			
@@ -170,33 +172,20 @@ namespace wave
 						return false;
 					}
 
-					for (unsigned c = 0; c < channel_count; ++c)
-					{
-						pfc::list_hybrid_t<float, 2048> channel;
-						float const * fs = (float*)&dst[2048 * c * sizeof(float)];
-						channel.add_items_fromptr(fs, 2048);
-						list.add_item(channel);
-					}
+					std::copy(dst.begin(), dst.end(), (char*)waveform::get_field(w, 0, tag));
 				}
 				else
 				{
-					for (unsigned c = 0; c < channel_count; ++c)
-					{
-						pfc::list_hybrid_t<float, 2048> channel;
-						channel.add_items_fromptr(data + 2048*c, 2048);
-						list.add_item(channel);
-					}
+					std::copy_n(data, count, waveform::get_field(w, 0, tag));
 				}
-				w->fields[name] = list;
 				return true;
 			};
 
-			if (clear_and_set("minimum", 0) && 
-				clear_and_set("maximum", 1) &&
-				clear_and_set("rms", 2))
+			if (clear_and_set(waveform::min_field, 0) && 
+				clear_and_set(waveform::max_field, 1) &&
+				clear_and_set(waveform::rms_field, 2))
 			{
-				w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
-
+				ward.cancel();
 				out = w;
 			}
 			else
@@ -209,10 +198,10 @@ namespace wave
 		{
 			put(out, file);
 		}
-		return out.is_valid();
+		return !!out;
 	}
 
-	void backing_store::put(service_ptr_t<waveform> const& w, playable_location const& file)
+	void backing_store::put(waveform::data const* w, playable_location const& file)
 	{
 		shared_ptr<sqlite3_stmt> stmt;
 		stmt = prepare_statement(
@@ -229,27 +218,23 @@ namespace wave
 			"WHERE f.location = ? AND f.subsong = ?");
 
 #		define BIND_LIST(Member, Idx) \
-			std::vector<char> Member; \
+			std::vector<char> Member##_buf; \
 			{ \
 				std::vector<float> src_buf; \
-				for (size_t c = 0; c < w->get_channel_count(); ++c) \
-				{ \
-					pfc::list_t<float> channel; \
-					w->get_field(#Member, c, channel); \
-					float * p = (float *)channel.get_ptr(); \
-					std::copy(p, p + channel.get_size(), std::back_inserter(src_buf)); \
-				} \
-				pack::lzma_pack(&src_buf[0], src_buf.size() * sizeof(float), std::back_inserter(Member)); \
+				auto channel_count = get_channel_count(w); \
+				float const* p = waveform::get_field(w, 0, waveform::Member); \
+				auto n = 2048 * channel_count; \
+				pack::lzma_pack(p, n * sizeof(float), std::back_inserter(Member##_buf)); \
 			} \
-			sqlite3_bind_blob(stmt.get(), Idx, &Member[0], Member.size(), SQLITE_STATIC)
+			sqlite3_bind_blob(stmt.get(), Idx, &Member##_buf[0], Member##_buf.size(), SQLITE_STATIC)
 			
-		BIND_LIST(minimum, 1);
-		BIND_LIST(maximum, 2);
-		BIND_LIST(rms    , 3);
+		BIND_LIST(min_field, 1);
+		BIND_LIST(max_field, 2);
+		BIND_LIST(rms_field, 3);
 
 #		undef  BIND_LIST
 
-		sqlite3_bind_int(stmt.get(), 4, w->get_channel_map());
+		sqlite3_bind_int(stmt.get(), 4, get_channel_map(w));
 		sqlite3_bind_int(stmt.get(), 5, 1); // LZMA compression
 		sqlite3_bind_text(stmt.get(), 6, file.get_path(), -1, SQLITE_STATIC);
 		sqlite3_bind_int(stmt.get(), 7, file.get_subsong());

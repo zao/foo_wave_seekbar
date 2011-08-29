@@ -9,19 +9,28 @@
 
 namespace wave
 {
-	struct waveform : service_base
+	namespace waveform
 	{
-		virtual bool get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out) abstract;
-		virtual unsigned get_channel_count() const abstract;
-		virtual unsigned get_channel_map() const abstract;
+#pragma warning(push)
+#pragma warning(disable: 4200)
+		struct data
+		{
+			unsigned channel_count, channel_map;
+			float storage[0];
+		};
+#pragma warning(pop)
 
-		FB2K_MAKE_SERVICE_INTERFACE(waveform, service_base)
-	};
-	
-	service_ptr_t<waveform> make_placeholder_waveform();
-	service_ptr_t<waveform> downmix_waveform(service_ptr_t<waveform> const& in);
+		enum field_tag { min_field, max_field, rms_field };
 
-	// {53CA29B6-CF63-44ce-BF20-1532BEADFD62}
-	__declspec(selectany) const GUID waveform::class_guid = 
-	{ 0x53ca29b6, 0xcf63, 0x44ce, { 0xbf, 0x20, 0x15, 0x32, 0xbe, 0xad, 0xfd, 0x62 } };
+		data* create(unsigned channel_map);
+		void destroy(data*);
+
+		float* get_field(data*, unsigned channel_idx, field_tag);
+		float const* get_field(data const*, unsigned channel_idx, field_tag);
+		unsigned get_channel_count(data const*);
+		unsigned get_channel_map(data const*);
+
+		data* make_placeholder();
+		data* downmix(data const* in);
+	}
 }

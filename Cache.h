@@ -10,10 +10,7 @@
 
 namespace wave {
 
-	struct get_response
-	{
-		service_ptr_t<waveform> waveform;
-	};
+	typedef waveform::data get_response;
 
 	struct get_request
 	{

@@ -180,16 +180,16 @@ namespace wave
 
 		bool flip = callback.get_flip_display();
 
-		service_ptr_t<waveform> w;
+		boost::shared_ptr<waveform::data> w;
 		if (callback.get_waveform(w))
 		{
 			if (callback.get_downmix_display())
-				w = downmix_waveform(w);
+				w.reset(waveform::downmix(w.get()), &waveform::destroy);
 
 			pfc::list_t<channel_info> infos;
 			callback.get_channel_infos(infos);
 
-			auto channel_numbers = expand_flags(w->get_channel_map());
+			auto channel_numbers = expand_flags(get_channel_map(w.get()));
 			pfc::list_t<int> channel_indices;
 			infos.enumerate([&channel_indices, channel_numbers](channel_info const& info)
 			{
@@ -209,9 +209,9 @@ namespace wave
 			channel_indices.enumerate([&, index_count](int index)
 			{
 				pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
-				w->get_field("minimum", index, avg_min);
-				w->get_field("maximum", index, avg_max);
-				w->get_field("rms", index, avg_rms);
+				avg_min.add_items_fromptr(waveform::get_field(w.get(), index, waveform::min_field), 2048);
+				avg_max.add_items_fromptr(waveform::get_field(w.get(), index, waveform::max_field), 2048);
+				avg_rms.add_items_fromptr(waveform::get_field(w.get(), index, waveform::rms_field), 2048);
 				wave_dc->SelectPen(*pen_foreground);
 
 				color bg = callback.get_color(config::color_background);

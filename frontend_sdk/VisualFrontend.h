@@ -9,6 +9,7 @@
 #include <boost/assign.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace wave
 {
@@ -167,7 +168,7 @@ namespace wave
 		virtual double get_seek_position() const = 0;
 		virtual float get_replaygain(replaygain_value) const = 0;
 		virtual bool get_playable_location(playable_location&) const = 0;
-		virtual bool get_waveform(service_ptr_t<waveform>&) const = 0;
+		virtual bool get_waveform(boost::shared_ptr<waveform::data>&) const = 0;
 		virtual color get_color(config::color) const = 0;
 		virtual size get_size() const = 0;
 		virtual config::orientation get_orientation() const = 0;
@@ -190,7 +191,7 @@ namespace wave
 		virtual void set_seek_position(double v) = 0;
 		virtual void set_replaygain(visual_frontend_callback::replaygain_value e, float v) = 0;
 		virtual void set_playable_location(playable_location const& loc) = 0;
-		virtual void set_waveform(service_ptr_t<waveform> const& w) = 0;
+		virtual void set_waveform(boost::shared_ptr<waveform::data> const& w) = 0;
 		virtual void set_color(config::color e, color c) = 0;
 		virtual void set_size(size size) = 0;
 		virtual void set_orientation(config::orientation o) = 0;

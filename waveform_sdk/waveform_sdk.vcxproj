@@ -19,6 +19,16 @@
     <ClInclude Include="Waveform.h" />
     <ClInclude Include="WaveformImpl.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SDK\foobar2000_SDK.vcxproj">
+      <Project>{e8091321-d79d-4575-86ef-064ea1a4a20d}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{83BCE727-32C9-42B7-9D51-BB50B85B039B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

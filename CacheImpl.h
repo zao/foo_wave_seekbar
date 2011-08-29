@@ -45,7 +45,7 @@ namespace wave
 		void open_store();
 		void load_data(shared_ptr<boost::barrier>);
 		void delayed_init();
-		service_ptr_t<waveform> process_file(playable_location_impl loc, bool user_requested);
+		waveform::data* process_file(playable_location_impl loc, bool user_requested);
 
 		boost::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;

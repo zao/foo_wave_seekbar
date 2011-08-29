@@ -29,7 +29,7 @@ namespace wave
 			loc.set_subsong(location.get_subsong());
 			return true;
 		}
-		virtual bool get_waveform(service_ptr_t<waveform>& w) const { if (wf.is_valid()) w = wf; return wf.is_valid(); }
+		virtual bool get_waveform(boost::shared_ptr<waveform::data>& w) const { w = wf; return wf; }
 		virtual color get_color(config::color e) const {
 			switch(e) {
 			case config::color_background: return background_color;
@@ -65,7 +65,7 @@ namespace wave
 			location.set_path(loc.get_path());
 			location.set_subsong(loc.get_subsong());
 		}
-		virtual void set_waveform(service_ptr_t<waveform> const& w) { wf = w; }
+		virtual void set_waveform(boost::shared_ptr<waveform::data> const& w) { wf = w; }
 		virtual void set_color(config::color e, color c) {
 			switch(e) {
 			case config::color_background: background_color = c; break;
@@ -94,7 +94,7 @@ namespace wave
 		double seek_position;
 		float rg_album_gain, rg_track_gain, rg_album_peak, rg_track_peak;
 		playable_location_impl location;
-		service_ptr_t<waveform> wf;
+		boost::shared_ptr<waveform::data> wf;
 		color background_color, highlight_color, selection_color, text_color;
 		size size;
 		config::orientation orientation;

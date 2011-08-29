@@ -119,3 +119,20 @@ T clamp(T v, T a, T b)
 {
 	return std::max(a, std::min(b, v));
 }
+
+
+struct delayed_call
+{
+	boost::optional<boost::function<void ()>> f;
+
+	void cancel()
+	{
+		f.reset();
+	}
+
+	~delayed_call()
+	{
+		if (f)
+			(*f)();
+	}
+};

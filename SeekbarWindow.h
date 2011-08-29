@@ -119,7 +119,7 @@ namespace wave
 		boost::shared_ptr<visual_frontend> create_frontend(config::frontend id);
 
 		std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
-		service_ptr_t<waveform> placeholder_waveform;
+		boost::shared_ptr<waveform::data> placeholder_waveform;
 
 		shared_ptr<frontend_data> fe;
 
