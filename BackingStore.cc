@@ -354,6 +354,10 @@ namespace wave
 				{
 					pack::z_unpack(bytes, cb, std::back_inserter(scratch));
 				}
+				else if (compressed)
+				{
+					pack::lzma_unpack(bytes, cb, std::back_inserter(scratch));
+				}
 				else
 				{
 					std::copy(bytes, bytes + cb, scratch.begin());
@@ -391,8 +395,10 @@ namespace wave
 			"bench", 4, SQLITE_ANY, &acc,
 			&accumulator::func, 0, 0);
 
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement("SELECT bench(w.compression, w.min, w.max, w.rms) FROM (SELECT compression, min, max, rms FROM wave) AS w");
+		DWORD milli_tic = timeGetTime();
+		shared_ptr<sqlite3_stmt> stmt = prepare_statement("SELECT bench(w.compression, w.min, w.max, w.rms) FROM (SELECT compression, min, max, rms FROM wave) AS w LIMIT 500");
 		while (SQLITE_ROW == sqlite3_step(stmt.get()));
+		DWORD milli_toc = timeGetTime();
 		
 		long double means[6], devs[6];
 		acc.resolve(means, devs);
@@ -401,7 +407,8 @@ namespace wave
 		char const* sigma = ",\xCF\x83=";
 
 		std::ostringstream oss;
-		oss << "zlib min/max/rms: "
+		oss << "Benchmark completed in " << (milli_toc - milli_tic) / 1000.0 << " seconds.\n"
+			<< "zlib min/max/rms: "
 			<< mu << means[0] << sigma << devs[0] << " / "
 			<< mu << means[2] << sigma << devs[2] << " / "
 			<< mu << means[4] << sigma << devs[4] << "\n"
