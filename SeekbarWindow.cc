@@ -19,7 +19,7 @@ extern const GUID guid_seekbar_branch;
 static const GUID guid_presentation_scale = 
 { 0xf76a694e, 0xcb85, 0x45a6, { 0xa9, 0xc6, 0x26, 0x98, 0x77, 0xa0, 0xaa, 0xa4 } };
 
-static advconfig_integer_factory g_presentation_scale("Percentage of base display rate to display at (1-200%)", guid_presentation_scale, guid_seekbar_branch, 0.0, 100, 1, 200);
+static advconfig_integer_factory g_presentation_scale("Percentage of base display rate to display at (1-400%)", guid_presentation_scale, guid_seekbar_branch, 0.0, 100, 1, 400);
 
 namespace wave
 {
