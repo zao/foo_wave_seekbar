@@ -128,8 +128,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,2,13,8
- PRODUCTVERSION 0,2,13,8
+ FILEVERSION 0,2,13,9
+ PRODUCTVERSION 0,2,13,9
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -146,12 +146,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Zao"
             VALUE "FileDescription", "Seekbar component with waveform background for foobar2000."
-            VALUE "FileVersion", "0.2.13.8"
+            VALUE "FileVersion", "0.2.13.9"
             VALUE "InternalName", "foo_wave_seekbar.dll"
             VALUE "LegalCopyright", "Copyright (C) 2010"
             VALUE "OriginalFilename", "foo_wave_seekbar.dll"
             VALUE "ProductName", "Wave Seekbar"
-            VALUE "ProductVersion", "0.2.13.8"
+            VALUE "ProductVersion", "0.2.13.9"
         END
     END
     BLOCK "VarFileInfo"
