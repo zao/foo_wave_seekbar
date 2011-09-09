@@ -30,9 +30,13 @@ namespace wave
 			add_frontend_string(config::frontend_direct2d1);
 		add_frontend_string(config::frontend_gdi);
 
-		auto select_frontend_string = [&cb](config::frontend frontend)
+		auto select_frontend_string = [&](config::frontend frontend)
 		{
 			cb.SelectString(0, config::strings::frontend[frontend]);
+
+			CButton config_button = this->GetDlgItem(IDC_CONFIGURE);
+			bool has_conf = config::frontend_has_configuration[frontend];
+			config_button.EnableWindow(has_conf);
 		};
 
 		select_frontend_string(sw.settings.active_frontend_kind);
