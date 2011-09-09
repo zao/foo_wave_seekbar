@@ -59,6 +59,7 @@ namespace wave
       virtual void on_state_changed(state s);
       virtual void show_configuration(HWND parent);
       virtual void close_configuration();
+      int get_present_interval() const { return 10; } // milliseconds
 
     private: // Update
       void update_effect_colors();
