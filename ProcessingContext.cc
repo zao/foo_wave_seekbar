@@ -75,6 +75,11 @@ namespace wave
 	// {AF04D9DF-6C2B-4E70-AC05-0E3691B83224}
 	const GUID processing_contextmenu_item::remove_guid = 
 	{ 0xaf04d9df, 0x6c2b, 0x4e70, { 0xac, 0x5, 0xe, 0x36, 0x91, 0xb8, 0x32, 0x24 } };
+
+	GUID processing_contextmenu_item::get_parent()
+	{
+		return contextmenu_groups::utilities;
+	}
 }
 
 static contextmenu_item_factory_t<wave::processing_contextmenu_item> g_asdf;
