@@ -16,6 +16,8 @@ namespace wave
 		virtual GUID get_item_guid(unsigned p_index);
 		virtual bool get_item_description(unsigned p_index, pfc::string_base& p_out);
 
+		virtual GUID get_parent();
+
 		static const GUID extract_guid;
 		static const GUID remove_guid;
 	};

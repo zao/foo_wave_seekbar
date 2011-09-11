@@ -162,7 +162,7 @@ namespace pack
 				p = Lzma2Enc_Create(&mem_fns, &mem_fns);
 				Lzma2EncProps_Init(&props2);
 				auto& props = props2.lzmaProps;
-				props.level = 6;
+				props.level = 1;
 				props.fb = 128;
 				props.algo = 1;
 				props.numThreads = 1;
@@ -196,8 +196,6 @@ namespace pack
 
 			CLzma2Dec dec;
 		};
-
-		extern boost::thread_specific_ptr<encoder> enc;
 	}
 
 	/* LZMA stream:
@@ -209,10 +207,9 @@ namespace pack
 	template <typename Iterator>
 	bool lzma_pack(void const* src, size_t cb, Iterator I)
 	{
-		if (!detail::enc.get())
-			detail::enc.reset(new detail::encoder);
+		detail::encoder enc;
 
-		auto& h = detail::enc->p;
+		auto& h = enc.p;
 
 		auto os = detail::make_sink(I);
 		auto is = detail::make_source(src, cb);
