@@ -82,6 +82,50 @@ namespace wave
 	{
 	};
 
+	class audio_source
+	{
+		abort_callback& abort_cb;
+		service_ptr_t<input_decoder>& decoder;
+		bool exhausted;
+		int64_t sample_count;
+		int64_t generated_samples;
+		optional<unsigned> track_channel_count;
+
+		enum { SilenceChunkFrames = 16384 };
+
+	public:
+		audio_source(abort_callback& abort_cb, service_ptr_t<input_decoder>& decoder, int64_t sample_count)
+			: abort_cb(abort_cb)
+			, decoder(decoder)
+			, exhausted(false)
+			, sample_count(sample_count)
+			, generated_samples(0)
+		{
+		}
+		
+		void render(audio_chunk& chunk)
+		{
+			if (exhausted || !decoder->run(chunk, abort_cb))
+			{
+				int64_t n = std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames);
+				chunk.set_channels(*track_channel_count);
+				chunk.set_silence((t_size)n);
+				exhausted = true;
+			}
+
+			generated_samples += chunk.get_sample_count();
+
+			unsigned channel_count = chunk.get_channels();
+			if (!track_channel_count)
+				track_channel_count = channel_count;
+
+			if (*track_channel_count != channel_count)
+				throw channel_mismatch_exception();
+		}
+
+		unsigned channel_count() const { assert(track_channel_count); return *track_channel_count; }
+	};
+
 	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
 		service_ptr_t<waveform> out;
@@ -208,29 +252,20 @@ namespace wave
 				boost::optional<unsigned> track_channel_count;
 				scoped_ptr<span> current_span;
 
+				audio_source source(abort_cb, decoder, sample_count);
 				bool done = false;
 				while (!done)
 				{
-					if (!decoder->run(chunk, abort_cb))
-					{
-						chunk.set_silence((t_size)(sample_count - processed_samples));
-						done = true;
-					}
-					unsigned channel_count = chunk.get_channels();
-					if (!track_channel_count)
-						track_channel_count = channel_count;
-
-					if (*track_channel_count != channel_count)
-						throw channel_mismatch_exception();
+					source.render(chunk);
 
 					audio_sample* data = chunk.get_data();
 					channel_map = chunk.get_channel_config();
 					for (t_size i = 0; i < chunk.get_sample_count(); ++i)
 					{						
 						if (!current_span)
-							current_span.reset(new span(channel_count));
+							current_span.reset(new span(source.channel_count()));
 					
-						audio_sample* frame = data + i * channel_count;
+						audio_sample* frame = data + i * source.channel_count();
 						current_span->add(frame);
 						++processed_samples;
 						
