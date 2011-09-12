@@ -125,7 +125,8 @@ namespace wave
 			sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
 			sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
 
-			if (SQLITE_ROW != sqlite3_step(stmt.get())) {
+			if (SQLITE_ROW != sqlite3_step(stmt.get()))
+			{
 				return false;
 			}
 		
@@ -431,6 +432,22 @@ namespace wave
 			t_uint32 sub = (t_uint32)sqlite3_column_int(stmt.get(), 1);
 			out.add_item(playable_location_impl(loc, sub));
 		}
+	}
+
+	bool backing_store::get_info(playable_location const& file, unsigned& channel_count, bool& compressed, int& compression_method)
+	{
+		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+			"SELECT channels, compression FROM wave NATURAL JOIN file WHERE location = ? AND subsong = ?");
+
+		sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
+		sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
+		if (SQLITE_ROW != sqlite3_step(stmt.get()))
+			return false;
+
+		channel_count = sqlite3_column_int(stmt.get(), 1);
+		compressed = (sqlite3_column_type(stmt.get(), 2) != SQLITE_NULL);
+		compression_method = sqlite3_column_int(stmt.get(), 2);
+		return true;
 	}
 
 	shared_ptr<sqlite3_stmt> backing_store::prepare_statement(std::string const& query)

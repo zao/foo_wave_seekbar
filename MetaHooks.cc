@@ -21,24 +21,13 @@ struct waveform_hooks : metadb_display_field_provider
 		if (idx == 0)
 		{
 			auto const& loc = meta->get_location();
-			static_api_ptr_t<wave::cache_v2> c;
-			if (!c->has_waveform(loc))
+			static_api_ptr_t<wave::cache_v4> c;
+			wave::waveform_info info = {};
+			if (!c->get_waveform_info(loc, info))
 				return false;
 
-			shared_ptr<wave::get_request> req = make_shared<wave::get_request>();
-			req->location = loc;
-			req->user_requested = false;
-			shared_ptr<int> channel_count = make_shared<int>();
-			req->completion_handler = [channel_count](shared_ptr<wave::get_response> resp)
-			{
-				*channel_count = resp->waveform.is_valid()
-					? resp->waveform->get_channel_count()
-					: 0;
-			};
-
-			c->get_waveform(req);
-			dst->write_int(titleformat_inputtypes::unknown, *channel_count);
-			return !!*channel_count;
+			dst->write_int(titleformat_inputtypes::unknown, info.channel_count);
+			return true;
 		}
 		return false;
 	}

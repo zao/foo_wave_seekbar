@@ -74,9 +74,6 @@
     <ClCompile Include="GdiFallback.cc">
       <Filter>Seekbar\Frontends\GDI</Filter>
     </ClCompile>
-    <ClCompile Include="MetaHooks.cc">
-      <Filter>Seekbar</Filter>
-    </ClCompile>
     <ClCompile Include="zlib\adler32.c">
       <Filter>Packing\zlib</Filter>
     </ClCompile>
@@ -148,6 +145,9 @@
     </ClCompile>
     <ClCompile Include="utf8_codecvt_facet.cpp">
       <Filter>Seekbar</Filter>
+    </ClCompile>
+    <ClCompile Include="MetaHooks.cc">
+      <Filter>Cache</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

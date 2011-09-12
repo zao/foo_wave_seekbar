@@ -252,6 +252,14 @@ namespace wave
 		}
 	}
 
+	bool cache_impl::get_waveform_info(playable_location const& loc, waveform_info& out)
+	{
+		if (store)
+		{
+			return store->get_info(loc, out.channel_count, out.compressed, out.compression_method);
+		}
+	}
+
 	void cache_initquit::on_init()
 	{}
 

@@ -51,6 +51,24 @@ namespace wave {
 
 		FB2K_MAKE_SERVICE_INTERFACE(cache_v3, cache_v2)
 	};
+
+	struct waveform_info
+	{
+		unsigned channel_count;
+		bool compressed;
+		int compression_method;
+	};
+
+	struct cache_v4 : cache_v3
+	{
+		virtual bool get_waveform_info(playable_location const& loc, waveform_info& out) abstract;
+
+		FB2K_MAKE_SERVICE_INTERFACE(cache_v4, cache_v3)
+	};
+
+	// {B27A89EE-D92D-4CC2-BE95-BB7874751601}
+	__declspec(selectany) const GUID cache_v4::class_guid = 
+	{ 0xb27a89ee, 0xd92d, 0x4cc2, { 0xbe, 0x95, 0xbb, 0x78, 0x74, 0x75, 0x16, 0x1 } };
 	
 	// {503C40C1-ED5B-492E-98D7-DE9EB63D2F81}
 	__declspec(selectany) const GUID cache_v3::class_guid = 
