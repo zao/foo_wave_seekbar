@@ -14,6 +14,8 @@ struct ref_base
 	virtual void release() { if (!--ref) delete this; }
 
 private:
+	ref_base& operator = (ref_base const&);
+	ref_base(ref_base const&);
 	tbb::atomic<int> ref;
 };
 
