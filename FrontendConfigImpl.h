@@ -16,19 +16,19 @@ namespace wave
 		{
 		}
 
-		virtual bool get_configuration_string(GUID key, std::string& out) const
+		virtual bool get_configuration_string(GUID key, text_sink const& out) const
 		{
 			auto& gs = settings.generic_strings;
 			auto I = gs.find(key);
 			if (gs.end() != I)
 			{
-				out = I->second;
+				out.set(I->second.c_str());
 				return true;
 			}
 			return false;
 		}
 		
-		virtual void set_configuration_string(GUID key, std::string const& value)
+		virtual void set_configuration_string(GUID key, char const* value)
 		{
 			settings.generic_strings[key] = value;
 		}

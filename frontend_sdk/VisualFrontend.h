@@ -5,6 +5,7 @@
 
 #pragma once
 #include "../waveform_sdk/Waveform.h"
+#include "../waveform_sdk/RefPointer.h"
 #include <map>
 #include <boost/assign.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -127,7 +128,7 @@ namespace wave
 		bool enabled;
 	};
 
-	struct visual_frontend : boost::enable_shared_from_this<visual_frontend>
+	struct visual_frontend : ref_base
 	{
 		virtual ~visual_frontend() {};
 		virtual void clear() = 0;
@@ -167,7 +168,7 @@ namespace wave
 		virtual double get_seek_position() const = 0;
 		virtual float get_replaygain(replaygain_value) const = 0;
 		virtual bool get_playable_location(playable_location&) const = 0;
-		virtual bool get_waveform(service_ptr_t<waveform>&) const = 0;
+		virtual bool get_waveform(ref_ptr<waveform>&) const = 0;
 		virtual color get_color(config::color) const = 0;
 		virtual size get_size() const = 0;
 		virtual config::orientation get_orientation() const = 0;
@@ -175,7 +176,7 @@ namespace wave
 		virtual config::display_mode get_display_mode() const = 0;
 		virtual bool get_downmix_display() const = 0;
 		virtual bool get_flip_display() const = 0;
-		virtual void get_channel_infos(pfc::list_t<channel_info>&) const = 0;
+		virtual void get_channel_infos(array_sink<channel_info> const&) const = 0;
 
 		virtual void run_in_main_thread(boost::function<void ()>) const = 0;
 	};
@@ -190,7 +191,7 @@ namespace wave
 		virtual void set_seek_position(double v) = 0;
 		virtual void set_replaygain(visual_frontend_callback::replaygain_value e, float v) = 0;
 		virtual void set_playable_location(playable_location const& loc) = 0;
-		virtual void set_waveform(service_ptr_t<waveform> const& w) = 0;
+		virtual void set_waveform(ref_ptr<waveform> const& w) = 0;
 		virtual void set_color(config::color e, color c) = 0;
 		virtual void set_size(size size) = 0;
 		virtual void set_orientation(config::orientation o) = 0;
@@ -198,26 +199,51 @@ namespace wave
 		virtual void set_display_mode(config::display_mode mode) = 0;
 		virtual void set_downmix_display(bool downmix) = 0;
 		virtual void set_flip_display(bool flip) = 0;
-		virtual void set_channel_infos(pfc::list_t<channel_info> const&) = 0;
+		virtual void set_channel_infos(channel_info const*, size_t count) = 0;
+	};
+
+	struct text_sink
+	{
+		virtual void set(char const* text) const = 0;
+	};
+
+	struct std_string_sink : text_sink
+	{
+		std::string& s;
+		explicit std_string_sink(std::string& s) : s(s) {}
+		virtual void set(char const* text) const { s.assign(text); }
 	};
 
 	struct visual_frontend_config
 	{
 		virtual ~visual_frontend_config() {}
 		
-		virtual bool get_configuration_string(GUID key, std::string& out) const = 0;
-		virtual void set_configuration_string(GUID key, std::string const& value) = 0;
-	};
-
-	struct visual_frontend_factory
-	{
-		virtual ~visual_frontend_factory() {}
-		virtual boost::shared_ptr<visual_frontend> create() const = 0;
-	};
-
-	template <typename FE>
-	struct visual_frontend_traits
-	{
-		virtual boost::shared_ptr<FE> create() const { return boost::make_shared<FE>(); }
+		virtual bool get_configuration_string(GUID key, text_sink const& out) const = 0;
+		virtual void set_configuration_string(GUID key, char const* value) = 0;
 	};
 }
+
+struct frontend_entrypoint
+{
+	virtual unsigned id() = 0;
+	virtual ref_ptr<wave::visual_frontend> create(HWND, wave::size, wave::visual_frontend_callback&, wave::visual_frontend_config&) = 0;
+};
+
+extern "C"
+{
+	typedef frontend_entrypoint* (_cdecl *frontend_entrypoint_t)();
+}
+
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, Hook) \
+	static struct entrypoint_impl : frontend_entrypoint { \
+		virtual unsigned id() { return Id; } \
+		virtual ref_ptr<wave::visual_frontend> create(HWND wnd, wave::size size, wave::visual_frontend_callback& callback, wave::visual_frontend_config& config) override { \
+			return ref_ptr<wave::visual_frontend>(new Class(wnd, size, callback, config)); \
+		} \
+	} g_frontend_entrypoint_impl; \
+	extern "C" __declspec(dllexport) frontend_entrypoint* _cdecl g_entrypoint() { { Hook(); } return &g_frontend_entrypoint_impl; }
+//
+
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT(Id, Class) \
+	FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, []{})
+//

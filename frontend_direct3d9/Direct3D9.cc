@@ -237,7 +237,7 @@ namespace wave
 				config->BringWindowToTop();
 			else
 			{
-				shared_ptr<frontend_impl> p = boost::dynamic_pointer_cast<frontend_impl>(shared_from_this());
+				ref_ptr<frontend_impl> p(this);
 				config.reset(new config_dialog(p));
 				config->Create(parent);
 			}
@@ -252,12 +252,12 @@ namespace wave
 			}
 		}
 
-		void frontend_impl::get_effect_compiler(shared_ptr<effect_compiler>& out)
+		void frontend_impl::get_effect_compiler(ref_ptr<effect_compiler>& out)
 		{
 			out.reset(new effect_compiler_impl(dev));
 		}
 
-		void frontend_impl::set_effect(shared_ptr<effect_handle> in, bool permanent)
+		void frontend_impl::set_effect(ref_ptr<effect_handle> in, bool permanent)
 		{
 			if (permanent)
 			{

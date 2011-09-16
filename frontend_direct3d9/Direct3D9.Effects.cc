@@ -70,15 +70,15 @@ namespace wave
     {
     }
 
-    bool effect_compiler_impl::compile_fragment(shared_ptr<effect_handle>& effect, std::deque<effect_compiler::diagnostic_entry>& output, std::string const& source)
+    bool effect_compiler_impl::compile_fragment(ref_ptr<effect_handle>& effect, array_sink<effect_compiler::diagnostic_entry> const& output, char const* source, size_t source_cb)
     {
+			std::vector<effect_compiler::diagnostic_entry> errors;
       effect.reset();
-      output.clear();
 
-      if (source.size() == 0)
+      if (source_cb == 0)
         return false;
         
-      std::vector<char> fx_body(source.begin(), source.end());
+      std::vector<char> fx_body(source, source + source_cb);
       if (size_t diff = nuke_if(fx_body, [](char c) { return (unsigned char)c >= 0x80U; }))
       {
         diagnostic_entry e;
@@ -87,7 +87,7 @@ namespace wave
         e.type = "error";
         e.code = "";
         e.message = "Effect contained non-ASCII code units. Remove any characters with diacritics or other moonspeak.\n";
-        output.push_back(e);
+        errors.push_back(e);
       }
 
       {
@@ -107,12 +107,14 @@ namespace wave
           {
             iter first = (char*)err->GetBufferPointer(), last = first + err->GetBufferSize();
             qi::parse(first, last, error_grammar<iter>(), errors);
-            output.insert(output.end(), errors.begin(), errors.end());
+            errors.insert(errors.end(), errors.begin(), errors.end());
           }
+					output.set(errors.size() ? &errors[0] : 0, errors.size());
           return false;
         }
         effect.reset(new effect_impl(fx));
       }
+			output.set(errors.size() ? &errors[0] : 0, errors.size());
       return true;
     }
 

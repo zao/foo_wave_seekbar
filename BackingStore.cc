@@ -112,9 +112,9 @@ namespace wave
 		sqlite3_step(stmt.get());
 	}
 
-	bool backing_store::get(service_ptr_t<waveform>& out, playable_location const& file)
+	bool backing_store::get(ref_ptr<waveform>& out, playable_location const& file)
 	{
-		out = NULL;
+		out.reset();
 		boost::optional<int> compression;
 		{
 			shared_ptr<sqlite3_stmt> stmt = prepare_statement(
@@ -141,7 +141,7 @@ namespace wave
 
 			unsigned channel_count = channels ? count_bits_set(*channels) : 1;
 
-			service_ptr_t<waveform_impl> w = new service_impl_t<waveform_impl>;
+			ref_ptr<waveform_impl> w(new waveform_impl);
 			auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col) -> bool
 			{
 				pfc::list_t<pfc::list_t<float>> list;
@@ -212,7 +212,7 @@ namespace wave
 		return out.is_valid();
 	}
 
-	void backing_store::put(service_ptr_t<waveform> const& w, playable_location const& file)
+	void backing_store::put(ref_ptr<waveform> const& w, playable_location const& file)
 	{
 		shared_ptr<sqlite3_stmt> stmt;
 		stmt = prepare_statement(
@@ -235,7 +235,7 @@ namespace wave
 				for (size_t c = 0; c < w->get_channel_count(); ++c) \
 				{ \
 					pfc::list_t<float> channel; \
-					w->get_field(#Member, c, channel); \
+					w->get_field(#Member, c, list_array_sink<float>(channel)); \
 					float * p = (float *)channel.get_ptr(); \
 					std::copy(p, p + channel.get_size(), std::back_inserter(src_buf)); \
 				} \

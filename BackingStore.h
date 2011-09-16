@@ -16,8 +16,8 @@ namespace wave
 
 		bool has(playable_location const& file);
 		void remove(playable_location const& file);
-		bool get(service_ptr_t<waveform>& out, playable_location const& file);
-		void put(service_ptr_t<waveform> const& in, playable_location const& file);
+		bool get(ref_ptr<waveform>& out, playable_location const& file);
+		void put(ref_ptr<waveform> const& in, playable_location const& file);
 		void remove_dead();
 		void compact();
 		void bench();

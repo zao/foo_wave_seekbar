@@ -49,14 +49,14 @@ namespace wave
 		{
 			HRESULT hr = S_OK;
 
-			shared_ptr<effect_compiler> compiler;
+			ref_ptr<effect_compiler> compiler;
 			get_effect_compiler(compiler);
 
-			auto build_effect = [compiler](std::string body) -> shared_ptr<effect_handle>
+			auto build_effect = [compiler](std::string body) -> ref_ptr<effect_handle>
 			{
-				shared_ptr<effect_handle> fx;
+				ref_ptr<effect_handle> fx;
 				std::deque<effect_compiler::diagnostic_entry> errors;
-				bool success = compiler->compile_fragment(fx, errors, body);
+				bool success = compiler->compile_fragment(fx, deque_array_sink<effect_compiler::diagnostic_entry>(errors), body.c_str(), body.size());
 
 				if (!success)
 				{
@@ -81,9 +81,9 @@ namespace wave
 			// Compile current stored effect
 			{
 				std::string stored_body;
-				if (conf.get_configuration_string(guid_fx_string, stored_body))
+				if (conf.get_configuration_string(guid_fx_string, std_string_sink(stored_body)))
 				{
-					shared_ptr<effect_handle> fx;
+					ref_ptr<effect_handle> fx;
 					fx = build_effect(stored_body);
 					if (fx)
 						effect_stack.push(fx);
@@ -96,7 +96,7 @@ namespace wave
 
 		void frontend_impl::release_default_resources()
 		{
-			effect_stack = std::stack<shared_ptr<effect_handle>>();
+			effect_stack = std::stack<ref_ptr<effect_handle>>();
 			effect_override.reset();
 		}
 	}

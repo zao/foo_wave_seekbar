@@ -8,5 +8,6 @@
     <ClInclude Include="Waveform.h" />
     <ClInclude Include="WaveformImpl.h" />
     <ClInclude Include="Downmix.h" />
+    <ClInclude Include="RefPointer.h" />
   </ItemGroup>
 </Project>

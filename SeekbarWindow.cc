@@ -8,6 +8,7 @@
 //#include "Direct3D9.h"
 //#include "Direct2D.h"
 #include "GdiFallback.h"
+#include "waveform_sdk/WaveformImpl.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -38,16 +39,16 @@ namespace wave
 			}
 		}
 
-		virtual bool get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out)
+		virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out)
 		{
 			if (index >= get_channel_count())
 				return false;
 			if (pfc::string::g_equals(what, "minimum"))
-				return out = minimum, true;
+				return out.set(minimum.get_ptr(), minimum.get_count()), true;
 			if (pfc::string::g_equals(what, "maximum"))
-				return out = maximum, true;
+				return out.set(maximum.get_ptr(), maximum.get_count()), true;
 			if (pfc::string::g_equals(what, "rms"))
-				return out = rms, true;
+				return out.set(rms.get_ptr(), rms.get_count()), true;
 			return false;
 		}
 
@@ -55,12 +56,12 @@ namespace wave
 		virtual unsigned get_channel_map() const { return (1 << audio_chunk::defined_channel_count) - 1; } // channel mask of bits 0 to 17 set.
 
 	private:
-		pfc::list_hybrid_t<float, 2048> minimum, maximum, rms;
+		pfc::list_t<float> minimum, maximum, rms;
 	};
 
-	service_ptr_t<waveform> make_placeholder_waveform()
+	ref_ptr<waveform> make_placeholder_waveform()
 	{
-		return new service_impl_t<waveform_placeholder>;
+		return ref_ptr<waveform>(new waveform_placeholder);
 	}
 
 	seekbar_window::seekbar_window()
@@ -79,9 +80,14 @@ namespace wave
 	{
 	}
 
-	frontend_module::frontend_module(boost::shared_ptr<bex::shared_library> lib, boost::shared_ptr<bex::type_map> types)
-		: library(lib), types(types), factory_map(types->get())
+	frontend_module::frontend_module(HMODULE module, frontend_entrypoint* entry)
+		: module(module), entry(entry)
 	{
+	}
+
+	frontend_module::~frontend_module()
+	{
+		FreeLibrary(module);
 	}
 
 	boost::filesystem::path file_location_to_path(char const* fb2k_file)
@@ -115,18 +121,18 @@ namespace wave
 			fs::directory_iterator I = fs::directory_iterator(path), last;
 			while (I != last)
 			{
-				auto lib = boost::make_shared<bex::shared_library>(I->path(), true);
-				if (lib && lib->open())
+				HMODULE lib = LoadLibraryW(I->path().wstring().c_str());
+				if (lib)
 				{
-					auto types = boost::make_shared<bex::type_map>();
-					if (lib->call(*types))
+					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_entrypoint");
+					if (entry)
 					{
-						frontend_module::map_type& m = types->get();
-						if (!m.empty())
-						{
-							auto mod = boost::make_shared<frontend_module>(lib, types);
-							frontend_modules.push_back(mod);
-						}
+						auto mod = boost::make_shared<frontend_module>(lib, entry());
+						frontend_modules.push_back(mod);
+					}
+					else
+					{
+						FreeLibrary(lib);
 					}
 				}
 				++I;
@@ -174,28 +180,25 @@ namespace wave
 			channel_info info = { p.first, p.second };
 			infos.add_item(info);
 		}
-		cb.set_channel_infos(infos);
+		cb.set_channel_infos(infos.get_ptr(), infos.get_count());
 	}
 
-	shared_ptr<visual_frontend> frontend_module::instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf)
+	ref_ptr<visual_frontend> frontend_module::instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf)
 	{
-		shared_ptr<visual_frontend> ret;
-		auto facI = factory_map.find(id);
-		if (facI != factory_map.end())
-		{
-			auto p = facI->second.create(wnd, size, callback, conf);
-			ret = shared_ptr<visual_frontend>(p);
-		}
+		ref_ptr<visual_frontend> ret;
+		if (id == entry->id())
+			ret = entry->create(wnd, size, callback, conf);
 		return ret;
 	}
 
-	shared_ptr<visual_frontend> seekbar_window::create_frontend(config::frontend id)
+	ref_ptr<visual_frontend> seekbar_window::create_frontend(config::frontend id)
 	{
-		shared_ptr<visual_frontend> ret;
+		ref_ptr<visual_frontend> ret;
+		auto sz = client_rect.Size();
 		for (auto I = frontend_modules.begin(); I != frontend_modules.end(); ++I)
 		{
-			auto sz = client_rect.Size();
-			if (ret = (*I)->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf))
+			ret = (*I)->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf);
+			if (ret)
 				return ret;
 		}
 		return ret;
