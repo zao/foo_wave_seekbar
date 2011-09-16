@@ -51,8 +51,10 @@ struct ref_ptr
 
 	ref_ptr& operator = (ref_ptr const& rhs)
 	{
-		if (this != &rhs)
+		if (this != &rhs && p != rhs.p)
 		{
+			if (p)
+				p->release();
 			p = rhs.p;
 			if (p)
 				p->add_ref();
