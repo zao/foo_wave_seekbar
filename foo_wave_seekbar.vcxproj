@@ -134,7 +134,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MainSeekbar.cc" />
-    <ClCompile Include="MetaHooks.cc" />
     <ClCompile Include="Pack.cc" />
     <ClCompile Include="PchSeekbar.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
