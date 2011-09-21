@@ -163,6 +163,7 @@ namespace wave
 			}
 			io.post([this, request, response]()
 			{
+				response->waveform = process_file(request->location, request->user_requested);
 				request->completion_handler(response);
 			});
 		}
