@@ -250,7 +250,7 @@ namespace wave
 
 				unsigned channel_map = audio_chunk::channel_config_mono;
 				boost::optional<unsigned> track_channel_count;
-				scoped_ptr<span> current_span;
+				std::unique_ptr<span> current_span;
 
 				audio_source source(abort_cb, decoder, sample_count);
 				bool done = false;

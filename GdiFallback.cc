@@ -119,22 +119,24 @@ namespace wave
 
 	void gdi_fallback_frontend::create_objects()
 	{
-		auto pen_from_color = [&](config::color color, scoped_ptr<CPen>& out)
+		auto pen_from_color = [&](config::color color) -> std::unique_ptr<CPen>
 		{
 			auto c = callback.get_color(color);
-			out.reset(new CPen);
-			out->CreatePen(PS_SOLID, 0, color_to_xbgr(c));
+			std::unique_ptr<CPen> ret(new CPen);
+			ret->CreatePen(PS_SOLID, 0, color_to_xbgr(c));
+			return ret;
 		};
-		auto solid_brush_from_color = [&](config::color color, scoped_ptr<CBrush>& out)
+		auto solid_brush_from_color = [&](config::color color) -> std::unique_ptr<CBrush>
 		{
 			auto c = callback.get_color(color);
-			out.reset(new CBrush);
-			out->CreateSolidBrush(color_to_xbgr(c));
+			std::unique_ptr<CBrush> ret(new CBrush);
+			ret->CreateSolidBrush(color_to_xbgr(c));
+			return ret;
 		};
-		pen_from_color(config::color_foreground, pen_foreground);
-		pen_from_color(config::color_highlight, pen_highlight);
-		pen_from_color(config::color_selection, pen_selection);
-		solid_brush_from_color(config::color_background, brush_background);
+		pen_foreground = pen_from_color(config::color_foreground);
+		pen_highlight = pen_from_color(config::color_highlight);
+		pen_selection = pen_from_color(config::color_selection);
+		brush_background = solid_brush_from_color(config::color_background);
 		
 		if (!shade_dc)
 		{

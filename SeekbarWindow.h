@@ -29,8 +29,8 @@ namespace wave
 			frontend.reset();
 		}
 		boost::recursive_mutex mutex;
-		scoped_ptr<frontend_callback_impl> callback;
-		scoped_ptr<frontend_config_impl> conf;
+		std::unique_ptr<frontend_callback_impl> callback;
+		std::unique_ptr<frontend_config_impl> conf;
 		ref_ptr<visual_frontend> frontend;
 		metadb_handle_ptr displayed_song;
 		uint32_t auto_get_serial;
@@ -251,6 +251,6 @@ namespace wave
 			void add_item(channel_info const&, CListBox&);
 			void remove_item(int, CListBox&);
 		};
-		scoped_ptr<configuration_dialog> config_dialog;
+		std::unique_ptr<configuration_dialog> config_dialog;
 	};
 }

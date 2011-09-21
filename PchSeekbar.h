@@ -20,12 +20,8 @@
 #include <boost/thread.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/regex.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/spirit/home/karma.hpp>
 #include <boost/make_shared.hpp>
-using boost::scoped_ptr;
-using boost::shared_ptr;
 typedef boost::recursive_mutex::scoped_lock scoped_lock;
 
 using boost::int8_t;
@@ -61,17 +57,16 @@ using std::max;
 #include <dwmapi.h>
 
 #include <map>
+#include <memory>
 #include <vector>
 
 using namespace boost::assign;
 
 using boost::noncopyable;
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/make_shared.hpp>
-using boost::scoped_ptr;
 using boost::shared_ptr;
 using boost::weak_ptr;
 using boost::make_shared;

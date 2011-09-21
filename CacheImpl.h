@@ -53,7 +53,7 @@ namespace wave
 		pfc::string cache_filename;
 		boost::mutex cache_mutex;
 		boost::asio::io_service io;
-		scoped_ptr<boost::asio::io_service::work> idle_work;
+		std::unique_ptr<boost::asio::io_service::work> idle_work;
 		boost::thread_group work_threads;
 		long initialized;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
