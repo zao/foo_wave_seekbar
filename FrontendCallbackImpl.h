@@ -29,7 +29,7 @@ namespace wave
 			loc.set_subsong(location.get_subsong());
 			return true;
 		}
-		virtual bool get_waveform(service_ptr_t<waveform>& w) const { if (wf.is_valid()) w = wf; return wf.is_valid(); }
+		virtual bool get_waveform(ref_ptr<waveform>& w) const { if (wf.is_valid()) w = wf; return wf.is_valid(); }
 		virtual color get_color(config::color e) const {
 			switch(e) {
 			case config::color_background: return background_color;
@@ -45,7 +45,7 @@ namespace wave
 		virtual config::display_mode get_display_mode() const { return display_mode; }
 		virtual bool get_downmix_display() const { return downmix_display; }
 		virtual bool get_flip_display() const { return flip_display; }
-		virtual void get_channel_infos(pfc::list_t<channel_info>& out) const { out = channel_infos; }
+		virtual void get_channel_infos(array_sink<channel_info> const& out) const { out.set(channel_infos.get_ptr(), channel_infos.get_count()); }
 
 		// Setters
 		virtual void set_track_length(double v) { track_length = v; }
@@ -65,7 +65,7 @@ namespace wave
 			location.set_path(loc.get_path());
 			location.set_subsong(loc.get_subsong());
 		}
-		virtual void set_waveform(service_ptr_t<waveform> const& w) { wf = w; }
+		virtual void set_waveform(ref_ptr<waveform> const& w) { wf = w; }
 		virtual void set_color(config::color e, color c) {
 			switch(e) {
 			case config::color_background: background_color = c; break;
@@ -80,7 +80,7 @@ namespace wave
 		virtual void set_display_mode(config::display_mode mode) { display_mode = mode; }
 		virtual void set_downmix_display(bool b) { downmix_display = b; }
 		virtual void set_flip_display(bool b) { flip_display = b; }
-		virtual void set_channel_infos(pfc::list_t<channel_info> const& in) { channel_infos = in; }
+		virtual void set_channel_infos(channel_info const* in, size_t count) { channel_infos.remove_all(); channel_infos.add_items_fromptr(in, count); }
 
 		virtual void run_in_main_thread(boost::function<void ()> f) const
 		{
@@ -94,7 +94,7 @@ namespace wave
 		double seek_position;
 		float rg_album_gain, rg_track_gain, rg_album_peak, rg_track_peak;
 		playable_location_impl location;
-		service_ptr_t<waveform> wf;
+		ref_ptr<waveform> wf;
 		color background_color, highlight_color, selection_color, text_color;
 		size size;
 		config::orientation orientation;

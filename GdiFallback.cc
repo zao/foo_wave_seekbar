@@ -180,14 +180,14 @@ namespace wave
 
 		bool flip = callback.get_flip_display();
 
-		service_ptr_t<waveform> w;
+		ref_ptr<waveform> w;
 		if (callback.get_waveform(w))
 		{
 			if (callback.get_downmix_display())
 				w = downmix_waveform(w);
 
 			pfc::list_t<channel_info> infos;
-			callback.get_channel_infos(infos);
+			callback.get_channel_infos(list_array_sink<channel_info>(infos));
 
 			auto channel_numbers = expand_flags(w->get_channel_map());
 			pfc::list_t<int> channel_indices;
@@ -209,9 +209,9 @@ namespace wave
 			channel_indices.enumerate([&, index_count](int index)
 			{
 				pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
-				w->get_field("minimum", index, avg_min);
-				w->get_field("maximum", index, avg_max);
-				w->get_field("rms", index, avg_rms);
+				w->get_field("minimum", index, list_array_sink<float>(avg_min));
+				w->get_field("maximum", index, list_array_sink<float>(avg_max));
+				w->get_field("rms", index, list_array_sink<float>(avg_rms));
 				wave_dc->SelectPen(*pen_foreground);
 
 				color bg = callback.get_color(config::color_background);

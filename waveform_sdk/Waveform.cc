@@ -11,17 +11,17 @@
 
 namespace wave
 {
-	service_ptr_t<waveform> downmix_waveform(service_ptr_t<waveform> const& w)
+	ref_ptr<waveform> downmix_waveform(ref_ptr<waveform> w)
 	{
 		typedef pfc::list_t<float> t_channel;
 		typedef pfc::list_t<float> t_frame;
 
 		auto channel_count = w->get_channel_count();
 
-		service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
+		ref_ptr<waveform_impl> ret(new waveform_impl);
 		ret->channel_map = audio_chunk::channel_config_mono;
 
-		std::list<pfc::string> field_names;
+		std::list<char const*> field_names;
 		field_names.push_back("minimum");
 		field_names.push_back("maximum");
 		field_names.push_back("rms");
@@ -41,7 +41,7 @@ namespace wave
 
 			for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx)
 			{
-				w->get_field(name, channel_idx, channels[channel_idx]);
+				w->get_field(name, channel_idx, list_array_sink<float>(channels[channel_idx]));
 			}
 
 			for (size_t sample_index = 0; sample_index < 2048; ++sample_index)

@@ -53,7 +53,7 @@ namespace wave
 
 		void frontend_impl::update_data()
 		{
-			service_ptr_t<waveform> w;
+			ref_ptr<waveform> w;
 			if (callback.get_waveform(w))
 			{
 				if (callback.get_downmix_display() && w->get_channel_map() != audio_chunk::channel_config_mono)
@@ -64,7 +64,7 @@ namespace wave
 
 				channel_order.clear();
 				pfc::list_t<channel_info> infos;
-				callback.get_channel_infos(infos);
+				callback.get_channel_infos(list_array_sink<channel_info>(infos));
 				infos.enumerate([this, &w](channel_info const& info)
 				{
 					if (!info.enabled)
@@ -85,9 +85,9 @@ namespace wave
 						CComPtr<IDirect3DTexture9> tex = channel_textures[info.channel];
 					
 						pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
-						w->get_field("minimum", idx, avg_min);
-						w->get_field("maximum", idx, avg_max);
-						w->get_field("rms", idx, avg_rms);
+						w->get_field("minimum", idx, list_array_sink<float>(avg_min));
+						w->get_field("maximum", idx, list_array_sink<float>(avg_max));
+						w->get_field("rms", idx, list_array_sink<float>(avg_rms));
 
 						for (UINT mip = 0; mip < mip_count; ++mip)
 						{

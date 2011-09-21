@@ -14,6 +14,16 @@
     <ClInclude Include="FrontendHelpers.h" />
     <ClInclude Include="VisualFrontend.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\waveform_sdk\waveform_sdk.vcxproj">
+      <Project>{83bce727-32c9-42b7-9d51-bb50b85b039b}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F75576DB-81F0-4BF5-8732-656F66C6035E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

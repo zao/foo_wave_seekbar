@@ -126,9 +126,9 @@ namespace wave
 		unsigned channel_count() const { assert(track_channel_count); return *track_channel_count; }
 	};
 
-	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
+	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
-		service_ptr_t<waveform> out;
+		ref_ptr<waveform> out;
 
 		// Check for priority jobs.
 		if (user_requested)
@@ -313,7 +313,7 @@ namespace wave
 					transpose(tr_maximum, maximum);
 					transpose(tr_rms, rms);
 
-					service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
+					ref_ptr<waveform_impl> ret(new waveform_impl);
 					ret->fields.set("minimum", tr_minimum);
 					ret->fields.set("maximum", tr_maximum);
 					ret->fields.set("rms", tr_rms);
