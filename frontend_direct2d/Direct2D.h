@@ -13,6 +13,7 @@
 #include <ObjBase.h>
 
 #include <algorithm>
+#include <memory>
 using std::min; using std::max;
 
 #include "../frontend_sdk/VisualFrontend.h"
@@ -22,7 +23,6 @@ using std::min; using std::max;
 #include <atlbase.h>
 #include <atlcom.h>
 #include <boost/thread.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/asio.hpp>
 
 #include "../waveform_sdk/RefPointer.h"
@@ -53,8 +53,8 @@ namespace wave
 		CComPtr<ID2D1Factory> factory;
 		boost::mutex mutex;
 		boost::shared_ptr<boost::asio::io_service> pump;
-		boost::scoped_ptr<boost::asio::io_service::work> pump_work;
-		boost::scoped_ptr<boost::thread> pump_thread;
+		std::unique_ptr<boost::asio::io_service::work> pump_work;
+		std::unique_ptr<boost::thread> pump_thread;
 		size_t jobs;
 
 		CComPtr<ID2D1HwndRenderTarget> rt;

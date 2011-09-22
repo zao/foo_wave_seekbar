@@ -110,7 +110,7 @@ namespace wave
       bool floating_point_texture;
 
     private: // Configuration
-      scoped_ptr<config_dialog> config;
+      std::unique_ptr<config_dialog> config;
 
       void get_effect_compiler(ref_ptr<effect_compiler>& out);
       void set_effect(ref_ptr<effect_handle> effect, bool permanent);
