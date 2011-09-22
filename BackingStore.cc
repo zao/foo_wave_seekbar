@@ -25,7 +25,7 @@ namespace wave
 		{
 			sqlite3* p = 0;
 			sqlite3_open(cache_filename.get_ptr(), &p);
-			backing_db.reset(p, &sqlite3_close);
+			backing_db = std::unique_ptr<sqlite3>(p);
 		}
 
 		sqlite3_exec(
@@ -89,7 +89,7 @@ namespace wave
 
 	bool backing_store::has(playable_location const& file)
 	{
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+		auto stmt = prepare_statement(
 			"SELECT 1 "
 			"FROM file as f, wave AS w "
 			"WHERE f.location = ? AND f.subsong = ? AND f.fid = w.fid");
@@ -117,7 +117,7 @@ namespace wave
 		out.reset();
 		boost::optional<int> compression;
 		{
-			shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+			auto stmt = prepare_statement(
 				"SELECT w.min, w.max, w.rms, w.channels, w.compression "
 				"FROM file AS f NATURAL JOIN wave AS w "
 				"WHERE f.location = ? AND f.subsong = ?");
@@ -214,15 +214,16 @@ namespace wave
 
 	void backing_store::put(ref_ptr<waveform> const& w, playable_location const& file)
 	{
-		shared_ptr<sqlite3_stmt> stmt;
-		stmt = prepare_statement(
-			"INSERT INTO file (location, subsong) "
-			"VALUES (?, ?)");
-		sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
-		sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
-		sqlite3_step(stmt.get());
+		{
+			auto stmt = prepare_statement(
+				"INSERT INTO file (location, subsong) "
+				"VALUES (?, ?)");
+			sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
+			sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
+			sqlite3_step(stmt.get());
+		}
 
-		stmt = prepare_statement(
+		auto stmt = prepare_statement(
 			"REPLACE INTO wave (fid, min, max, rms, channels, compression) "
 			"SELECT f.fid, ?, ?, ?, ?, ? "
 			"FROM file AS f "
@@ -259,7 +260,7 @@ namespace wave
 
 	void backing_store::get_jobs(std::deque<job>& out)
 	{
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+		auto stmt = prepare_statement(
 			"SELECT location, subsong, user_submitted FROM job ORDER BY jid");
 
 		out.clear();
@@ -276,7 +277,7 @@ namespace wave
 	{
 		sqlite3_exec(backing_db.get(), "BEGIN", 0, 0, 0);
 		sqlite3_exec(backing_db.get(), "DELETE FROM job", 0, 0, 0);
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+		auto stmt = prepare_statement(
 			"INSERT INTO job (location, subsong, user_submitted) "
 			"VALUES (?, ?, ?)");
 
@@ -396,7 +397,7 @@ namespace wave
 			&accumulator::func, 0, 0);
 
 		DWORD milli_tic = timeGetTime();
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement("SELECT bench(w.compression, w.min, w.max, w.rms) FROM (SELECT compression, min, max, rms FROM wave) AS w LIMIT 500");
+		auto stmt = prepare_statement("SELECT bench(w.compression, w.min, w.max, w.rms) FROM (SELECT compression, min, max, rms FROM wave) AS w LIMIT 500");
 		while (SQLITE_ROW == sqlite3_step(stmt.get()));
 		DWORD milli_toc = timeGetTime();
 		
@@ -421,7 +422,7 @@ namespace wave
 
 	void backing_store::get_all(pfc::list_t<playable_location_impl>& out)
 	{
-		shared_ptr<sqlite3_stmt> stmt = prepare_statement(
+		auto stmt = prepare_statement(
 			"SELECT location, subsong FROM file ORDER BY location, subsong");
 
 		out.remove_all();
@@ -433,13 +434,13 @@ namespace wave
 		}
 	}
 
-	shared_ptr<sqlite3_stmt> backing_store::prepare_statement(std::string const& query)
+	std::unique_ptr<sqlite3_stmt> backing_store::prepare_statement(std::string const& query)
 	{
 		sqlite3_stmt* p = 0;
 		sqlite3_prepare_v2(
 			backing_db.get(),
 			query.c_str(),
 			query.size(), &p, 0);
-		return shared_ptr<sqlite3_stmt>(p, &sqlite3_finalize);
+		return std::unique_ptr<sqlite3_stmt>(p);
 	}
 }

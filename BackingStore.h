@@ -7,6 +7,22 @@
 #include "Job.h"
 #include "waveform_sdk/Waveform.h"
 
+struct sqlite3;
+namespace std
+{
+	template <>
+	struct default_delete<sqlite3>
+	{
+		void operator () (sqlite3* p) const { sqlite3_close(p); }
+	};
+
+	template <>
+	struct default_delete<sqlite3_stmt>
+	{
+		void operator () (sqlite3_stmt* p) const { sqlite3_finalize(p); }
+	};
+}
+
 namespace wave
 {
 	struct backing_store
@@ -28,7 +44,7 @@ namespace wave
 		void get_all(pfc::list_t<playable_location_impl>&);
 
 	private:
-		shared_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
-		shared_ptr<sqlite3> backing_db;
+		std::unique_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
+		std::unique_ptr<sqlite3> backing_db;
 	};
 }
