@@ -260,7 +260,13 @@ namespace wave
 
 					audio_sample* data = chunk.get_data();
 					channel_map = chunk.get_channel_config();
-					for (t_size i = 0; i < chunk.get_sample_count(); ++i)
+					if (processed_samples >= sample_count)
+					{
+						done = true;
+						break;
+					}
+					t_size n = std::min<t_size>(chunk.get_sample_count(), (t_size)(sample_count - processed_samples));
+					for (t_size i = 0; i < n; ++i)
 					{						
 						if (!current_span)
 							current_span.reset(new span(source.channel_count()));
@@ -277,11 +283,6 @@ namespace wave
 							current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
 							current_span.reset();
 							++out_index;
-						}
-						if (processed_samples >= sample_count)
-						{
-							done = true;
-							break;
 						}
 					}
 				}
