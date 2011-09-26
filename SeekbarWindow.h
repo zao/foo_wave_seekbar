@@ -31,21 +31,19 @@ namespace wave
 		boost::recursive_mutex mutex;
 		scoped_ptr<frontend_callback_impl> callback;
 		scoped_ptr<frontend_config_impl> conf;
-		shared_ptr<visual_frontend> frontend;
+		ref_ptr<visual_frontend> frontend;
 		metadb_handle_ptr displayed_song;
 		uint32_t auto_get_serial;
 	};
 
-	struct frontend_module
+	struct frontend_module : noncopyable
 	{
-		frontend_module(boost::shared_ptr<bex::shared_library>, boost::shared_ptr<bex::type_map>);
-		boost::shared_ptr<visual_frontend> instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf);
+		frontend_module(HMODULE module, frontend_entrypoint* entry);
+		~frontend_module();
+		ref_ptr<visual_frontend> instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf);
 
-		typedef std::map<config::frontend, bex::factory<visual_frontend, HWND, wave::size, visual_frontend_callback&, visual_frontend_config&>> map_type;
-
-		boost::shared_ptr<bex::shared_library> library;
-		boost::shared_ptr<bex::type_map> types;
-		map_type& factory_map;
+		HMODULE module;
+		frontend_entrypoint* entry;
 	};
 
 	enum mouse_drag_state
@@ -116,10 +114,10 @@ namespace wave
 		virtual bool forward_rightclick() { return false; }
 
 		void load_frontend_modules();
-		boost::shared_ptr<visual_frontend> create_frontend(config::frontend id);
+		ref_ptr<visual_frontend> create_frontend(config::frontend id);
 
 		std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
-		service_ptr_t<waveform> placeholder_waveform;
+		ref_ptr<waveform> placeholder_waveform;
 
 		shared_ptr<frontend_data> fe;
 

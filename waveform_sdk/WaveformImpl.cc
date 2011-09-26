@@ -8,7 +8,7 @@
 
 namespace wave
 {
-	bool waveform_impl::get_field(pfc::string const& what, unsigned index, pfc::list_base_t<float>& out)
+	bool waveform_impl::get_field(char const* what, unsigned index, array_sink<float> const& out)
 	{
 		auto I = fields.find(what);
 		if (!I.is_valid())
@@ -17,8 +17,10 @@ namespace wave
 		auto& field = I->m_value;
 		if (index >= field.get_size())
 			return false;
-		
-		out = field[index];
+
+		pfc::list_t<float> data;
+		data.add_items(field[index]);
+		out.set(data.get_ptr(), data.get_count());
 		return true;
 	}
 

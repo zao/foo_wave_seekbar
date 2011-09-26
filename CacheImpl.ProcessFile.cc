@@ -126,9 +126,9 @@ namespace wave
 		unsigned channel_count() const { assert(track_channel_count); return *track_channel_count; }
 	};
 
-	service_ptr_t<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
+	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
-		service_ptr_t<waveform> out;
+		ref_ptr<waveform> out;
 
 		// Check for priority jobs.
 		if (user_requested)
@@ -260,7 +260,13 @@ namespace wave
 
 					audio_sample* data = chunk.get_data();
 					channel_map = chunk.get_channel_config();
-					for (t_size i = 0; i < chunk.get_sample_count(); ++i)
+					if (processed_samples >= sample_count)
+					{
+						done = true;
+						break;
+					}
+					t_size n = std::min<t_size>(chunk.get_sample_count(), (t_size)(sample_count - processed_samples));
+					for (t_size i = 0; i < n; ++i)
 					{						
 						if (!current_span)
 							current_span.reset(new span(source.channel_count()));
@@ -277,11 +283,6 @@ namespace wave
 							current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
 							current_span.reset();
 							++out_index;
-						}
-						if (processed_samples >= sample_count)
-						{
-							done = true;
-							break;
 						}
 					}
 				}
@@ -313,7 +314,7 @@ namespace wave
 					transpose(tr_maximum, maximum);
 					transpose(tr_rms, rms);
 
-					service_ptr_t<waveform_impl> ret = new service_impl_t<waveform_impl>;
+					ref_ptr<waveform_impl> ret(new waveform_impl);
 					ret->fields.set("minimum", tr_minimum);
 					ret->fields.set("maximum", tr_maximum);
 					ret->fields.set("rms", tr_rms);

@@ -138,21 +138,21 @@ namespace wave
 	{
 		auto size = callback.get_size();
 		rt->Resize(D2D1::SizeU(size.cx, size.cy));
-		service_ptr_t<waveform> wf;
+		ref_ptr<waveform> wf;
 		if (callback.get_waveform(wf))
 		{
 			trigger_texture_update(wf, size);
 		}
 	}
 
-	void direct2d1_frontend::trigger_texture_update(service_ptr_t<waveform> wf, wave::size size)
+	void direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
 	{
 		boost::mutex::scoped_lock sl(cache->mutex);
 		++cache->jobs;
 		if (callback.get_downmix_display())
 			wf = downmix_waveform(wf);
 		pfc::list_t<channel_info> infos;
-		callback.get_channel_infos(infos);
+		callback.get_channel_infos(list_array_sink<channel_info>(infos));
 		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
 			, D2D1::SizeF((float)size.cx, (float)size.cy)
 			, callback.get_orientation() == config::orientation_vertical
@@ -176,7 +176,7 @@ namespace wave
 		return p;
 	}
 
-	void image_cache::update_texture_target(service_ptr_t<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical, bool flip)
+	void image_cache::update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical, bool flip)
 	{
 		{
 			boost::mutex::scoped_lock sl(mutex);
@@ -225,9 +225,9 @@ namespace wave
 		channel_indices.enumerate([&, fac, index_count](int index)
 		{
 			pfc::list_t<float> mini, maxi, rms;
-			wf->get_field("minimum", index, mini);
-			wf->get_field("maximum", index, maxi);
-			wf->get_field("rms", index, rms);
+			wf->get_field("minimum", index, list_array_sink<float>(mini));
+			wf->get_field("maximum", index, list_array_sink<float>(maxi));
+			wf->get_field("rms", index, list_array_sink<float>(rms));
 
 			CComPtr<ID2D1PathGeometry> wave_geometry, rms_geometry;
 			fac->CreatePathGeometry(&wave_geometry);
@@ -333,7 +333,7 @@ namespace wave
 	void direct2d1_frontend::update_data()
 	{
 		D2D1_SIZE_F size = rt->GetSize();
-		service_ptr_t<waveform> wf;
+		ref_ptr<waveform> wf;
 		if (callback.get_waveform(wf))
 		{
 			trigger_texture_update(wf, callback.get_size());

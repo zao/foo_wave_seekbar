@@ -14,7 +14,7 @@ namespace wave
 		struct effect_compiler_impl : effect_compiler
 		{
 			explicit effect_compiler_impl(CComPtr<IDirect3DDevice9> dev);
-			virtual bool compile_fragment(shared_ptr<effect_handle>& effect, std::deque<diagnostic_entry>& output, std::string const& source);
+			virtual bool compile_fragment(ref_ptr<effect_handle>& effect, array_sink<diagnostic_entry> const& output, char const* data, size_t data_bytes);
 
 		private:
 			CComPtr<IDirect3DDevice9> dev;

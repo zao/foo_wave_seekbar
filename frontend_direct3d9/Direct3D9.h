@@ -79,8 +79,8 @@ namespace wave
       std::vector<unsigned> channel_numbers;
       std::vector<channel_info> channel_order;
 
-      std::stack<shared_ptr<effect_handle>> effect_stack;
-      shared_ptr<effect_handle> effect_override;
+      std::stack<ref_ptr<effect_handle>> effect_stack;
+      ref_ptr<effect_handle> effect_override;
 
       CComPtr<IDirect3DVertexBuffer9> vb;
       CComPtr<IDirect3DVertexDeclaration9> decl;
@@ -112,14 +112,14 @@ namespace wave
     private: // Configuration
       scoped_ptr<config_dialog> config;
 
-      void get_effect_compiler(shared_ptr<effect_compiler>& out);
-      void set_effect(shared_ptr<effect_handle> effect, bool permanent);
+      void get_effect_compiler(ref_ptr<effect_compiler>& out);
+      void set_effect(ref_ptr<effect_handle> effect, bool permanent);
     };
 
     struct config_dialog : CDialogImpl<config_dialog>
     {
       enum { IDD = IDD_CONFIG_D3D };
-      config_dialog(weak_ptr<frontend_impl> fe);
+      config_dialog(ref_ptr<frontend_impl> fe);
 
       BEGIN_MSG_MAP_EX(config_dialog)
         MSG_WM_INITDIALOG(on_wm_init_dialog)
@@ -213,16 +213,16 @@ namespace wave
         std::function<int (int, int, int)> f;
       };
 
-      weak_ptr<frontend_impl> fe;
-      shared_ptr<effect_compiler> compiler;
+      ref_ptr<frontend_impl> fe;
+      ref_ptr<effect_compiler> compiler;
       CFont mono_font;
       scintilla_func code_box;
       CEdit error_box;
       CButton apply_button, default_button, reset_button;
-      shared_ptr<effect_handle> fx;
+      ref_ptr<effect_handle> fx;
     };
 
-    struct NOVTABLE effect_compiler : noncopyable
+    struct NOVTABLE effect_compiler : ref_base, noncopyable
     {
       struct diagnostic_entry
       {
@@ -236,10 +236,10 @@ namespace wave
       };
 
       virtual ~effect_compiler() {}
-      virtual bool compile_fragment(shared_ptr<effect_handle>& effect, std::deque<diagnostic_entry>& output, std::string const& data) = 0;
+      virtual bool compile_fragment(ref_ptr<effect_handle>& effect, array_sink<diagnostic_entry> const& output, char const* data, size_t data_bytes) = 0;
     };
 
-    struct NOVTABLE effect_handle : noncopyable
+    struct NOVTABLE effect_handle : ref_base, noncopyable
     {
       virtual ~effect_handle() {}
       virtual CComPtr<ID3DXEffect> get_effect() const = 0;

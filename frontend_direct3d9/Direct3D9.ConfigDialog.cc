@@ -26,16 +26,16 @@ namespace wave
       f = std::bind(fn, ptr, _1, _2, _3);
     }
 
-    config_dialog::config_dialog(weak_ptr<frontend_impl> fe)
+    config_dialog::config_dialog(ref_ptr<frontend_impl> fe)
       : fe(fe)
     {
-      auto front = fe.lock();
+      auto front = fe;
       front->get_effect_compiler(compiler);
     }
 
     LRESULT config_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM param)
     {
-      auto front = fe.lock();
+      auto front = fe;
       if (!front)
         return FALSE;
 
@@ -79,13 +79,13 @@ namespace wave
 
     void config_dialog::on_effect_apply_click(UINT code, int id, CWindow control)
     {
-      if (auto front = fe.lock())
+      if (auto front = fe)
       {
         front->set_effect(fx, true);
 
         std::string source;
         code_box.get_all(source);
-        front->conf.set_configuration_string(guid_fx_string, source);
+        front->conf.set_configuration_string(guid_fx_string, source.c_str());
         apply_button.EnableWindow(FALSE);
         reset_button.EnableWindow(FALSE);
       }
@@ -103,11 +103,11 @@ namespace wave
 
     void config_dialog::on_effect_reset_click(UINT code, int id, CWindow control)
     {
-      if (auto front = fe.lock())
+      if (auto front = fe)
       {
         // read up effect contents
         std::string fx_data;
-        front->conf.get_configuration_string(guid_fx_string, fx_data);
+        front->conf.get_configuration_string(guid_fx_string, std_string_sink(fx_data));
     
         // set effect box text
         code_box.reset(fx_data);
@@ -137,7 +137,7 @@ namespace wave
 
       code_box.clear_annotations();
       std::deque<effect_compiler::diagnostic_entry> output;
-      bool success = compiler->compile_fragment(fx, output, source);
+      bool success = compiler->compile_fragment(fx, deque_array_sink<effect_compiler::diagnostic_entry>(output), source.c_str(), source.size());
       if (success)
       {
         error_box.SetWindowTextW(L"No errors.\n");
@@ -162,7 +162,7 @@ namespace wave
       }
       error_box.SetSelNone(FALSE);
 
-      if (auto front = fe.lock())
+      if (auto front = fe)
       {
         front->set_effect(fx, false);
         bool ok = fx;
@@ -174,7 +174,7 @@ namespace wave
     void config_dialog::OnFinalMessage(HWND wnd)
     {
       // reset parents pointer to dialog
-      auto front = fe.lock();
+      auto front = fe;
       if (front)
         front->config.reset();
     }

@@ -12,7 +12,7 @@ namespace wave {
 
 	struct get_response
 	{
-		service_ptr_t<waveform> waveform;
+		ref_ptr<waveform> waveform;
 	};
 
 	struct get_request
