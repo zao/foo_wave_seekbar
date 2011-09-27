@@ -70,9 +70,8 @@ namespace wave
     {
     }
 
-    bool effect_compiler_impl::compile_fragment(ref_ptr<effect_handle>& effect, array_sink<effect_compiler::diagnostic_entry> const& output, char const* source, size_t source_cb)
+    bool effect_compiler_impl::compile_fragment(ref_ptr<effect_handle>& effect, effect_compiler::diagnostic_sink const& output, char const* source, size_t source_cb)
     {
-			std::vector<effect_compiler::diagnostic_entry> errors;
       effect.reset();
 
       if (source_cb == 0)
@@ -81,13 +80,10 @@ namespace wave
       std::vector<char> fx_body(source, source + source_cb);
       if (size_t diff = nuke_if(fx_body, [](char c) { return (unsigned char)c >= 0x80U; }))
       {
-        diagnostic_entry e;
-        diagnostic_entry::location loc = { 0, 0 };
-        e.loc = loc;
-        e.type = "error";
-        e.code = "";
-        e.message = "Effect contained non-ASCII code units. Remove any characters with diacritics or other moonspeak.\n";
-        errors.push_back(e);
+        auto type = "error";
+        auto code = "";
+        auto message = "Effect contained non-ASCII code units. Remove any characters with diacritics or other moonspeak.\n";
+				output.on_error(type, code, message);
       }
 
       {
@@ -107,14 +103,18 @@ namespace wave
           {
             iter first = (char*)err->GetBufferPointer(), last = first + err->GetBufferSize();
             qi::parse(first, last, error_grammar<iter>(), errors);
-            errors.insert(errors.end(), errors.begin(), errors.end());
+						std::for_each(begin(errors), end(errors), [&](diagnostic_entry e)
+						{
+							if (e.loc)
+								output.on_error(e.type.c_str(), e.code.c_str(), e.message.c_str(), e.loc->row, e.loc->col);
+							else
+								output.on_error(e.type.c_str(), e.code.c_str(), e.message.c_str());
+						});
           }
-					output.set(errors.size() ? &errors[0] : 0, errors.size());
           return false;
         }
         effect.reset(new effect_impl(fx));
       }
-			output.set(errors.size() ? &errors[0] : 0, errors.size());
       return true;
     }
 

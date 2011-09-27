@@ -235,8 +235,14 @@ namespace wave
         std::string type, code, message;
       };
 
+			struct diagnostic_sink
+			{
+				virtual void on_error(char const* type, char const* code, char const* message) const abstract;
+				virtual void on_error(char const* type, char const* code, char const* message, int row, int col) const abstract;
+			};
+
       virtual ~effect_compiler() {}
-      virtual bool compile_fragment(ref_ptr<effect_handle>& effect, array_sink<diagnostic_entry> const& output, char const* data, size_t data_bytes) = 0;
+      virtual bool compile_fragment(ref_ptr<effect_handle>& effect, diagnostic_sink const& output, char const* data, size_t data_bytes) = 0;
     };
 
     struct NOVTABLE effect_handle : ref_base, noncopyable
@@ -244,6 +250,36 @@ namespace wave
       virtual ~effect_handle() {}
       virtual CComPtr<ID3DXEffect> get_effect() const = 0;
     };
+	
+		struct diagnostic_collector : effect_compiler::diagnostic_sink
+		{
+			struct entry
+			{
+				int row, col;
+				bool has_loc;
+				std::string type, code, message;
+			};
+
+			void on_error(char const* type, char const* code, char const* message, int row, int col) const override
+			{
+				entry e = { row, col, true, type, code, message };
+				entries.push_back(e);
+			}
+
+			void on_error(char const* type, char const* code, char const* message) const override
+			{
+				on_error(type, code, message, 0, 0);
+				entries.back().has_loc = false;
+			}
+
+			diagnostic_collector(std::deque<entry>& entries)
+				: entries(entries)
+			{
+				entries.clear();
+			}
+
+			std::deque<entry>& entries;
+		};
   }
 }
 
