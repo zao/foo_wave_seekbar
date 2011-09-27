@@ -55,8 +55,8 @@ namespace wave
 			auto build_effect = [compiler](std::string body) -> ref_ptr<effect_handle>
 			{
 				ref_ptr<effect_handle> fx;
-				std::deque<effect_compiler::diagnostic_entry> errors;
-				bool success = compiler->compile_fragment(fx, deque_array_sink<effect_compiler::diagnostic_entry>(errors), body.c_str(), body.size());
+				std::deque<diagnostic_collector::entry> errors;
+				bool success = compiler->compile_fragment(fx, diagnostic_collector(errors), body.c_str(), body.size());
 
 				if (!success)
 				{

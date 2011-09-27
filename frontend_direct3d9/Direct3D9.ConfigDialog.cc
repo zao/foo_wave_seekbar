@@ -136,29 +136,32 @@ namespace wave
         return;
 
       code_box.clear_annotations();
-      std::deque<effect_compiler::diagnostic_entry> output;
-      bool success = compiler->compile_fragment(fx, deque_array_sink<effect_compiler::diagnostic_entry>(output), source.c_str(), source.size());
+      std::deque<diagnostic_collector::entry> output;
+      bool success = compiler->compile_fragment(fx, diagnostic_collector(output), source.c_str(), source.size());
       if (success)
       {
         error_box.SetWindowTextW(L"No errors.\n");
       }
       else
       {
-        boost::for_each(output, [&](effect_compiler::diagnostic_entry const& e)
+        boost::for_each(output, [&](diagnostic_collector::entry const& e)
         {
           // TODO: effect error parser fails at parsing TEasdafXCOORD2
-          if (e.loc)
+          if (e.has_loc)
           {
-            auto loc = *e.loc;
             std::ostringstream oss;
             oss << e.type << ":";
             oss << " (" << e.code << "):";
             oss << " " << e.message;
-            code_box.add_annotation(loc.row - 1, oss.str());
+            code_box.add_annotation(e.row - 1, oss.str());
           }
         });
-        std::string errors = simple_diagnostic_format(output);
-        error_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(errors.c_str()));
+        std::ostringstream errors;
+				std::for_each(begin(output), end(output), [&](diagnostic_collector::entry e)
+				{
+					errors << e.type << ": (" << e.code << "): " << e.message << std::endl;
+				});
+        error_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(errors.str().c_str()));
       }
       error_box.SetSelNone(FALSE);
 
