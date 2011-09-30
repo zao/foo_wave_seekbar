@@ -107,7 +107,7 @@ namespace wave
 		{
 			if (exhausted || !decoder->run(chunk, abort_cb))
 			{
-				int64_t n = std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames);
+				int64_t n = std::max(0LL, std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames));
 				chunk.set_channels(*track_channel_count);
 				chunk.set_silence((t_size)n);
 				exhausted = true;
