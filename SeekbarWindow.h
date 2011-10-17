@@ -12,11 +12,6 @@
 #include "FrontendConfigImpl.h"
 #include "Helpers.h"
 #include "SeekCallback.h"
-#include <boost/extension/factory.hpp>
-#include <boost/extension/shared_library.hpp>
-#include <boost/extension/type_map.hpp>
-
-namespace bex = boost::extensions;
 
 namespace wave
 {
