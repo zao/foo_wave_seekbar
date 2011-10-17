@@ -41,7 +41,7 @@ namespace wave
 		D2D1_FACTORY_OPTIONS const& opts;
 	};
 	
-	D2D1_FACTORY_OPTIONS const opts = { D2D1_DEBUG_LEVEL_INFORMATION };
+	D2D1_FACTORY_OPTIONS const opts = { };
 
 	image_cache::image_cache()
 		: pump(new boost::asio::io_service), pump_work(new boost::asio::io_service::work(*pump)), jobs(0)
