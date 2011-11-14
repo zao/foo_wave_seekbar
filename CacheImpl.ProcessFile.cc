@@ -225,10 +225,13 @@ namespace wave
 				decoder->get_info(subsong, info, abort_cb);
 
 				t_int64 sample_rate = info.info_get_int("samplerate");
-				if (!sample_rate)
 				{
 					double foo;
-					decoder->get_dynamic_info(info, foo);
+					if (decoder->get_dynamic_info(info, foo))
+					{
+						auto dynamic_rate = info.info_get_int("samplerate");
+						sample_rate = dynamic_rate ? dynamic_rate : sample_rate;
+					}
 				}
 				t_int64 sample_count = info.info_get_length_samples();
 				t_int64 chunk_size = sample_count / 2047;
