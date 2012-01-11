@@ -205,7 +205,7 @@ namespace wave
 				}
 				repaint();
 			}
-			else if (drag_state = MouseDragSelection)
+			else if (drag_state == MouseDragSelection)
 			{
 				drag_data.to = outside
 					? -1.0f

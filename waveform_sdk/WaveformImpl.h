@@ -14,7 +14,7 @@ namespace wave
 		virtual unsigned get_channel_count() const override;
 		virtual unsigned get_channel_map() const override;
 
-		pfc::map_t<pfc::string, pfc::list_t<pfc::list_hybrid_t<float, 2048>>> fields;
+		pfc::map_t<pfc::string, pfc::list_t<pfc::list_t<float>>> fields;
 		unsigned channel_map;
 	};
 }

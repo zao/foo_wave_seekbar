@@ -83,10 +83,10 @@ namespace wave
 
 				if (callback.is_seeking())
 				{
-					auto pos = callback.get_seek_position();
+					auto seek_pos = callback.get_seek_position();
 					draw_bar(
-						CPoint((int)(pos * size.cx / len), 0),
-						CPoint((int)(pos * size.cx / len), size.cy));
+						CPoint((int)(seek_pos * size.cx / len), 0),
+						CPoint((int)(seek_pos * size.cx / len), size.cy));
 				}
 			}
 			dc.BitBlt(0, 0, true_size.cx, true_size.cy, *back_dc, 0, 0, SRCCOPY);
@@ -208,7 +208,7 @@ namespace wave
 			auto index_count = channel_indices.get_count();
 			channel_indices.enumerate([&, index_count](int index)
 			{
-				pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
+				pfc::list_t<float> avg_min, avg_max, avg_rms;
 				w->get_field("minimum", index, list_array_sink<float>(avg_min));
 				w->get_field("maximum", index, list_array_sink<float>(avg_max));
 				w->get_field("rms", index, list_array_sink<float>(avg_rms));

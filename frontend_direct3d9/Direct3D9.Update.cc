@@ -84,7 +84,7 @@ namespace wave
 
 						CComPtr<IDirect3DTexture9> tex = channel_textures[info.channel];
 					
-						pfc::list_hybrid_t<float, 2048> avg_min, avg_max, avg_rms;
+						pfc::list_t<float> avg_min, avg_max, avg_rms;
 						w->get_field("minimum", idx, list_array_sink<float>(avg_min));
 						w->get_field("maximum", idx, list_array_sink<float>(avg_max));
 						w->get_field("rms", idx, list_array_sink<float>(avg_rms));

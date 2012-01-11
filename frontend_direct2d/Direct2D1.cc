@@ -16,7 +16,8 @@ namespace wave
 	bool has_direct2d1()
 	{
 		HMODULE lib = LoadLibrary(L"d2d1");
-		FreeLibrary(lib);
+		if (lib)
+			FreeLibrary(lib);
 		return !!lib;
 	}
 
