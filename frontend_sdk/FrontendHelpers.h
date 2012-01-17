@@ -22,10 +22,18 @@ inline std::vector<T> expand_flags(T map)
 template <typename Cont>
 void get_resource_contents(Cont& out, WORD id)
 {
+	out.clear();
 	auto module = (HMODULE)&__ImageBase;
+
 	auto res_info = FindResource(module, MAKEINTRESOURCE(id), RT_RCDATA);
+	if (!res_info) return;
+
 	auto res = LoadResource(module, res_info);
+	if (!res) return;
+
 	auto size = SizeofResource(module, res_info);
 	auto p = (char*)LockResource(res);
+	if (!p) return;
+
 	std::copy(p, p + size, std::back_inserter(out));
 }

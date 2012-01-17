@@ -6,6 +6,7 @@
 #include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include <boost/filesystem/path.hpp>
+#include <vector>
 
 static void f() {}
 
@@ -24,10 +25,10 @@ void init_scintilla()
 {
 	if (!scintilla)
 	{
-		wchar_t path[9001] = {};
+		std::vector<wchar_t> path(9001);
 		HMODULE self;
 		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&f, &self);
-		GetModuleFileName(self, path, 9000);
+		GetModuleFileName(self, &path[0], path.size()-1);
 		boost::filesystem::path lexer_path = path;
 		lexer_path.remove_filename();
 		lexer_path /= "SciLexer.dll";

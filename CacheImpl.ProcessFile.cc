@@ -134,17 +134,17 @@ namespace wave
 		if (user_requested)
 		{
 			bool done = false;
-			playable_location_impl loc;
+			playable_location_impl prio_loc;
 			while (true)
 			{
 				{
 					boost::mutex::scoped_lock sl(important_mutex);
 					if (important_queue.empty())
 						break;
-					loc = important_queue.top();
+					prio_loc = important_queue.top();
 					important_queue.pop();
 				}
-				process_file(loc, false);
+				process_file(prio_loc, false);
 			}
 		}
 
@@ -239,7 +239,7 @@ namespace wave
 				if (sample_count == 0)
 					return out;
 
-				pfc::list_hybrid_t<pfc::list_t<float>, 2048> minimum, maximum, rms;
+				pfc::list_t<pfc::list_t<float>> minimum, maximum, rms;
 				minimum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
 				maximum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
 				rms.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
@@ -312,7 +312,7 @@ namespace wave
 						channel_map = audio_chunk::channel_config_mono;
 					}
 
-					pfc::list_t<pfc::list_hybrid_t<float, 2048>> tr_minimum, tr_maximum, tr_rms;
+					pfc::list_t<pfc::list_t<float>> tr_minimum, tr_maximum, tr_rms;
 					transpose(tr_minimum, minimum);
 					transpose(tr_maximum, maximum);
 					transpose(tr_rms, rms);
