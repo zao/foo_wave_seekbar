@@ -24,7 +24,6 @@ namespace wave
 
 	void processing_contextmenu_item::get_item_default_path(unsigned p_index, pfc::string_base& p_out)
 	{
-
 	}
 
 	void enqueue(service_ptr_t<cache> cache, const metadb_handle_ptr& p)

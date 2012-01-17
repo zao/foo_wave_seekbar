@@ -145,10 +145,16 @@ namespace wave
 			delayed_init();
 		}
 
-		shared_ptr<get_response> response(new get_response);
+		if (!store)
+			return;
+
 		bool force_rescan = g_always_rescan_user.get();
-		if (!request->user_requested && store && store->get(response->waveform, request->location))
+		bool should_rescan = force_rescan && request->user_requested || !store->has(request->location);
+
+		shared_ptr<get_response> response(new get_response);
+		if (!should_rescan)
 		{
+			store->get(response->waveform, request->location);
 			request->completion_handler(response);
 		}
 		else
