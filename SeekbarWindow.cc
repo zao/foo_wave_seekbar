@@ -74,6 +74,11 @@ namespace wave
 		fe->callback->set_waveform(placeholder_waveform);
 
 		load_frontend_modules();
+		static_api_ptr_t<playback_control> pc;
+		metadb_handle_ptr mh;
+		if (pc->get_now_playing(mh)) {
+			on_playback_new_track(mh);
+		}
 	}
 
 	seekbar_window::~seekbar_window()
