@@ -126,6 +126,12 @@ namespace wave
 		unsigned channel_count() const { assert(track_channel_count); return *track_channel_count; }
 	};
 
+	void throw_if_aborting(abort_callback const& cb)
+	{	
+		if (cb.is_aborting())
+			throw foobar2000_io::exception_aborted();
+	}
+
 	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
 		ref_ptr<waveform> out;
@@ -259,6 +265,7 @@ namespace wave
 				bool done = false;
 				while (!done)
 				{
+					throw_if_aborting(abort_cb);
 					source.render(chunk);
 
 					audio_sample* data = chunk.get_data();
@@ -313,8 +320,11 @@ namespace wave
 					}
 
 					pfc::list_t<pfc::list_t<float>> tr_minimum, tr_maximum, tr_rms;
+					throw_if_aborting(abort_cb);
 					transpose(tr_minimum, minimum);
+					throw_if_aborting(abort_cb);
 					transpose(tr_maximum, maximum);
+					throw_if_aborting(abort_cb);
 					transpose(tr_rms, rms);
 
 					ref_ptr<waveform_impl> ret(new waveform_impl);

@@ -41,12 +41,12 @@ namespace wave
 			replaygain_info rg = info.get_replaygain();
 #define SET_REPLAYGAIN(Name) fe->callback->set_replaygain(visual_frontend_callback::replaygain_##Name, rg.m_##Name);
 			SET_REPLAYGAIN(album_gain)
-				SET_REPLAYGAIN(track_gain)
-				SET_REPLAYGAIN(album_peak)
-				SET_REPLAYGAIN(track_peak)
+			SET_REPLAYGAIN(track_gain)
+			SET_REPLAYGAIN(album_peak)
+			SET_REPLAYGAIN(track_peak)
 #undef  SET_REPLAYGAIN
 
-				set_cursor_position(0.0f);
+			set_cursor_position(0.0f);
 			set_cursor_visibility(true);
 			fe->callback->set_playable_location(ptr->get_location());
 

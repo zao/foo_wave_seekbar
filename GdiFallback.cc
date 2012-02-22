@@ -10,7 +10,7 @@
 
 namespace wave
 {
-	gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_callback& callback)
+	gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd, wave::size, visual_frontend_callback& callback, visual_frontend_config& conf)
 		: wnd(wnd), callback(callback)
 	{
 		create_objects();
@@ -276,3 +276,5 @@ namespace wave
 		return p;
 	}
 }
+
+FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT(g_gdi_entrypoint, wave::config::frontend_gdi, wave::gdi_fallback_frontend)

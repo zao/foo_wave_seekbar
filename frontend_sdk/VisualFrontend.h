@@ -234,16 +234,25 @@ extern "C"
 	typedef frontend_entrypoint* (_cdecl *frontend_entrypoint_t)();
 }
 
-#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, Hook) \
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(Name, Id, Class, Hook) \
 	static struct entrypoint_impl : frontend_entrypoint { \
 		virtual unsigned id() { return Id; } \
 		virtual ref_ptr<wave::visual_frontend> create(HWND wnd, wave::size size, wave::visual_frontend_callback& callback, wave::visual_frontend_config& config) override { \
 			return ref_ptr<wave::visual_frontend>(new Class(wnd, size, callback, config)); \
 		} \
 	} g_frontend_entrypoint_impl; \
-	extern "C" __declspec(dllexport) frontend_entrypoint* _cdecl g_entrypoint() { { Hook(); } return &g_frontend_entrypoint_impl; }
+	extern "C" __declspec(dllexport) frontend_entrypoint* _cdecl Name() { { Hook(); } return &g_frontend_entrypoint_impl; }
+//
+
+
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT(Name, Id, Class) \
+        FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(Name, Id, Class, []{})
+//
+
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, Hook) \
+        FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(g_seekbar_frontend_entrypoint, Id, Class, Hook)
 //
 
 #define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT(Id, Class) \
-	FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, []{})
+        FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, []{})
 //

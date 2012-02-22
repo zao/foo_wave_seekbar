@@ -74,6 +74,11 @@ namespace wave
 		fe->callback->set_waveform(placeholder_waveform);
 
 		load_frontend_modules();
+		static_api_ptr_t<playback_control> pc;
+		metadb_handle_ptr mh;
+		if (pc->get_now_playing(mh)) {
+			on_playback_new_track(mh);
+		}
 	}
 
 	seekbar_window::~seekbar_window()
@@ -87,7 +92,9 @@ namespace wave
 
 	frontend_module::~frontend_module()
 	{
-		FreeLibrary(module);
+		if (module) {
+			FreeLibrary(module);
+		}
 	}
 
 	boost::filesystem::path file_location_to_path(char const* fb2k_file)
@@ -113,6 +120,7 @@ namespace wave
 
 	void seekbar_window::load_frontend_modules()
 	{
+		frontend_modules.push_back(boost::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		try
 		{
 			namespace fs = boost::filesystem;
@@ -124,7 +132,7 @@ namespace wave
 				HMODULE lib = LoadLibraryW(I->path().wstring().c_str());
 				if (lib)
 				{
-					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_entrypoint");
+					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
 					if (entry)
 					{
 						auto mod = boost::make_shared<frontend_module>(lib, entry());
@@ -232,7 +240,7 @@ namespace wave
 				break;
 			case config::frontend_gdi:
 				console::info("Seekbar: taking GDI path.");
-				fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
+				dynamic_frontend =  true;
 				present_interval = 50;
 				break;
 			default:
@@ -259,7 +267,6 @@ namespace wave
 			settings.active_frontend_kind = config::frontend_gdi;
 
 			console::info("Seekbar: taking GDI path.");
-			fe->frontend.reset(new gdi_fallback_frontend(*this, client_rect.Size(), *fe->callback));
 			present_interval = 50;
 		}
 			

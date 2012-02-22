@@ -33,7 +33,7 @@ namespace wave
 
 	struct gdi_fallback_frontend : visual_frontend
 	{
-		gdi_fallback_frontend(HWND wnd, CSize, visual_frontend_callback& callback);
+		gdi_fallback_frontend(HWND wnd, wave::size, visual_frontend_callback& callback, visual_frontend_config& conf);
 		~gdi_fallback_frontend();
 
 		void clear();
@@ -58,3 +58,5 @@ namespace wave
 		visual_frontend_callback& callback;
 	};
 }
+
+extern "C" __declspec(dllexport) frontend_entrypoint* _cdecl g_gdi_entrypoint();
