@@ -240,7 +240,7 @@ namespace wave
 				break;
 			case config::frontend_gdi:
 				console::info("Seekbar: taking GDI path.");
-				dynamic_frontend =  true;
+				dynamic_frontend = true;
 				present_interval = 50;
 				break;
 			default:
@@ -265,17 +265,15 @@ namespace wave
 			initializing_graphics = true;
 			console::complain("Seekbar: frontend creation failed", e);
 			settings.active_frontend_kind = config::frontend_gdi;
-
 			console::info("Seekbar: taking GDI path.");
+			fe->frontend = create_frontend(settings.active_frontend_kind);
 			present_interval = 50;
 		}
-			
-		try_get_data();
-
-		fe->frontend->on_state_changed((visual_frontend::state)~0);
 
 		if (fe->frontend)
 		{
+			try_get_data();
+			fe->frontend->on_state_changed((visual_frontend::state)~0);
 			repaint_timer_id = SetTimer(REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
 		}
 	}
