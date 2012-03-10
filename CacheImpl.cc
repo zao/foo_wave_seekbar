@@ -134,16 +134,21 @@ namespace wave
 		}
 	}
 
-	void cache_impl::get_waveform(shared_ptr<get_request> request)
+	void cache_impl::try_delayed_init()
 	{
-		if (regex_match(request->location.get_path(), boost::regex("\\s*", boost::regex::perl)))
-			return;
-
 		boost::mutex::scoped_lock sl(cache_mutex);
 		if (!InterlockedCompareExchange(&initialized, 1, 0))
 		{
 			delayed_init();
 		}
+	}
+
+	void cache_impl::get_waveform(shared_ptr<get_request> request)
+	{
+		if (regex_match(request->location.get_path(), boost::regex("\\s*", boost::regex::perl)))
+			return;
+
+		try_delayed_init();
 
 		if (!store)
 			return;
@@ -177,6 +182,7 @@ namespace wave
 
 	void cache_impl::remove_dead_waveforms()
 	{
+		try_delayed_init();
 		if (store)
 		{
 			io.post([this]()
@@ -188,6 +194,7 @@ namespace wave
 
 	void cache_impl::compact_storage()
 	{
+		try_delayed_init();
 		if (store)
 		{
 			io.post([this]()
@@ -199,6 +206,7 @@ namespace wave
 
 	void cache_impl::rescan_waveforms()
 	{
+		try_delayed_init();
 		if (store)
 		{
 			io.post([this]()
@@ -220,6 +228,7 @@ namespace wave
 
 	void cache_impl::compression_bench()
 	{
+		try_delayed_init();
 		if (store)
 		{
 			io.post([this]()
@@ -231,6 +240,7 @@ namespace wave
 
 	bool cache_impl::has_waveform(playable_location const& loc)
 	{
+		try_delayed_init();
 		if (store)
 		{
 			return store->has(loc);
@@ -240,6 +250,7 @@ namespace wave
 
 	void cache_impl::remove_waveform(playable_location const& loc)
 	{
+		try_delayed_init();
 		if (store)
 		{
 			store->remove(loc);
