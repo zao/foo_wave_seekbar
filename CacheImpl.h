@@ -44,6 +44,7 @@ namespace wave
 	private:
 		void open_store();
 		void load_data(shared_ptr<boost::barrier>);
+		void try_delayed_init();
 		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested);
 
