@@ -61,7 +61,10 @@ namespace wave
       virtual void close_configuration();
       int get_present_interval() const { return 10; } // milliseconds
 
+      virtual void make_screenshot(screenshot_settings const* settings);
+
     private: // Update
+      bool draw_to_target(int target_width, int target_height, IDirect3DSurface9* render_target = NULL);
       void update_effect_colors();
       void update_effect_cursor();
       void update_replaygain();

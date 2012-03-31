@@ -8,6 +8,35 @@
 #include "SeekTooltip.h"
 #include "Clipboard.h"
 
+#include <wincodec.h>
+#pragma comment(lib, "windowscodecs")
+
+// {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
+static const GUID guid_seekbar_branch =
+{ 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
+
+// {E913D7C7-676A-4A4F-A0F4-3DA33622D3D8}
+static const GUID guid_seekbar_screenshot_branch =
+{ 0xe913d7c7, 0x676a, 0x4a4f, { 0xa0, 0xf4, 0x3d, 0xa3, 0x36, 0x22, 0xd3, 0xd8 } };
+
+// {FA3261D7-671B-4BE4-AA18-75B8EFA7E4D6}
+static const GUID guid_seekbar_screenshot_width =
+{ 0xfa3261d7, 0x671b, 0x4be4, { 0xaa, 0x18, 0x75, 0xb8, 0xef, 0xa7, 0xe4, 0xd6 } };
+
+// {B3534AC9-609A-4A6E-8B6A-7522D7E9E419}
+static const GUID guid_seekbar_screenshot_height =
+{ 0xb3534ac9, 0x609a, 0x4a6e, { 0x8b, 0x6a, 0x75, 0x22, 0xd7, 0xe9, 0xe4, 0x19 } };
+
+// {0936311D-C065-4C72-806C-1F68403B385D}
+static const GUID guid_seekbar_screenshot_filename_format =
+{ 0x936311d, 0xc065, 0x4c72, { 0x80, 0x6c, 0x1f, 0x68, 0x40, 0x3b, 0x38, 0x5d } };
+
+static advconfig_branch_factory g_seekbar_screenshot_branch("Screenshots", guid_seekbar_screenshot_branch, guid_seekbar_branch, 0.0);
+
+static advconfig_integer_factory g_seekbar_screenshot_width ("Horizontal size (pixels)", guid_seekbar_screenshot_width,  guid_seekbar_screenshot_branch, 0.1, 1024, 16, 8192);
+static advconfig_integer_factory g_seekbar_screenshot_height("Vertical size (pixels)",   guid_seekbar_screenshot_height, guid_seekbar_screenshot_branch, 0.2, 1024, 16, 8192);
+static advconfig_string_factory g_seekbar_screenshot_filename_format("File format template", guid_seekbar_screenshot_filename_format, guid_seekbar_screenshot_branch, 0.3, "%artist% - %tracknumber%. %title%.png");
+
 static bool is_outside(CPoint point, CRect r, int N, bool horizontal)
 {
 	if (!horizontal)
@@ -214,6 +243,62 @@ namespace wave
 		}
 	}
 
+  struct screenshot_saver : screenshot_settings
+  {
+    screenshot_saver(std::wstring path, int width, int height)
+      : path(path)
+    {
+      this->width = width;
+      this->height = height;
+      this->context = this;
+      this->write_screenshot = &save_shot_trampoline;
+      this->flags = 0u;
+    }
+
+    void save_shot(BYTE const* pixels)
+    {
+      CComPtr<IWICImagingFactory> wic_factory;
+      HRESULT hr;
+      hr = CoCreateInstance(
+            CLSID_WICImagingFactory, nullptr,
+            CLSCTX_INPROC_SERVER, IID_IWICImagingFactory,
+            (void**)&wic_factory);
+
+      WICPixelFormatGUID pixel_format = GUID_WICPixelFormat32bppRGBA;
+
+      CComPtr<IWICBitmapEncoder> encoder;
+      GUID container_format = GUID_ContainerFormatPng;
+      std::wstring extension = path.substr(path.find_last_of('.'));
+      if (extension == L".jpg" || extension == L".jpeg")
+        container_format = GUID_ContainerFormatJpeg;
+      else if (extension == L".png")
+        container_format = GUID_ContainerFormatPng;
+      else
+        return;
+
+      hr = wic_factory->CreateEncoder(container_format, nullptr, &encoder);
+
+      CComPtr<IWICStream> stream;
+      hr = wic_factory->CreateStream(&stream);
+      hr = stream->InitializeFromFilename(path.c_str(), GENERIC_WRITE);
+      hr = encoder->Initialize(stream, WICBitmapEncoderNoCache);
+
+      CComPtr<IWICBitmapFrameEncode> frame_encode;
+      hr = encoder->CreateNewFrame(&frame_encode, nullptr);
+      hr = frame_encode->Initialize(nullptr);
+      hr = frame_encode->SetSize(width, height);
+        
+      hr = frame_encode->SetPixelFormat(&pixel_format);
+      hr = frame_encode->WritePixels(height, width*4, height*width*4, (BYTE*)pixels);
+      hr = frame_encode->Commit();
+      hr = encoder->Commit();
+    }
+
+    std::wstring path;
+
+    static void save_shot_trampoline(void* self, BYTE const* pixels) { auto p = (screenshot_saver*)self; p->save_shot(pixels); }
+  };
+
 	void seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
 	{
 		if (forward_rightclick())
@@ -225,6 +310,7 @@ namespace wave
 		WTL::CMenu m;
 		m.CreatePopupMenu();
 		m.InsertMenu(-1, MF_BYPOSITION | MF_STRING, 3, L"Configure");
+    m.InsertMenu(-1, MF_BYPOSITION | MF_STRING, 4, L"Capture screenshot");
 		ClientToScreen(&point);
 		BOOL ans = m.TrackPopupMenu(TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, *this, 0);
 		config::frontend old_kind = settings.active_frontend_kind;
@@ -239,6 +325,44 @@ namespace wave
 				config_dialog->Create(*this);
 			}
 			break;
+    case 4:
+      {
+        if (fe && fe->frontend)
+        {
+          metadb_handle_ptr h;
+          titleformat_object::ptr tf_obj;
+
+          {
+            static_api_ptr_t<titleformat_compiler> tfc;
+            pfc::string8 format;
+            g_seekbar_screenshot_filename_format.get(format);
+            if (!tfc->compile(tf_obj, format.get_ptr()))
+            {
+              console::error("Could not take screenshot, invalid filename format specified.");
+              return;
+            }
+            
+            playable_location_impl loc;
+            fe->callback->get_playable_location(loc);
+            static_api_ptr_t<metadb>()->handle_create(h, loc);
+          }
+
+          pfc::string8 filename;
+          if (!h->format_title(nullptr, filename, tf_obj, nullptr))
+          {
+            console::error("Could not format filename for screenshot, file information not available yet.");
+            return;
+          }
+          
+          std::wstring wide_filename = pfc::stringcvt::string_wide_from_utf8(filename.get_ptr());
+
+          screenshot_saver saver(
+            wide_filename,
+            (int)g_seekbar_screenshot_width,
+            (int)g_seekbar_screenshot_height);
+          fe->frontend->make_screenshot(&saver);
+        }
+      }
 		default:
 			return;
 		}

@@ -119,15 +119,22 @@ namespace wave
 
 		void frontend_impl::draw()
 		{
+      draw_to_target(pp.BackBufferWidth, pp.BackBufferHeight, NULL);
+    }
+
+    bool frontend_impl::draw_to_target(int target_width, int target_height, IDirect3DSurface9* render_target)
+    {
 			if (device_still_lost())
-				return;
+				return false;
+
+      dev->SetRenderTarget(0, render_target);
 
 			//D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
-			auto draw_quad = [this](int idx, int ch, int n)
+			auto draw_quad = [&,this](int idx, int ch, int n)
 			{
 				using namespace boost::assign;
 				D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
-				D3DXVECTOR4 viewport = D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0.0f, 0.0f);
+				D3DXVECTOR4 viewport = D3DXVECTOR4((float)target_width, (float)target_height, 0.0f, 0.0f);
 				sides /= (float)n;
 
 				std::vector<float> buf;
@@ -183,6 +190,7 @@ namespace wave
 			{
 				draw_quad(idx, I->channel, num);
 			}
+      return true;
 		}
 
 		void frontend_impl::present()
@@ -251,6 +259,24 @@ namespace wave
 				config.reset();
 			}
 		}
+
+    void frontend_impl::make_screenshot(screenshot_settings const* settings)
+    {
+      CComPtr<IDirect3DSurface9> rt;
+      HRESULT hr = dev->CreateRenderTarget(settings->width, settings->height, D3DFMT_A8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &rt, nullptr);
+      if (FAILED(hr))
+        return;
+      
+      IDirect3DSurface9* old_rt = nullptr;
+      dev->GetRenderTarget(0, &old_rt);
+      if (draw_to_target(settings->width, settings->height, rt))
+      {
+        D3DLOCKED_RECT r = {};
+        rt->LockRect(&r, NULL, 0);
+        settings->write_screenshot(settings->context, (BYTE*)r.pBits);
+      }
+      dev->SetRenderTarget(0, old_rt);
+    }
 
 		void frontend_impl::get_effect_compiler(ref_ptr<effect_compiler>& out)
 		{

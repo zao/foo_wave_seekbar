@@ -128,6 +128,14 @@ namespace wave
 		bool enabled;
 	};
 
+	struct screenshot_settings
+	{
+	  void* context;
+	  void (*write_screenshot)(void* context, BYTE const* rgba);
+	  int32_t width, height;
+	  uint32_t flags;
+	};
+
 	struct visual_frontend : ref_base
 	{
 		virtual ~visual_frontend() {};
@@ -153,6 +161,7 @@ namespace wave
 		virtual void show_configuration(HWND parent) { }
 		virtual void close_configuration() { }
 		virtual int get_present_interval() const { return 100; } // milliseconds
+    virtual void make_screenshot(screenshot_settings const* settings) {}
 	};
 
 	struct visual_frontend_callback
