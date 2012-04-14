@@ -35,7 +35,7 @@ static advconfig_branch_factory g_seekbar_screenshot_branch("Screenshots", guid_
 
 static advconfig_integer_factory g_seekbar_screenshot_width ("Horizontal size (pixels)", guid_seekbar_screenshot_width,  guid_seekbar_screenshot_branch, 0.1, 1024, 16, 8192);
 static advconfig_integer_factory g_seekbar_screenshot_height("Vertical size (pixels)",   guid_seekbar_screenshot_height, guid_seekbar_screenshot_branch, 0.2, 1024, 16, 8192);
-static advconfig_string_factory g_seekbar_screenshot_filename_format("File format template", guid_seekbar_screenshot_filename_format, guid_seekbar_screenshot_branch, 0.3, "%artist% - %tracknumber%. %title%.png");
+static advconfig_string_factory g_seekbar_screenshot_filename_format("File format template (either absolute path+filename or just filename)", guid_seekbar_screenshot_filename_format, guid_seekbar_screenshot_branch, 0.3, "%artist% - %tracknumber%. %title%.png");
 
 static bool is_outside(CPoint point, CRect r, int N, bool horizontal)
 {
@@ -245,8 +245,7 @@ namespace wave
 
   struct screenshot_saver : screenshot_settings
   {
-    screenshot_saver(std::wstring path, int width, int height)
-      : path(path)
+    screenshot_saver(int width, int height)
     {
       this->width = width;
       this->height = height;
@@ -265,38 +264,87 @@ namespace wave
             (void**)&wic_factory);
 
       WICPixelFormatGUID pixel_format = GUID_WICPixelFormat32bppRGBA;
-
-      CComPtr<IWICBitmapEncoder> encoder;
       GUID container_format = GUID_ContainerFormatPng;
-      std::wstring extension = path.substr(path.find_last_of('.'));
-      if (extension == L".jpg" || extension == L".jpeg")
-        container_format = GUID_ContainerFormatJpeg;
-      else if (extension == L".png")
-        container_format = GUID_ContainerFormatPng;
-      else
+
+      abort_callback_dummy cb;
+
+      try
+      {
+        filesystem::g_open_tempmem(target_file, cb);
+      }
+      catch (std::exception& e)
+      {
+        console::error(e.what());
         return;
+      }
 
-      hr = wic_factory->CreateEncoder(container_format, nullptr, &encoder);
+      CComPtr<IWICStream> wic_stream;
+      hr = wic_factory->CreateStream(&wic_stream);
+      CComPtr<IStream> mem_stream;
+      hr = CreateStreamOnHGlobal(NULL, TRUE, &mem_stream);
+      hr = wic_stream->InitializeFromIStream(mem_stream);
 
-      CComPtr<IWICStream> stream;
-      hr = wic_factory->CreateStream(&stream);
-      hr = stream->InitializeFromFilename(path.c_str(), GENERIC_WRITE);
-      hr = encoder->Initialize(stream, WICBitmapEncoderNoCache);
+      {
+        CComPtr<IWICBitmapEncoder> encoder;
+        hr = wic_factory->CreateEncoder(container_format, nullptr, &encoder);
+        hr = encoder->Initialize(wic_stream, WICBitmapEncoderNoCache);
 
-      CComPtr<IWICBitmapFrameEncode> frame_encode;
-      hr = encoder->CreateNewFrame(&frame_encode, nullptr);
-      hr = frame_encode->Initialize(nullptr);
-      hr = frame_encode->SetSize(width, height);
+        CComPtr<IWICBitmapFrameEncode> frame_encode;
+        hr = encoder->CreateNewFrame(&frame_encode, nullptr);
+        hr = frame_encode->Initialize(nullptr);
+        hr = frame_encode->SetSize(width, height);
         
-      hr = frame_encode->SetPixelFormat(&pixel_format);
-      hr = frame_encode->WritePixels(height, width*4, height*width*4, (BYTE*)pixels);
-      hr = frame_encode->Commit();
-      hr = encoder->Commit();
+        hr = frame_encode->SetPixelFormat(&pixel_format);
+        hr = frame_encode->WritePixels(height, width*4, height*width*4, (BYTE*)pixels);
+        hr = frame_encode->Commit();
+        hr = encoder->Commit();
+      }
+
+      LARGE_INTEGER pos;
+      pos.QuadPart = 0;
+      hr = mem_stream->Seek(pos, STREAM_SEEK_SET, NULL);
+
+      uint8_t buf[4096];
+      ULONG amount_read = 0;
+      while (SUCCEEDED(hr = mem_stream->Read(buf, sizeof(buf), &amount_read)) && amount_read > 0)
+      {
+        target_file->write(buf, amount_read, cb);
+      }
     }
 
-    std::wstring path;
+    file_ptr target_file;
 
     static void save_shot_trampoline(void* self, BYTE const* pixels) { auto p = (screenshot_saver*)self; p->save_shot(pixels); }
+  };
+
+  struct file_uri_builder
+  {
+    file_uri_builder(pfc::string8 src)
+      : protocol("file://")
+    {
+      t_size n = std::min(protocol.get_length(), src.get_length());
+      if (strnicmp(protocol, src, n) == 0)
+      {
+        src = src + protocol.get_length();
+      }
+
+      t_size filename_offset = src.scan_filename();
+      directory.set_string(src, filename_offset);
+      filename.set_string(src + filename_offset);
+    }
+
+    operator pfc::string8 () const
+    {
+      pfc::string8 ret;
+      ret.add_string(protocol);
+      ret.add_string(directory);
+      ret.add_string(filename);
+      return ret;
+    }
+
+    pfc::string8 protocol;
+    pfc::string8 directory;
+    pfc::string8 filename;
   };
 
 	void seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
@@ -347,20 +395,49 @@ namespace wave
             static_api_ptr_t<metadb>()->handle_create(h, loc);
           }
 
-          pfc::string8 filename;
-          if (!h->format_title(nullptr, filename, tf_obj, nullptr))
+          pfc::string8 formatted;
+          if (!h->format_title(nullptr, formatted, tf_obj, nullptr))
           {
             console::error("Could not format filename for screenshot, file information not available yet.");
             return;
           }
           
-          std::wstring wide_filename = pfc::stringcvt::string_wide_from_utf8(filename.get_ptr());
+          abort_callback_dummy cb;
 
+          // cases:
+          // format is a full path: use as-is
+          // format is a filename: put in My Pictures
+
+          file_uri_builder uri = formatted;
+
+          if (uri.directory.is_empty())
+          {
+            wchar_t pictures[MAX_PATH+1] = {};
+            SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, pictures);
+            uri.directory = pfc::stringcvt::string_utf8_from_wide(pictures);
+            uri.directory.add_char('\\');
+          }
+
+          pfc::string8 target_filename = uri;
+          
           screenshot_saver saver(
-            wide_filename,
             (int)g_seekbar_screenshot_width,
             (int)g_seekbar_screenshot_height);
           fe->frontend->make_screenshot(&saver);
+          if (saver.target_file.is_valid())
+          {
+            file_ptr target;
+            try
+            {
+              filesystem::g_open_write_new(target, target_filename, cb);
+              file::g_transfer_file(saver.target_file, target, cb);
+            }
+            catch (std::exception& e)
+            {
+              console::error(e.what());
+              return;
+            }
+          }
         }
       }
 		default:
