@@ -53,6 +53,9 @@ namespace wave
 
 		void frontend_impl::update_data()
 		{
+			if (device_lost)
+				return;
+
 			ref_ptr<waveform> w;
 			if (callback.get_waveform(w))
 			{
@@ -94,6 +97,10 @@ namespace wave
 							UINT width = 2048 >> mip;
 							D3DLOCKED_RECT lock = {};
 							hr = tex->LockRect(mip, &lock, 0, 0);
+							if (FAILED(hr))
+							{
+								return;
+							}
 							if (floating_point_texture)
 							{
 								D3DXFLOAT16* dst = (D3DXFLOAT16*)lock.pBits;
