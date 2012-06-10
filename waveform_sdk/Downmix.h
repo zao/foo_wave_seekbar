@@ -13,37 +13,37 @@ void get_downmix_coefficients(t_size n, pfc::list_t<T>& left, pfc::list_t<T>& ri
 	switch (n)
 	{
 	case 1:
-		{ //      { center }
+		{	//      { center }
 			T l[] = { one    }; left = l;
 			T r[] = { one    }; right = r;
 			break;
 		}
 	case 2:
-		{ //      { left , right }
+		{	//      { left , right }
 			T l[] = { one  , zero  }; left = l;
 			T r[] = { zero , one   }; right = r;
 			break;
 		}
 	case 4:
-		{ //      { left , right , surr-left , surr-right }
+		{	//      { left , right , surr-left , surr-right }
 			T l[] = { one  , zero  , one       , zero       }; left = l;
 			T r[] = { zero , one   , zero      , one        }; right = r;
 			break;
 		}
 	case 5:
-		{ //      { left , right , center    , surr-left , surr-right }
+		{	//      { left , right , center    , surr-left , surr-right }
 			T l[] = { one  , zero  , sqrt_half , sqrt_half , zero       }; left = l;
 			T r[] = { zero , one   , sqrt_half , zero      , sqrt_half  }; right = r;
 			break;
 		}
 	case 6:
-		{ //      { left , right , center    , LFE , surr-left , surr-right }
+		{	//      { left , right , center    , LFE , surr-left , surr-right }
 			T l[] = { one  , zero  , sqrt_half , one , sqrt_half , zero       }; left = l;
 			T r[] = { zero , one   , sqrt_half , one , zero      , sqrt_half  }; right = r;
 			break;
 		}
 	case 8:
-		{ //      { left , right , center    , LFE , surr-left , surr-right , back-left , back-right }
+		{	//      { left , right , center    , LFE , surr-left , surr-right , back-left , back-right }
 			T l[] = { one  , zero  , sqrt_half , one , sqrt_half , zero       , sqrt_half , zero       }; left = l;
 			T r[] = { zero , one   , sqrt_half , one , zero      , sqrt_half  , zero      , sqrt_half  }; right = r;
 			break;
