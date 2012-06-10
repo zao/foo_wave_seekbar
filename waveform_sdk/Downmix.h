@@ -7,32 +7,72 @@
 #include "../../../pfc/list.h"
 
 template <typename T>
+void get_downmix_coefficients(t_size n, pfc::list_t<T>& left, pfc::list_t<T>& right)
+{
+	T zero = T(0.0), one = T(1.0), sqrt_half = T(0.70710678118654752440084436210485);
+	switch (n)
+	{
+	case 1:
+		{ //      { center }
+			T l[] = { one    }; left = l;
+			T r[] = { one    }; right = r;
+			break;
+		}
+	case 2:
+		{ //      { left , right }
+			T l[] = { one  , zero  }; left = l;
+			T r[] = { zero , one   }; right = r;
+			break;
+		}
+	case 4:
+		{ //      { left , right , surr-left , surr-right }
+			T l[] = { one  , zero  , one       , zero       }; left = l;
+			T r[] = { zero , one   , zero      , one        }; right = r;
+			break;
+		}
+	case 5:
+		{ //      { left , right , center    , surr-left , surr-right }
+			T l[] = { one  , zero  , sqrt_half , sqrt_half , zero       }; left = l;
+			T r[] = { zero , one   , sqrt_half , zero      , sqrt_half  }; right = r;
+			break;
+		}
+	case 6:
+		{ //      { left , right , center    , LFE , surr-left , surr-right }
+			T l[] = { one  , zero  , sqrt_half , one , sqrt_half , zero       }; left = l;
+			T r[] = { zero , one   , sqrt_half , one , zero      , sqrt_half  }; right = r;
+			break;
+		}
+	case 8:
+		{ //      { left , right , center    , LFE , surr-left , surr-right , back-left , back-right }
+			T l[] = { one  , zero  , sqrt_half , one , sqrt_half , zero       , sqrt_half , zero       }; left = l;
+			T r[] = { zero , one   , sqrt_half , one , zero      , sqrt_half  , zero      , sqrt_half  }; right = r;
+			break;
+		}
+	default:
+		{
+			pfc::list_t<T> c; c.set_size(n);
+			for (t_size i = 0; i < n; ++i)
+			{
+				c[i] = T(1.0);
+			}
+			left = c;
+			right = c;
+		}
+	}
+}
+
+template <typename T>
 float downmix(pfc::list_t<T> frame)
 {
 	const T sqrt_half = T(0.70710678118654752440084436210485);
 	t_size n_ch = frame.get_size();
-	switch (n_ch)
+	pfc::list_t<T> left, right;
+	get_downmix_coefficients(n_ch, left, right);
+	T ret = T(0.0);
+	for (t_size i = 0; i < n_ch; ++i)
 	{
-	case 8:
-		frame[0] += frame[6] * sqrt_half;
-		frame[1] += frame[7] * sqrt_half;
-	case 6:
-		frame[0] += frame[2] * sqrt_half + frame[4] * sqrt_half + frame[3];
-		frame[1] += frame[2] * sqrt_half + frame[5] * sqrt_half + frame[3];
-	case 2:
-		frame[0] += frame[1];
-		frame[0] /= T(2.0);
-		break;
-	case 4:
-		frame[0] += frame[1] + frame[2] + frame[3];
-		frame[0] /= T(4.0);
-		break;
-	default:
-		for (t_size i = 1; i < n_ch; ++i)
-		{
-			frame[0] += frame[i];
-		}
-		frame[0] /= n_ch;
+		ret += T(0.5) * left[i] * frame[i];
+		ret += T(0.5) * right[i] * frame[i];
 	}
-	return frame[0];
+	return ret;
 }
