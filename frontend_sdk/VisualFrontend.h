@@ -161,7 +161,7 @@ namespace wave
 		virtual void show_configuration(HWND parent) { }
 		virtual void close_configuration() { }
 		virtual int get_present_interval() const { return 100; } // milliseconds
-    virtual void make_screenshot(screenshot_settings const* settings) {}
+		virtual void make_screenshot(screenshot_settings const* settings) {}
 	};
 
 	struct visual_frontend_callback
