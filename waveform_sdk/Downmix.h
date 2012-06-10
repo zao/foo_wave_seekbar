@@ -10,7 +10,8 @@ template <typename T>
 float downmix(pfc::list_t<T> frame)
 {
 	const T sqrt_half = T(0.70710678118654752440084436210485);
-	switch (frame.get_size())
+	t_size n_ch = frame.get_size();
+	switch (n_ch)
 	{
 	case 8:
 		frame[0] += frame[6] * sqrt_half;
@@ -25,6 +26,13 @@ float downmix(pfc::list_t<T> frame)
 	case 4:
 		frame[0] += frame[1] + frame[2] + frame[3];
 		frame[0] /= T(4.0);
+		break;
+	default:
+		for (t_size i = 1; i < n_ch; ++i)
+		{
+			frame[0] += frame[i];
+		}
+		frame[0] /= n_ch;
 	}
 	return frame[0];
 }
