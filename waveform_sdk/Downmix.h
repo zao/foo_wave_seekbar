@@ -14,21 +14,24 @@ float downmix(pfc::list_t<T> frame)
 	switch (n_ch)
 	{
 	case 8:
-		frame[0] += frame[6] * sqrt_half;
+		frame[0] += frame[6] * sqrt_half; // add in weighted side
 		frame[1] += frame[7] * sqrt_half;
 	case 6:
-		frame[0] += frame[2] * sqrt_half + frame[4] * sqrt_half + frame[3];
-		frame[1] += frame[2] * sqrt_half + frame[5] * sqrt_half + frame[3];
+		frame[0] += frame[3]; // add in LFE unchanged
+		frame[1] += frame[3];
+	case 5:
+		frame[0] += frame[2] * sqrt_half + frame[4]; // add in weighted center and rear as-is
+		frame[1] += frame[2] * sqrt_half + frame[5];
 	case 2:
-		frame[0] += frame[1];
+		frame[0] += frame[1]; // average left-right
 		frame[0] /= T(2.0);
 		break;
 	case 4:
-		frame[0] += frame[1] + frame[2] + frame[3];
+		frame[0] += frame[1] + frame[2] + frame[3]; // straight average of the four corners
 		frame[0] /= T(4.0);
 		break;
 	default:
-		for (t_size i = 1; i < n_ch; ++i)
+		for (t_size i = 1; i < n_ch; ++i) // straight fallback average of silly channel configurations
 		{
 			frame[0] += frame[i];
 		}
