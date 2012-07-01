@@ -13,6 +13,13 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
+#include <fstream>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/info_parser.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/detail/rapidxml.hpp>
+namespace pt = boost::property_tree;
+
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
 
@@ -370,8 +377,9 @@ namespace wave
 		out.clear();
 		std::ostringstream os;
 		{
-			boost::archive::xml_oarchive ar(os);
-			ar & BOOST_SERIALIZATION_NVP(settings);
+			pt::ptree out_pt;
+			settings.to_ptree(out_pt);
+			write_info(os, out_pt);
 		}
 
 		std::string s = os.str();
@@ -380,10 +388,18 @@ namespace wave
 
 	void seekbar_window::load_settings(persistent_settings& settings, std::vector<char> const& in)
 	{
-		std::istringstream is(std::string(in.begin(), in.end()));
+		std::string s(in.begin(), in.end());
+		
+		if (!s.empty() && s[0] == '<') // parsing legacy information
 		{
-			boost::archive::xml_iarchive ar(is);
-			ar & BOOST_SERIALIZATION_NVP(settings);
+			read_s11n_xml(s, settings);
+		}
+		else
+		{
+			pt::ptree config_tree;
+			std::istringstream is(s);
+			pt::read_info(is, config_tree);
+			settings.from_ptree(config_tree);
 		}
 	}
 

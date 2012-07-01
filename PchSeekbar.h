@@ -7,6 +7,7 @@
 #pragma warning(disable: 4005)
 #define D3D_DEBUG_INFO
 #define _WIN32_WINNT 0x0501
+#define BOOST_SPIRIT_USE_PHOENIX_V3
 
 #define NOMINMAX
 #define BOOST_ASIO_NO_WIN32_LEAN_AND_MEAN
@@ -76,10 +77,6 @@ using boost::shared_ptr;
 using boost::weak_ptr;
 using boost::make_shared;
 
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/version.hpp>
 
 #include <boost/cstdint.hpp>
 
@@ -106,3 +103,5 @@ using boost::optional;
 #define BOOST_UTF8_END_NAMESPACE }
 #define BOOST_UTF8_DECL
 #include <boost/detail/utf8_codecvt_facet.hpp>
+
+#include <boost/foreach.hpp>
