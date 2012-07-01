@@ -52,10 +52,6 @@ namespace wave
 			load_settings(settings, std::vector<char>(p, p + data->get_data_size()));
 			flush_frontend();
 		}
-		catch (boost::archive::archive_exception& ex)
-		{
-			console::formatter() << "Wave seekbar: configuration load failure - " << ex.what();
-		}
 		catch (std::exception& ex)
 		{
 			console::formatter() << "Wave seekbar: configuration snafu - " << ex.what();

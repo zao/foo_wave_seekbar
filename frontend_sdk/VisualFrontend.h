@@ -103,7 +103,7 @@ namespace wave
 	inline color xbgr_to_color(DWORD c, BYTE a = 0xFFU) {
 		float r = GetRValue(c) / 255.f,
 		      g = GetGValue(c) / 255.f,
-			  b = GetBValue(c) / 255.f;
+		      b = GetBValue(c) / 255.f;
 		return color(r, g, b, a / 255.f);
 	}
 
@@ -130,10 +130,10 @@ namespace wave
 
 	struct screenshot_settings
 	{
-	  void* context;
-	  void (*write_screenshot)(void* context, BYTE const* rgba);
-	  int32_t width, height;
-	  uint32_t flags;
+		void* context;
+		void (*write_screenshot)(void* context, BYTE const* rgba);
+		int32_t width, height;
+		uint32_t flags;
 	};
 
 	struct visual_frontend : ref_base

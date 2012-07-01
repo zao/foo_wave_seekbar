@@ -146,6 +146,9 @@
     <ClCompile Include="utf8_codecvt_facet.cpp">
       <Filter>Seekbar</Filter>
     </ClCompile>
+    <ClCompile Include="PersistentSettings.cc">
+      <Filter>Seekbar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h">
