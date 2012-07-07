@@ -275,8 +275,8 @@ namespace wave
 						done = true;
 						break;
 					}
-					t_size n = std::min<t_size>(chunk.get_sample_count(), (t_size)(sample_count - processed_samples));
-					for (t_size i = 0; i < n; ++i)
+					t_int64 n = std::min<t_int64>(chunk.get_sample_count(), sample_count - processed_samples);
+					for (t_int64 i = 0; i < n; ++i)
 					{						
 						if (!current_span)
 							current_span.reset(new span(source.channel_count()));
