@@ -241,8 +241,9 @@ namespace wave
 				}
 				t_int64 sample_count = info.info_get_length_samples();
 				t_int64 chunk_size = sample_count / 2047;
-				
-				if (sample_count == 0)
+
+				// around a month ought to be enough for anyone
+				if (sample_count <= 0 || sample_count > sample_rate * 60 * 60 * 24 * 31)
 					return out;
 
 				pfc::list_t<pfc::list_t<float>> minimum, maximum, rms;
