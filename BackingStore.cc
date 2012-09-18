@@ -144,7 +144,7 @@ namespace wave
 			ref_ptr<waveform_impl> w(new waveform_impl);
 			auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col) -> bool
 			{
-				pfc::list_t<pfc::list_t<float>> list;
+				pfc::list_t<waveform_impl::signal> list;
 			
 				float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
 				t_size count = sqlite3_column_bytes(stmt.get(), col);
@@ -172,7 +172,7 @@ namespace wave
 
 					for (unsigned c = 0; c < channel_count; ++c)
 					{
-						pfc::list_hybrid_t<float, 2048> channel;
+						waveform_impl::signal channel;
 						float const * fs = (float*)&dst[2048 * c * sizeof(float)];
 						channel.add_items_fromptr(fs, 2048);
 						list.add_item(channel);
@@ -182,7 +182,7 @@ namespace wave
 				{
 					for (unsigned c = 0; c < channel_count; ++c)
 					{
-						pfc::list_hybrid_t<float, 2048> channel;
+						waveform_impl::signal channel;
 						channel.add_items_fromptr(data + 2048*c, 2048);
 						list.add_item(channel);
 					}
