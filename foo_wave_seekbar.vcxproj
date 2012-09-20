@@ -67,6 +67,7 @@
       <DisableSpecificWarnings>4996;4180</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnablePREfast>false</EnablePREfast>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName)-$(Configuration)-vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -93,6 +94,7 @@
       <EnablePREfast>false</EnablePREfast>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Precise</FloatingPointModel>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName)-$(Configuration)-vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
