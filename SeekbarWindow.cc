@@ -134,9 +134,13 @@ namespace wave
 			boost::filesystem::path path = file_location_to_path(core_api::get_my_full_path());
 			path = path.remove_filename();
 			fs::directory_iterator I = fs::directory_iterator(path), last;
-			while (I != last)
+			for (; I != last; ++I)
 			{
-				HMODULE lib = LoadLibraryW(I->path().wstring().c_str());
+				fs::path p = *I;
+				if (p.extension() != L".dll")
+					continue;
+
+				HMODULE lib = LoadLibraryW(p.wstring().c_str());
 				if (lib)
 				{
 					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
@@ -150,7 +154,6 @@ namespace wave
 						FreeLibrary(lib);
 					}
 				}
-				++I;
 			}
 		}
 		catch (std::exception& e)
