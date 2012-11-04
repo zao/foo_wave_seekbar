@@ -153,13 +153,30 @@ namespace wave
 		brush_background.reset();
 	}
 
-	D3DXVECTOR4* saturate(D3DXVECTOR4* in)
+	struct float4
+	{
+		float4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
+		float4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+		float x, y, z, w;
+	};
+
+	float4* saturate(float4* in)
 	{
 		in->x = std::max(0.0f, std::min(1.0f, in->x));
 		in->y = std::max(0.0f, std::min(1.0f, in->y));
 		in->z = std::max(0.0f, std::min(1.0f, in->z));
 		in->w = std::max(0.0f, std::min(1.0f, in->w));
 		return in;
+	}
+
+	float4* lerp(float4* out, float4 const* a, float4 const* b, float f)
+	{
+		float const omf = 1.0f - f;
+		out->x = omf * a->x + f * b->x;
+		out->y = omf * a->y + f * b->y;
+		out->z = omf * a->z + f * b->z;
+		out->w = omf * a->w + f * b->w;
+		return out;
 	}
 
 	void gdi_fallback_frontend::update_data()
@@ -216,9 +233,9 @@ namespace wave
 
 				color bg = callback.get_color(config::color_background);
 				color txt = callback.get_color(config::color_foreground);
-				D3DXVECTOR4 backgroundColor(bg.r, bg.g, bg.b, bg.a);
-				D3DXVECTOR4 textColor(txt.r, txt.g, txt.b, txt.a);
-				D3DXVECTOR2 tc;
+				float4 backgroundColor(bg.r, bg.g, bg.b, bg.a);
+				float4 textColor(txt.r, txt.g, txt.b, txt.a);
+				float4 tc;
 
 				float squash = (float)quad_index / (float)index_count;
 				auto& outer_size = size;
@@ -233,12 +250,12 @@ namespace wave
 					if (flip)
 						ix = 2047ul - ix;
 
-					D3DXVECTOR4 sample(avg_min[ix], avg_max[ix], avg_rms[ix], 1);
+					float4 sample(avg_min[ix], avg_max[ix], avg_rms[ix], 1);
 		#if 1
 					for (size_t y = 0; y < (size_t)size.cy; ++y)
 					{
 						size_t out_y = y + (size_t)(outer_size.cy * squash);
-						D3DXVECTOR4 c;
+						float4 c;
 						tc.y = 1.0f - 2.0f * (float)y / (float)size.cy;
 						float below = tc.y - sample.x;
 						float above = tc.y - sample.y;
@@ -249,7 +266,7 @@ namespace wave
 						if (outside)
 							c = backgroundColor;
 						else
-							D3DXVec4Lerp(&c, &backgroundColor, &textColor, 7.0f * factor);
+							lerp(&c, &backgroundColor, &textColor, 7.0f * factor);
 						
 						saturate(&c);
 						color cc(c.x, c.y, c.z, c.w);
