@@ -48,11 +48,6 @@ using std::min;
 using std::max;
 
 #include <comdef.h>
-#include <d3d10_1.h>
-#include <d3dx10.h>
-#include <d3d9.h>
-#include <d3dx9.h>
-#include <dxerr.h>
 #include <tchar.h>
 
 #include "../ATLHelpers/ATLHelpers.h"

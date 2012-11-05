@@ -247,9 +247,6 @@ namespace wave
 					return out;
 
 				pfc::list_t<pfc::list_t<float>> minimum, maximum, rms;
-				minimum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
-				maximum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
-				rms.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(pfc::list_t<float>(), 2048));
 
 				audio_chunk_impl chunk;
 
@@ -268,6 +265,16 @@ namespace wave
 				{
 					throw_if_aborting(abort_cb);
 					source.render(chunk);
+
+					if (minimum.get_count() == 0)
+					{
+						int nch = source.channel_count();
+						pfc::list_t<float> ch_list;
+						ch_list.set_size(2);
+						minimum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(ch_list, 2048));
+						maximum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(ch_list, 2048));
+						rms.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(ch_list, 2048));
+					}
 
 					audio_sample* data = chunk.get_data();
 					channel_map = chunk.get_channel_config();
@@ -303,6 +310,11 @@ namespace wave
 					current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
 				}
 				
+				if (minimum.get_size() == 0)
+				{
+					console::formatter() << "Wave cache: failed to render location " << loc;
+					return out;
+				}
 				{
 					if (should_downmix)
 					{

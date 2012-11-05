@@ -32,11 +32,13 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
     <Import Project="..\Output to devel.props" />
     <Import Project="..\Shared.props" />
+    <Import Project="..\Local.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
     <Import Project="..\Output to devel.props" />
     <Import Project="..\Shared.props" />
+    <Import Project="..\Local.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -67,6 +69,7 @@
       <DisableSpecificWarnings>4996;4180</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnablePREfast>false</EnablePREfast>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName)-$(Configuration)-vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -93,6 +96,7 @@
       <EnablePREfast>false</EnablePREfast>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Precise</FloatingPointModel>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName)-$(Configuration)-vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
