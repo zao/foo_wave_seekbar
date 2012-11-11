@@ -40,7 +40,7 @@ namespace wave
 		color background, foreground, highlight, selection;
 	};
 
-	brush_set create_brush_set(CComPtr<ID2D1RenderTarget> target, palette pal);
+	brush_set create_brush_set(ID2D1RenderTarget* target, palette pal);
 
 	struct image_cache : boost::enable_shared_from_this<image_cache>
 	{
@@ -48,7 +48,7 @@ namespace wave
 		~image_cache();
 		void start();
 
-		void update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip);
+		void update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip, uint64_t serial);
 
 		CComPtr<ID2D1Factory> factory;
 		boost::mutex mutex;
@@ -57,9 +57,9 @@ namespace wave
 		boost::scoped_ptr<boost::thread> pump_thread;
 		size_t jobs;
 
-		CComPtr<ID2D1HwndRenderTarget> rt;
 		CComPtr<IWICImagingFactory> wic_factory;
-		CComPtr<ID2D1Bitmap> wave_bitmap;
+		CComPtr<IWICBitmap> last_bitmap;
+		uint64_t bitmap_serial;
 		palette colors;
 	};
 
@@ -81,14 +81,18 @@ namespace wave
 		void update_data();
 		void update_size();
 
+		visual_frontend_callback& callback;
+		HWND wnd;
+
 		CComPtr<ID2D1Factory> factory;
 		CComPtr<ID2D1HwndRenderTarget> rt;
+		CComPtr<ID2D1Bitmap> wave_bitmap;
+		uint64_t bitmap_serial;
+		uint64_t last_serial_issued;
 		
 		boost::shared_ptr<image_cache> cache;
 		palette colors;
 
 		brush_set brushes;
-
-		visual_frontend_callback& callback;
 	};
 }

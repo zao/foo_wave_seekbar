@@ -64,6 +64,9 @@ namespace wave
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)
 		: callback(callback)
+		, wnd(wnd)
+		, bitmap_serial(0)
+		, last_serial_issued(0)
 	{
 		in_main_thread = boost::bind(&visual_frontend_callback::run_in_main_thread, &callback, _1);
 		factory.Attach(create_d2d1_factory_func(opts)());
@@ -71,8 +74,6 @@ namespace wave
 			throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
 
 		cache.reset(new image_cache);
-		factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(size.cx, size.cy)), &rt);
-		cache->rt = rt;
 		cache->start();
 	}
 
@@ -89,46 +90,78 @@ namespace wave
 		bool vertical = callback.get_orientation() == config::orientation_vertical;
 		bool flip = callback.get_flip_display();
 
-		D2D1_SIZE_F size = rt->GetSize();
-		if (vertical) std::swap(size.width, size.height);
-		
-		rt->BeginDraw();
-		rt->Clear(color_to_d2d1_color(colors.background));
-		float seek_x = (float)(size.width * callback.get_seek_position() / callback.get_track_length());
-		float play_x = (float)(size.width * callback.get_playback_position() / callback.get_track_length());
-
-		if (flip)
+		HRESULT hr = E_FAIL;
+		while (! SUCCEEDED(hr))
 		{
-			seek_x = size.width - seek_x;
-			play_x = size.width - play_x;
-		}
-		
-		if (vertical) rt->SetTransform(D2D1::Matrix3x2F(0, 1, 1, 0, 0, 0));
-		{
-			boost::mutex::scoped_lock sl(cache->mutex);
-			if (cache->wave_bitmap)
+			if (! rt)
 			{
-				rt->DrawBitmap(cache->wave_bitmap);
+				auto sz = callback.get_size();
+				factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(sz.cx, sz.cy)), &rt);
+				brushes = create_brush_set(rt, colors);
+			}
+
+			D2D1_SIZE_F size = rt->GetSize();
+			if (vertical)
+			{
+				std::swap(size.width, size.height);
+			}
+		
+			rt->BeginDraw();
+			rt->Clear(color_to_d2d1_color(colors.background));
+			float seek_x = (float)(size.width * callback.get_seek_position() / callback.get_track_length());
+			float play_x = (float)(size.width * callback.get_playback_position() / callback.get_track_length());
+
+			if (flip)
+			{
+				seek_x = size.width - seek_x;
+				play_x = size.width - play_x;
+			}
+		
+			if (vertical)
+			{
+				rt->SetTransform(D2D1::Matrix3x2F(0, 1, 1, 0, 0, 0));
+			}
+
+			{
+				boost::mutex::scoped_lock sl(cache->mutex);
+				if (cache->last_bitmap && bitmap_serial < cache->bitmap_serial)
+				{
+					wave_bitmap.Release();
+					rt->CreateBitmapFromWicBitmap(cache->last_bitmap, &wave_bitmap);
+				}
+				if (wave_bitmap)
+				{
+					rt->DrawBitmap(wave_bitmap);
+				}
+			}
+
+			if (callback.is_seeking())
+			{
+				rt->DrawLine(D2D1::Point2F(seek_x), D2D1::Point2F(seek_x, size.height), brushes.selection_brush, 2.5f);
+			}
+
+			if (callback.get_shade_played())
+			{
+				D2D1_COLOR_F hi = brushes.highlight_brush->GetColor();
+				CComPtr<ID2D1SolidColorBrush> overlay_brush;
+				rt->CreateSolidColorBrush(hi, D2D1::BrushProperties(0.3f), &overlay_brush);
+				if (flip)
+					rt->FillRectangle(D2D1::RectF(play_x, 0, size.width, size.height), overlay_brush);
+				else
+					rt->FillRectangle(D2D1::RectF(0, 0, play_x, size.height), overlay_brush);
+			}
+
+			rt->DrawLine(D2D1::Point2F(play_x), D2D1::Point2F(play_x, size.height), brushes.selection_brush, 2.5f);
+			rt->SetTransform(D2D1::Matrix3x2F::Identity());
+			hr = rt->EndDraw();
+
+			if (hr == D2DERR_RECREATE_TARGET)
+			{
+				brushes = brush_set();
+				wave_bitmap.Release();
+				rt.Release();
 			}
 		}
-
-		if (callback.is_seeking())
-			rt->DrawLine(D2D1::Point2F(seek_x), D2D1::Point2F(seek_x, size.height), brushes.selection_brush, 2.5f);
-
-		if (callback.get_shade_played())
-		{
-			D2D1_COLOR_F hi = brushes.highlight_brush->GetColor();
-			CComPtr<ID2D1SolidColorBrush> overlay_brush;
-			rt->CreateSolidColorBrush(hi, D2D1::BrushProperties(0.3f), &overlay_brush);
-			if (flip)
-				rt->FillRectangle(D2D1::RectF(play_x, 0, size.width, size.height), overlay_brush);
-			else
-				rt->FillRectangle(D2D1::RectF(0, 0, play_x, size.height), overlay_brush);
-		}
-
-		rt->DrawLine(D2D1::Point2F(play_x), D2D1::Point2F(play_x, size.height), brushes.selection_brush, 2.5f);
-		rt->SetTransform(D2D1::Matrix3x2F::Identity());
-		rt->EndDraw();
 	}
 
 	void direct2d1_frontend::present()
@@ -138,7 +171,11 @@ namespace wave
 	void direct2d1_frontend::update_size()
 	{
 		auto size = callback.get_size();
-		rt->Resize(D2D1::SizeU(size.cx, size.cy));
+		if (rt)
+		{
+			rt->Resize(D2D1::SizeU(size.cx, size.cy));
+		}
+
 		ref_ptr<waveform> wf;
 		if (callback.get_waveform(wf))
 		{
@@ -154,10 +191,12 @@ namespace wave
 			wf = downmix_waveform(wf);
 		pfc::list_t<channel_info> infos;
 		callback.get_channel_infos(list_array_sink<channel_info>(infos));
+		uint64_t serial = ++last_serial_issued;
 		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
 			, D2D1::SizeF((float)size.cx, (float)size.cy)
 			, callback.get_orientation() == config::orientation_vertical
-			, callback.get_flip_display()));
+			, callback.get_flip_display()
+			, serial));
 	}
 
 	void direct2d1_frontend::on_state_changed(state s)
@@ -177,7 +216,8 @@ namespace wave
 		return p;
 	}
 
-	void image_cache::update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size, bool vertical, bool flip)
+	void image_cache::update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size,
+		bool vertical, bool flip, uint64_t serial)
 	{
 		{
 			boost::mutex::scoped_lock sl(mutex);
@@ -212,114 +252,119 @@ namespace wave
 		int index_count = channel_indices.get_count();
 		D2D1::Matrix3x2F scale = D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.5f / index_count);
 
-		CComPtr<ID2D1RenderTarget> temp_target;
 		CComPtr<IWICBitmap> bm;
 		wic_factory->CreateBitmap((UINT)target_size.width, (UINT)target_size.height, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnDemand, &bm);
-        D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat()); //, dpi[0], dpi[1]);
-        factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
+		HRESULT hr = E_FAIL;
 
-		brush_set brushes = create_brush_set(temp_target, colors);
-
-		pfc::list_t<pfc::com_ptr_t<ID2D1PathGeometry>> wave_geometries, rms_geometries;
-		auto& fac = factory;
-		
-		channel_indices.enumerate([&, fac, index_count](int index)
+		while (! SUCCEEDED(hr))
 		{
-			pfc::list_t<float> mini, maxi, rms;
-			wf->get_field("minimum", index, list_array_sink<float>(mini));
-			wf->get_field("maximum", index, list_array_sink<float>(maxi));
-			wf->get_field("rms", index, list_array_sink<float>(rms));
+			CComPtr<ID2D1RenderTarget> temp_target;
+			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat()); //, dpi[0], dpi[1]);
+			factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
 
-			CComPtr<ID2D1PathGeometry> wave_geometry, rms_geometry;
-			fac->CreatePathGeometry(&wave_geometry);
-			fac->CreatePathGeometry(&rms_geometry);
+			brush_set brushes = create_brush_set(temp_target, colors);
 
-			wave_geometries.add_item(wave_geometry);
-			rms_geometries.add_item(rms_geometry);
+			pfc::list_t<pfc::com_ptr_t<ID2D1PathGeometry>> wave_geometries, rms_geometries;
+			auto& fac = factory;
 
-			CComPtr<ID2D1GeometrySink> gs, rms_gs;
-			wave_geometry->Open(&gs);
-			size_t n = mini.get_size();
-
-			// Prepare waveform
-			size_t x;
-			gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
-			for (size_t i = 0; i < n; i += 1)
+			channel_indices.enumerate([&, fac, index_count](int index)
 			{
-				if (flip)
-					x = n - i - 1;
-				else
-					x = i;
-				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, maxi[x]);
-				if (flip)
-					p.x = 1.0f - p.x;
-				gs->AddLine(scale.TransformPoint(p));
-			}
-			for (size_t i = 0; i < n; i += 1)
-			{
-				if (flip)
-					x = i;
-				else
-					x = n - i - 1;
-				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, mini[x]);
-				if (flip)
-					p.x = 1.0f - p.x;
-				gs->AddLine(scale.TransformPoint(p));
-			}
-			gs->EndFigure(D2D1_FIGURE_END_CLOSED);
-			gs->Close();
+				pfc::list_t<float> mini, maxi, rms;
+				wf->get_field("minimum", index, list_array_sink<float>(mini));
+				wf->get_field("maximum", index, list_array_sink<float>(maxi));
+				wf->get_field("rms", index, list_array_sink<float>(rms));
 
-			// Prepare RMS
-			rms_geometry->Open(&rms_gs);
-			rms_gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
-			for (size_t i = 0; i < n; ++i)
-			{
-				if (flip)
-					x = n - i - 1;
-				else
-					x = i;
-				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
-				if (flip)
-					p.x = 1.0f - p.x;
-				rms_gs->AddLine(scale.TransformPoint(p));
-			}
-			for (size_t i = 0; i < n; ++i)
-			{
-				if (flip)
-					x = i;
-				else
-					x = n - i - 1;
-				D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
-				if (flip)
-					p.x = 1.0f - p.x;
-				rms_gs->AddLine(scale.TransformPoint(p));
-			}
-			rms_gs->EndFigure(D2D1_FIGURE_END_CLOSED);
-			rms_gs->Close();
-		});
+				CComPtr<ID2D1PathGeometry> wave_geometry, rms_geometry;
+				fac->CreatePathGeometry(&wave_geometry);
+				fac->CreatePathGeometry(&rms_geometry);
+
+				wave_geometries.add_item(wave_geometry);
+				rms_geometries.add_item(rms_geometry);
+
+				CComPtr<ID2D1GeometrySink> gs, rms_gs;
+				wave_geometry->Open(&gs);
+				size_t n = mini.get_size();
+
+				// Prepare waveform
+				size_t x;
+				gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
+				for (size_t i = 0; i < n; i += 1)
+				{
+					if (flip)
+						x = n - i - 1;
+					else
+						x = i;
+					D2D1_POINT_2F p = D2D1::Point2(x / (float)n, maxi[x]);
+					if (flip)
+						p.x = 1.0f - p.x;
+					gs->AddLine(scale.TransformPoint(p));
+				}
+				for (size_t i = 0; i < n; i += 1)
+				{
+					if (flip)
+						x = i;
+					else
+						x = n - i - 1;
+					D2D1_POINT_2F p = D2D1::Point2(x / (float)n, mini[x]);
+					if (flip)
+						p.x = 1.0f - p.x;
+					gs->AddLine(scale.TransformPoint(p));
+				}
+				gs->EndFigure(D2D1_FIGURE_END_CLOSED);
+				gs->Close();
+
+				// Prepare RMS
+				rms_geometry->Open(&rms_gs);
+				rms_gs->BeginFigure(D2D1::Point2F(), D2D1_FIGURE_BEGIN_HOLLOW);
+				for (size_t i = 0; i < n; ++i)
+				{
+					if (flip)
+						x = n - i - 1;
+					else
+						x = i;
+					D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
+					if (flip)
+						p.x = 1.0f - p.x;
+					rms_gs->AddLine(scale.TransformPoint(p));
+				}
+				for (size_t i = 0; i < n; ++i)
+				{
+					if (flip)
+						x = i;
+					else
+						x = n - i - 1;
+					D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
+					if (flip)
+						p.x = 1.0f - p.x;
+					rms_gs->AddLine(scale.TransformPoint(p));
+				}
+				rms_gs->EndFigure(D2D1_FIGURE_END_CLOSED);
+				rms_gs->Close();
+			});
 		
-		ID2D1RenderTarget* rt = temp_target;
+			ID2D1RenderTarget* rt = temp_target;
 
-		rt->BeginDraw();
-		rt->Clear(color_to_d2d1_color(colors.background));
-		int x = 0;
-		wave_geometries.enumerate([this, &brushes, rt, size, &x, index_count](pfc::com_ptr_t<ID2D1PathGeometry> const& geom)
-		{
-			float offset = (float)(2*x + 1)/(float)(2*index_count);
-			D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, boost::math::round(offset*size.height));
-			++x;
+			rt->BeginDraw();
+			rt->Clear(color_to_d2d1_color(colors.background));
+			int x = 0;
+			wave_geometries.enumerate([this, &brushes, rt, size, &x, index_count](pfc::com_ptr_t<ID2D1PathGeometry> const& geom)
+			{
+				float offset = (float)(2*x + 1)/(float)(2*index_count);
+				D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, boost::math::round(offset*size.height));
+				++x;
 
-			rt->SetTransform(centered);
-			rt->DrawGeometry(geom.get_ptr(), brushes.foreground_brush);
-		});
-		rt->EndDraw();
+				rt->SetTransform(centered);
+				rt->DrawGeometry(geom.get_ptr(), brushes.foreground_brush);
+			});
+			hr = rt->EndDraw();
+		}
 
 		boost::shared_ptr<image_cache> self = shared_from_this();
-		in_main_thread([self, bm]()
+		in_main_thread([self, bm, serial]()
 		{
 			boost::mutex::scoped_lock sl(self->mutex);
-			self->wave_bitmap.Release();
-			self->rt->CreateBitmapFromWicBitmap(bm, &self->wave_bitmap);
+			self->last_bitmap = bm;
+			self->bitmap_serial = serial;
 		});
 	}
 
@@ -333,7 +378,6 @@ namespace wave
 
 	void direct2d1_frontend::update_data()
 	{
-		D2D1_SIZE_F size = rt->GetSize();
 		ref_ptr<waveform> wf;
 		if (callback.get_waveform(wf))
 		{
@@ -354,11 +398,13 @@ namespace wave
 		boost::mutex::scoped_lock sl(cache->mutex);
 		cache->colors = p;
 
-		CComPtr<ID2D1RenderTarget> rt_base = rt;
-		brushes = create_brush_set(rt_base, colors);
+		if (rt)
+		{
+			brushes = create_brush_set(rt, colors);
+		}
 	}
 
-	brush_set create_brush_set(CComPtr<ID2D1RenderTarget> target, palette pal)
+	brush_set create_brush_set(ID2D1RenderTarget* target, palette pal)
 	{
 		brush_set set;
 #define RECREATE(Name) { color c = pal.Name;\
