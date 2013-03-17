@@ -25,12 +25,13 @@ namespace wave
 {
 	class span
 	{
-		unsigned channels, samples;
+		unsigned const channels;
+		t_int64 frames, chunk_size;
 		pfc::list_t<float> min, max, rms; // list of channels
 
 	public:
-		explicit span(unsigned channels)
-			: channels(channels), samples(0)
+		explicit span(t_int64 chunk_size, unsigned channels)
+			: channels(channels), frames(0), chunk_size(chunk_size)
 		{
 			min.add_items_repeat( 9001.0f, channels);
 			max.add_items_repeat(-9001.0f, channels);
@@ -39,13 +40,28 @@ namespace wave
 
 		void add(audio_sample* frame)
 		{
+			++frames;
 			for (size_t c = 0; c < channels; ++c)
 			{
 				min[c] = std::min(frame[c], min[c]);
 				max[c] = std::max(frame[c], max[c]);
 				rms[c] += frame[c] * frame[c];
 			}
-			++samples;
+		}
+
+		void add(audio_sample* frame, t_int64 count)
+		{
+			frames += count;
+			while (count--)
+			{
+				for (size_t c = 0; c < channels; ++c)
+				{
+					min[c] = std::min(frame[c], min[c]);
+					max[c] = std::max(frame[c], max[c]);
+					rms[c] += frame[c] * frame[c];
+				}
+				frame += channels;
+			}
 		}
 
 		template <typename List>
@@ -56,8 +72,13 @@ namespace wave
 			rms_result = rms;
 			for (size_t c = 0; c < channels; ++c)
 			{
-				rms_result[c] = sqrt(rms_result[c] / samples);
+				rms_result[c] = sqrt(rms_result[c] / frames);
 			}
+		}
+
+		t_int64 frames_remaining() const
+		{
+			return chunk_size - frames;
 		}
 	};
 
@@ -211,6 +232,24 @@ namespace wave
 			}
 		}
 
+		struct scoped_timer
+		{
+			LARGE_INTEGER then;
+			scoped_timer()
+			{
+				QueryPerformanceCounter(&then);
+			}
+
+			~scoped_timer()
+			{
+				LARGE_INTEGER now, freq;
+				QueryPerformanceCounter(&now);
+				QueryPerformanceFrequency(&freq);
+				double t = (double)(now.QuadPart - then.QuadPart) / (double)freq.QuadPart;
+				console::formatter() << "Scan took " << t << " seconds.";
+			}
+		} timer;
+
 		try
 		{
 			bool should_downmix = g_downmix_in_analysis.get();
@@ -284,14 +323,16 @@ namespace wave
 						break;
 					}
 					t_int64 n = std::min<t_int64>(chunk.get_sample_count(), sample_count - processed_samples);
-					for (t_int64 i = 0; i < n; ++i)
+					for (t_int64 i = 0; i < n;)
 					{						
 						if (!current_span)
-							current_span.reset(new span(source.channel_count()));
+							current_span.reset(new span(chunk_size, source.channel_count()));
 					
 						audio_sample* frame = data + i * source.channel_count();
-						current_span->add(frame);
-						++processed_samples;
+						auto wanted = std::min(current_span->frames_remaining(), n-i);
+						current_span->add(frame, wanted);
+						processed_samples += wanted;
+						i += wanted;
 						
 						if (++sample_index == chunk_size)
 						{
