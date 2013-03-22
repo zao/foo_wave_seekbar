@@ -187,8 +187,11 @@ namespace wave
 	{
 		boost::mutex::scoped_lock sl(cache->mutex);
 		++cache->jobs;
-		if (callback.get_downmix_display())
-			wf = downmix_waveform(wf);
+		switch (callback.get_downmix_display())
+		{
+		case config::downmix_mono:   if (wf->get_channel_count() > 1) wf = downmix_waveform(wf, 1); break;
+		case config::downmix_stereo: if (wf->get_channel_count() > 2) wf = downmix_waveform(wf, 2); break;
+		}
 		pfc::list_t<channel_info> infos;
 		callback.get_channel_infos(list_array_sink<channel_info>(infos));
 		uint64_t serial = ++last_serial_issued;

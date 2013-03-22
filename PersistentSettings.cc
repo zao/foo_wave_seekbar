@@ -220,7 +220,7 @@ namespace wave
 {
 	persistent_settings::persistent_settings()
 		: active_frontend_kind(config::frontend_direct3d9), has_border(true), shade_played(true)
-		, display_mode(config::display_normal), flip_display(false), downmix_display(false)
+		, display_mode(config::display_normal), flip_display(false), downmix_display(config::downmix_none)
 		, generic_strings(&less_guid)
 	{
 		std::fill_n(colors.begin(), colors.size(), color());
@@ -285,8 +285,9 @@ namespace wave
 			extract_bool(node->first_node("shade_played"), settings.shade_played);
 		if (version >= 7)
 		{
-			extract_int(node->first_node("display_mode"), settings.display_mode);
-			extract_bool(node->first_node("downmix_display"), settings.downmix_display);
+			bool to_mono;
+			extract_bool(node->first_node("downmix_display"), to_mono);
+			settings.downmix_display = (to_mono ? config::downmix_mono : config::downmix_none);
 		}
 		if (version >= 9)
 		{
@@ -326,7 +327,16 @@ namespace wave
 
 		shade_played = src.get<bool>("shade_played");
 		display_mode = (config::display_mode)src.get<int>("display_mode");
-		downmix_display = src.get<bool>("downmix_display");
+		try
+		{
+			downmix_display = (config::downmix)src.get<int>("downmix_display");
+		}
+		catch (boost::property_tree::ptree_bad_data e)
+		{
+			// fallback to old to-mono boolean flag
+			bool to_mono = src.get<bool>("downmix_display");
+			downmix_display = (to_mono ? config::downmix_mono : config::downmix_stereo);
+		}
 
 		{
 			auto channel_order_tree = src.get_child("channel_order");

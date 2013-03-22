@@ -62,9 +62,8 @@ void get_downmix_coefficients(t_size n, pfc::list_t<T>& left, pfc::list_t<T>& ri
 }
 
 template <typename T>
-float downmix(pfc::list_t<T> frame)
+float downmix_to_mono(pfc::list_t<T> frame)
 {
-	const T sqrt_half = T(0.70710678118654752440084436210485);
 	t_size n_ch = frame.get_size();
 	pfc::list_t<T> left, right;
 	get_downmix_coefficients(n_ch, left, right);
@@ -75,4 +74,26 @@ float downmix(pfc::list_t<T> frame)
 		ret += T(0.5) * right[i] * frame[i];
 	}
 	return ret;
+}
+
+template <typename T>
+std::pair<T, T> downmix_to_stereo(pfc::list_t<T> frame)
+{
+	typedef std::pair<T, T> R;
+	t_size n_ch = frame.get_size();
+	pfc::list_t<T> left, right;
+	get_downmix_coefficients(n_ch, left, right);
+	R ret = R(T(0.0), T(0.0));
+	for (t_size i = 0; i < n_ch; ++i)
+	{
+		ret.first  += left[i] * frame[i];
+		ret.second += right[i] * frame[i];
+	}
+	return ret;
+}
+
+template <typename T>
+float downmix(pfc::list_t<T> frame)
+{
+	return downmix_to_mono(frame);
 }

@@ -43,7 +43,7 @@ namespace wave
 		virtual config::orientation get_orientation() const { return orientation; }
 		virtual bool get_shade_played() const { return shade_played; }
 		virtual config::display_mode get_display_mode() const { return display_mode; }
-		virtual bool get_downmix_display() const { return downmix_display; }
+		virtual config::downmix get_downmix_display() const { return downmix_display; }
 		virtual bool get_flip_display() const { return flip_display; }
 		virtual void get_channel_infos(array_sink<channel_info> const& out) const { out.set(channel_infos.get_ptr(), channel_infos.get_count()); }
 
@@ -78,7 +78,7 @@ namespace wave
 		virtual void set_orientation(config::orientation o) { orientation = o; }
 		virtual void set_shade_played(bool b) { shade_played = b; }
 		virtual void set_display_mode(config::display_mode mode) { display_mode = mode; }
-		virtual void set_downmix_display(bool b) { downmix_display = b; }
+		virtual void set_downmix_display(config::downmix mix) { downmix_display = mix; }
 		virtual void set_flip_display(bool b) { flip_display = b; }
 		virtual void set_channel_infos(channel_info const* in, size_t count) { channel_infos.remove_all(); channel_infos.add_items_fromptr(in, count); }
 
@@ -100,13 +100,15 @@ namespace wave
 		config::orientation orientation;
 		bool shade_played;
 		config::display_mode display_mode;
-		bool downmix_display, flip_display;
+		config::downmix downmix_display;
+		bool flip_display;
 		pfc::list_t<channel_info> channel_infos;
 
 		frontend_callback_impl()
 			: track_length(1.0), playback_position(0.0), cursor_visible(false), seeking(false)
 			, seek_position(0.0), rg_album_gain(0.0), rg_track_gain(0.0), rg_album_peak(0.0), rg_track_peak(0.0)
-			, orientation(config::orientation_horizontal), shade_played(true), downmix_display(false), flip_display(false)
+			, orientation(config::orientation_horizontal), shade_played(true)
+			, downmix_display(config::downmix_none), flip_display(false)
 		{}
 	};
 }

@@ -47,5 +47,5 @@ namespace wave
 	};
 	
 	ref_ptr<waveform> make_placeholder_waveform();
-	ref_ptr<waveform> downmix_waveform(ref_ptr<waveform> in);
+	ref_ptr<waveform> downmix_waveform(ref_ptr<waveform> in, size_t target_channels);
 }

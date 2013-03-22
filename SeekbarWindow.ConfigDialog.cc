@@ -59,7 +59,13 @@ namespace wave
 		CheckDlgButton(IDC_NOBORDER, !sw.settings.has_border ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(IDC_SHADEPLAYED, sw.settings.shade_played ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(IDC_MIRRORDISPLAY, sw.settings.flip_display ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(IDC_DOWNMIX, sw.settings.downmix_display ? BST_CHECKED : BST_UNCHECKED);
+
+		CComboBox downmix = GetDlgItem(IDC_DOWNMIX);
+		for (int i = 0; i < sizeof(config::strings::downmix) / sizeof(wchar_t const*); ++i)
+		{
+			downmix.SetItemData(downmix.AddString(config::strings::downmix[i]), (config::downmix)i);
+		}
+		downmix.SelectString(0, config::strings::downmix[sw.settings.downmix_display]);
 
 		// Set up display properties
 		CComboBox modes = GetDlgItem(IDC_DISPLAYMODE);
@@ -233,11 +239,16 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::configuration_dialog::on_downmix_click(UINT code, int id, CWindow control)
+	void seekbar_window::configuration_dialog::on_downmix_select(UINT code, int id, CWindow control)
 	{
 		if (initializing)
 			return;
-		sw.set_downmix_display(!!IsDlgButtonChecked(id));
+		CComboBox cb = control;
+		config::downmix mode = (config::downmix)cb.GetItemData(cb.GetCurSel());
+		if (mode != sw.settings.downmix_display)
+		{
+			sw.set_downmix_display(mode);
+		}
 	}
 	
 	void seekbar_window::configuration_dialog::on_flip_click(UINT code, int id, CWindow control)
