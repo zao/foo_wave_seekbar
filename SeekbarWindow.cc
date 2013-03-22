@@ -31,46 +31,6 @@ static advconfig_integer_factory g_presentation_scale("Percentage of base displa
 
 namespace wave
 {
-	struct waveform_placeholder : waveform
-	{
-		waveform_placeholder()
-		{
-			minimum.set_size(2048);
-			maximum.set_size(2048);
-			rms.set_size(2048);
-			for (size_t i = 0; i < 2048; ++i)
-			{
-				minimum[i] = 0.0f;
-				maximum[i] = 0.0f;
-				rms[i] = 0.0f;
-			}
-		}
-
-		virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out)
-		{
-			if (index >= get_channel_count())
-				return false;
-			if (pfc::string::g_equals(what, "minimum"))
-				return out.set(minimum.get_ptr(), minimum.get_count()), true;
-			if (pfc::string::g_equals(what, "maximum"))
-				return out.set(maximum.get_ptr(), maximum.get_count()), true;
-			if (pfc::string::g_equals(what, "rms"))
-				return out.set(rms.get_ptr(), rms.get_count()), true;
-			return false;
-		}
-
-		virtual unsigned get_channel_count() const { return audio_chunk::defined_channel_count; }
-		virtual unsigned get_channel_map() const { return (1 << audio_chunk::defined_channel_count) - 1; } // channel mask of bits 0 to 17 set.
-
-	private:
-		pfc::list_t<float> minimum, maximum, rms;
-	};
-
-	ref_ptr<waveform> make_placeholder_waveform()
-	{
-		return ref_ptr<waveform>(new waveform_placeholder);
-	}
-
 	seekbar_window::seekbar_window()
 		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 		, placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
@@ -496,7 +456,7 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::set_downmix_display(bool downmix)
+	void seekbar_window::set_downmix_display(config::downmix downmix)
 	{
 		scoped_lock sl(fe->mutex);
 		settings.downmix_display = downmix;

@@ -200,8 +200,11 @@ namespace wave
 		ref_ptr<waveform> w;
 		if (callback.get_waveform(w))
 		{
-			if (callback.get_downmix_display())
-				w = downmix_waveform(w);
+			switch (callback.get_downmix_display())
+			{
+			case config::downmix_mono:   if (w->get_channel_count() > 1) w = downmix_waveform(w, 1); break;
+			case config::downmix_stereo: if (w->get_channel_count() > 2) w = downmix_waveform(w, 2); break;
+			}
 
 			pfc::list_t<channel_info> infos;
 			callback.get_channel_infos(list_array_sink<channel_info>(infos));

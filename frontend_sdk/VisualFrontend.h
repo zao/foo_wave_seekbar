@@ -45,6 +45,13 @@ namespace wave
 			display_maximum
 		};
 
+		enum downmix
+		{
+			downmix_none = 0,
+			downmix_mono = 1,
+			downmix_stereo
+		};
+
 		__declspec(selectany) bool frontend_has_configuration[] =
 		{
 			true, false, false, false
@@ -59,6 +66,10 @@ namespace wave
 			__declspec(selectany) wchar_t const* display_mode[] =
 			{
 				L"Normal", L"Only + half", L"Only - half", L"Average of +/-", L"Minimum of +/-", L"Maximum of +/-"
+			};
+			__declspec(selectany) wchar_t const* downmix[] =
+			{
+				L"Keep as-is", L"Mix-down to mono", L"Mix-down to stereo"
 			};
 			__declspec(selectany) std::map<int, wchar_t const*> channel_names =
 			boost::assign::map_list_of
@@ -183,7 +194,7 @@ namespace wave
 		virtual config::orientation get_orientation() const = 0;
 		virtual bool get_shade_played() const = 0;
 		virtual config::display_mode get_display_mode() const = 0;
-		virtual bool get_downmix_display() const = 0;
+		virtual config::downmix get_downmix_display() const = 0;
 		virtual bool get_flip_display() const = 0;
 		virtual void get_channel_infos(array_sink<channel_info> const&) const = 0;
 
@@ -206,7 +217,7 @@ namespace wave
 		virtual void set_orientation(config::orientation o) = 0;
 		virtual void set_shade_played(bool b) = 0;
 		virtual void set_display_mode(config::display_mode mode) = 0;
-		virtual void set_downmix_display(bool downmix) = 0;
+		virtual void set_downmix_display(config::downmix downmix) = 0;
 		virtual void set_flip_display(bool flip) = 0;
 		virtual void set_channel_infos(channel_info const*, size_t count) = 0;
 	};
