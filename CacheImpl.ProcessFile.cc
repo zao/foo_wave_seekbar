@@ -338,7 +338,10 @@ namespace wave
 						{
 							sample_index = 0;
 							if (out_index == 2047)
+							{
+								i = n; // hack-fix until proper rewrite, avoids eternal scan
 								continue;
+							}
 							current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
 							current_span.reset();
 							++out_index;
