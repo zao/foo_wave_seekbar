@@ -285,6 +285,7 @@ namespace wave
 			extract_bool(node->first_node("shade_played"), settings.shade_played);
 		if (version >= 7)
 		{
+			extract_int(node->first_node("display_mode"), settings.display_mode);
 			bool to_mono;
 			extract_bool(node->first_node("downmix_display"), to_mono);
 			settings.downmix_display = (to_mono ? config::downmix_mono : config::downmix_none);
