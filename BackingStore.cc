@@ -280,8 +280,26 @@ namespace wave
 			"INSERT INTO job (location, subsong, user_submitted) "
 			"VALUES (?, ?, ?)");
 
+		std::string user_profile_path = core_api::get_profile_path() + std::string("\\seekbar-jobs.log");
+		service_ptr_t<file> file;
+		abort_callback_impl dummy_cb;
+		filesystem::g_open_write_new(file, user_profile_path.c_str(), dummy_cb);
+		{
+			std::ostringstream oss;
+			oss << "Job queue, " << jobs.size() << " entries.\r\n";
+			std::string s = oss.str();
+			file->write(s.c_str(), s.size(), dummy_cb);
+		}
 		BOOST_FOREACH(job j, jobs)
 		{
+			{
+				std::ostringstream oss;
+				oss << "user: " << (j.user ? "Y" : "N") << ", "
+					<< "path: \"" << j.loc.get_path() << "\", "
+					<< "subsong: " << j.loc.get_subsong() << "\r\n";
+				std::string s = oss.str();
+				file->write(s.c_str(), s.size(), dummy_cb);
+			}
 			sqlite3_bind_text(stmt.get(), 1, j.loc.get_path(), -1, SQLITE_STATIC);
 			sqlite3_bind_int(stmt.get(), 2, j.loc.get_subsong());
 			sqlite3_bind_int(stmt.get(), 3, j.user);

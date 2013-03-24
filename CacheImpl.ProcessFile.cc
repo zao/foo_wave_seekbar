@@ -21,71 +21,50 @@ static const GUID guid_analyse_tracks_outside_library = { 0xec789b1b, 0x23a0, 0x
 static advconfig_branch_factory g_seekbar_branch("Waveform Seekbar", guid_seekbar_branch, advconfig_entry::guid_branch_tools, 0.0);
 static advconfig_checkbox_factory g_downmix_in_analysis("Store analysed tracks in mono", guid_downmix_in_analysis, guid_seekbar_branch, 0.0, false);
 static advconfig_checkbox_factory g_analyse_tracks_outside_library("Analyse tracks not in the media library", guid_analyse_tracks_outside_library, guid_seekbar_branch, 0.0, true);
+
 namespace wave
 {
-	class span
+	struct scoped_timer
 	{
-		unsigned const channels;
-		t_int64 frames, chunk_size;
-		pfc::list_t<float> min, max, rms; // list of channels
-
-	public:
-		explicit span(t_int64 chunk_size, unsigned channels)
-			: channels(channels), frames(0), chunk_size(chunk_size)
+		LARGE_INTEGER then;
+		scoped_timer()
 		{
-			min.add_items_repeat( 9001.0f, channels);
-			max.add_items_repeat(-9001.0f, channels);
-			rms.add_items_repeat(    0.0f, channels);
+			QueryPerformanceCounter(&then);
 		}
 
-		void add(audio_sample* frame)
+		~scoped_timer()
 		{
-			++frames;
-			for (size_t c = 0; c < channels; ++c)
-			{
-				min[c] = std::min(frame[c], min[c]);
-				max[c] = std::max(frame[c], max[c]);
-				rms[c] += frame[c] * frame[c];
-			}
-		}
-
-		void add(audio_sample* frame, t_int64 count)
-		{
-			frames += count;
-			while (count--)
-			{
-				for (size_t c = 0; c < channels; ++c)
-				{
-					min[c] = std::min(frame[c], min[c]);
-					max[c] = std::max(frame[c], max[c]);
-					rms[c] += frame[c] * frame[c];
-				}
-				frame += channels;
-			}
-		}
-
-		template <typename List>
-		void resolve(List& min_result, List& max_result, List& rms_result) const
-		{
-			min_result = min;
-			max_result = max;
-			rms_result = rms;
-			for (size_t c = 0; c < channels; ++c)
-			{
-				rms_result[c] = sqrt(rms_result[c] / frames);
-			}
-		}
-
-		t_int64 frames_remaining() const
-		{
-			return chunk_size - frames;
+			LARGE_INTEGER now, freq;
+			QueryPerformanceCounter(&now);
+			QueryPerformanceFrequency(&freq);
+			double t = (double)(now.QuadPart - then.QuadPart) / (double)freq.QuadPart;
+			console::formatter() << "Scan took " << t << " seconds.";
 		}
 	};
 
-	template <typename C1, typename C2>
-	void transpose(C1& out, C2 const& in)
+	bool try_determine_song_parameters(service_ptr_t<input_decoder>& decoder, t_uint32 subsong,
+		t_int64& sample_rate, t_int64& sample_count, abort_callback& abort_cb)
 	{
-		int in_rows = in.get_size(), in_cols = in[0].get_size();
+		file_info_impl info;
+		decoder->get_info(subsong, info, abort_cb);
+
+		sample_rate = info.info_get_int("samplerate");
+		{
+			double foo;
+			if (decoder->get_dynamic_info(info, foo))
+			{
+				auto dynamic_rate = info.info_get_int("samplerate");
+				sample_rate = dynamic_rate ? dynamic_rate : sample_rate;
+			}
+		}
+		sample_count = info.info_get_length_samples();
+		return true;
+	}
+
+	template <typename C1, typename C2>
+	void transpose(C1& out, C2 const& in, size_t width)
+	{
+		int in_rows = in.get_size()/width, in_cols = width;
 		int out_rows = in_cols, out_cols = in_rows;
 
 		out.set_size(out_rows);
@@ -94,7 +73,7 @@ namespace wave
 			out[out_row].set_size(out_cols);
 			for (int out_col = 0; out_col < out_cols; ++out_col)
 			{
-				out[out_row][out_col] = in[out_col][out_row];
+				out[out_row][out_col] = in[out_col*width + out_row];
 			}
 		}
 	}
@@ -153,6 +132,12 @@ namespace wave
 			throw foobar2000_io::exception_aborted();
 	}
 
+	bool is_of_forbidden_protocol(playable_location const& loc)
+	{
+		auto match_pi = [&](char const* pat){ return regex_match(loc.get_path(), boost::regex(pat, boost::regex::perl | boost::regex::icase)); };
+		return match_pi("(random|record):.*") || match_pi("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*") || match_pi("(cdda)://.*");
+	}
+
 	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested)
 	{
 		ref_ptr<waveform> out;
@@ -175,9 +160,7 @@ namespace wave
 			}
 		}
 
-		if (regex_match(loc.get_path(), boost::regex("(random|record):.*", boost::regex::perl | boost::regex::icase)) ||
-			regex_match(loc.get_path(), boost::regex("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*", boost::regex::perl | boost::regex::icase)) ||
-			regex_match(loc.get_path(), boost::regex("(cdda)://.*", boost::regex::perl | boost::regex::icase)) && !user_requested)
+		if (is_of_forbidden_protocol(loc) && !user_requested)
 		{
 			console::formatter() << "Wave cache: skipping location " << loc;
 			return out;
@@ -232,24 +215,6 @@ namespace wave
 			}
 		}
 
-		struct scoped_timer
-		{
-			LARGE_INTEGER then;
-			scoped_timer()
-			{
-				QueryPerformanceCounter(&then);
-			}
-
-			~scoped_timer()
-			{
-				LARGE_INTEGER now, freq;
-				QueryPerformanceCounter(&now);
-				QueryPerformanceFrequency(&freq);
-				double t = (double)(now.QuadPart - then.QuadPart) / (double)freq.QuadPart;
-				console::formatter() << "Scan took " << t << " seconds.";
-			}
-		} timer;
-
 		try
 		{
 			bool should_downmix = g_downmix_in_analysis.get();
@@ -263,126 +228,119 @@ namespace wave
 
 			t_uint32 subsong = loc.get_subsong();
 			{
-				file_info_impl info;
 				decoder->initialize(subsong, input_flag_simpledecode, abort_cb);
 				if (!decoder->can_seek())
 					return out;
-				decoder->get_info(subsong, info, abort_cb);
 
-				t_int64 sample_rate = info.info_get_int("samplerate");
-				{
-					double foo;
-					if (decoder->get_dynamic_info(info, foo))
-					{
-						auto dynamic_rate = info.info_get_int("samplerate");
-						sample_rate = dynamic_rate ? dynamic_rate : sample_rate;
-					}
-				}
-				t_int64 sample_count = info.info_get_length_samples();
-				t_int64 chunk_size = sample_count / 2047;
+				t_int64 sample_rate = 0;
+				t_int64 sample_count = 0;
+				if (!try_determine_song_parameters(decoder, subsong, sample_rate, sample_count, abort_cb))
+					return out;
 
 				// around a month ought to be enough for anyone
 				if (sample_count <= 0 || sample_count > sample_rate * 60 * 60 * 24 * 31)
 					return out;
 
-				pfc::list_t<pfc::list_t<float>> minimum, maximum, rms;
-
 				audio_chunk_impl chunk;
+				
+				t_int64 const bucket_count = 2048;
+				unsigned bucket = 0;
+				t_int64 bucket_begins = 0;
+				t_int64 samples_processed = 0;
 
-				t_int64 sample_index = 0;
-				t_int32 out_index = 0;
-
-				t_int64 processed_samples = 0;
-
-				unsigned channel_map = audio_chunk::channel_config_mono;
-				boost::optional<unsigned> track_channel_count;
-				scoped_ptr<span> current_span;
+				// buckets with interleaved channels
+				pfc::list_t<audio_sample> minimum, maximum, rms;
 
 				audio_source source(abort_cb, decoder, sample_count);
-				bool done = false;
-				while (!done)
+				unsigned channel_count = 0;
+				unsigned channel_map = 0;
+				while (bucket < bucket_count)
 				{
 					throw_if_aborting(abort_cb);
 					source.render(chunk);
-
-					if (minimum.get_count() == 0)
+					if (channel_count == 0)
 					{
-						int nch = source.channel_count();
-						pfc::list_t<float> ch_list;
-						ch_list.set_size(2);
-						minimum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(ch_list, 2048));
-						maximum.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(ch_list, 2048));
-						rms.add_items(pfc::list_single_ref_t<pfc::list_t<float>>(ch_list, 2048));
+						channel_count = chunk.get_channels();
+						channel_map = chunk.get_channel_config();
+						t_int32 const entry_count = channel_count*bucket_count;
+						minimum.add_items_repeat(FLT_MAX, entry_count); maximum.add_items_repeat(FLT_MIN, entry_count); rms.add_items_repeat(0.0f, entry_count);
 					}
 
-					audio_sample* data = chunk.get_data();
-					channel_map = chunk.get_channel_config();
-					if (processed_samples >= sample_count)
-					{
-						done = true;
-						break;
-					}
-					t_int64 n = std::min<t_int64>(chunk.get_sample_count(), sample_count - processed_samples);
+					t_int64 n = std::min(sample_count - samples_processed, (t_int64)chunk.get_sample_count());
+					audio_sample const* data = chunk.get_data();
 					for (t_int64 i = 0; i < n;)
-					{						
-						if (!current_span)
-							current_span.reset(new span(chunk_size, source.channel_count()));
-					
-						audio_sample* frame = data + i * source.channel_count();
-						auto wanted = std::min(current_span->frames_remaining(), n-i);
-						current_span->add(frame, wanted);
-						processed_samples += wanted;
-						i += wanted;
-						
-						if (++sample_index == chunk_size)
+					{
+						t_int64 const bucket_ends = ((bucket+1) * sample_count) / bucket_count;
+						t_int64 const chunk_size = bucket_ends - bucket_begins;
+						t_int64 const to_process = std::min(bucket_ends - samples_processed, n - i);
+						for (unsigned k = 0; k < to_process * channel_count; ++k)
 						{
-							sample_index = 0;
-							if (out_index == 2047)
+							auto const target_offset = bucket*channel_count + (k%channel_count);
+							audio_sample& min = minimum[target_offset];
+							audio_sample& max = maximum[target_offset];
+							audio_sample sample = *data++;
+							min = std::min(min, sample);
+							max = std::max(max, sample);
+							rms[target_offset] += sample * sample;
+						}
+						i += to_process;
+						samples_processed += to_process;
+						if (samples_processed == bucket_ends)
+						{
+							for (unsigned ch = 0; ch < channel_count; ++ch)
 							{
-								i = n; // hack-fix until proper rewrite, avoids eternal scan
-								continue;
+								auto const target_offset = bucket*channel_count + ch;
+								if (to_process == 0)
+								{
+									minimum[target_offset] = maximum[target_offset] = 0.0f;
+								}
+								rms[target_offset] = sqrt(rms[target_offset] / chunk_size);
 							}
-							current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
-							current_span.reset();
-							++out_index;
+							++bucket;
+							if (bucket == bucket_count)
+							{
+								break;
+							}
 						}
 					}
 				}
 
-				if (current_span)
-				{
-					current_span->resolve(minimum[out_index], maximum[out_index], rms[out_index]);
-				}
-				
-				if (minimum.get_size() == 0)
-				{
-					console::formatter() << "Wave cache: failed to render location " << loc;
-					return out;
-				}
 				{
 					if (should_downmix)
 					{
-						auto downmix_one = [](pfc::list_t<float>& l)
+						auto downmix_one = [channel_count](audio_sample const* l) -> audio_sample
 						{
-							l[0] = downmix(l);
-							l.set_size(1);
+							pfc::list_t<audio_sample> frame;
+							frame.add_items_fromptr(l, channel_count);
+							return downmix(frame);
 						};
-						for (size_t i = 0; i < minimum.get_size(); ++i)
+						for (size_t i = 0; i < bucket_count; ++i)
 						{
-							downmix_one(minimum[i]);
-							downmix_one(maximum[i]);
-							downmix_one(rms[i]);
+							auto off = i*channel_count;
+							minimum[i] = downmix_one(minimum.get_ptr()+off);
+							maximum[i] = downmix_one(maximum.get_ptr()+off);
+							rms[i]     = downmix_one(rms.get_ptr()+off);
 						}
+						channel_count = 1;
 						channel_map = audio_chunk::channel_config_mono;
 					}
 
+					// one inner list per channel
 					pfc::list_t<pfc::list_t<float>> tr_minimum, tr_maximum, tr_rms;
+					{
+						pfc::list_t<float> one_channel;
+						one_channel.set_size(bucket_count);
+						tr_minimum.add_items_repeat(one_channel, channel_count);
+						tr_maximum.add_items_repeat(one_channel, channel_count);
+						tr_rms.add_items_repeat(one_channel, channel_count);
+					}
+
 					throw_if_aborting(abort_cb);
-					transpose(tr_minimum, minimum);
+					transpose(tr_minimum, minimum, channel_count);
 					throw_if_aborting(abort_cb);
-					transpose(tr_maximum, maximum);
+					transpose(tr_maximum, maximum, channel_count);
 					throw_if_aborting(abort_cb);
-					transpose(tr_rms, rms);
+					transpose(tr_rms, rms, channel_count);
 
 					ref_ptr<waveform_impl> ret(new waveform_impl);
 					ret->fields.set("minimum", tr_minimum);
