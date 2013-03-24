@@ -297,6 +297,7 @@ namespace wave
 								rms[target_offset] = sqrt(rms[target_offset] / chunk_size);
 							}
 							++bucket;
+							bucket_begins = bucket_ends;
 							if (bucket == bucket_count)
 							{
 								break;
@@ -304,7 +305,6 @@ namespace wave
 						}
 					}
 				}
-
 				{
 					if (should_downmix)
 					{
@@ -366,9 +366,9 @@ namespace wave
 			boost::mutex::scoped_lock sl(cache_mutex);
 			job_flush_queue.push_back(make_job(loc, user_requested));
 		}
-		catch (foobar2000_io::exception_io_not_found&)
+		catch (foobar2000_io::exception_io_not_found& e)
 		{
-			console::formatter() << "Wave cache: could not open/find " << loc;
+			console::formatter() << "Wave cache: could not open/find " << loc << ", " << e.what();
 		}
 		catch (foobar2000_io::exception_io& ex)
 		{
