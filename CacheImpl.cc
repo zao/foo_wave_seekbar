@@ -238,6 +238,12 @@ namespace wave
 		}
 	}
 
+	void cache_impl::defer_action(boost::function<void ()> fun)
+	{
+		try_delayed_init();
+		io.post(fun);
+	}
+
 	bool cache_impl::has_waveform(playable_location const& loc)
 	{
 		try_delayed_init();
