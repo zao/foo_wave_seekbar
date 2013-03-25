@@ -7,6 +7,8 @@
 
 #include <vector>
 #include "waveform_sdk/Waveform.h"
+#include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace wave {
 
@@ -51,6 +53,17 @@ namespace wave {
 
 		FB2K_MAKE_SERVICE_INTERFACE(cache_v3, cache_v2)
 	};
+
+	struct cache_v4 : cache_v3
+	{
+		virtual void defer_action(boost::function<void ()> fun) abstract;
+
+		FB2K_MAKE_SERVICE_INTERFACE(cache_v4, cache_v3)
+	};
+
+	// {0E58FDB7-0B5B-4727-968A-ED2EFCAE75AA}
+	__declspec(selectany) const GUID cache_v4::class_guid = 
+	{ 0xe58fdb7, 0xb5b, 0x4727, { 0x96, 0x8a, 0xed, 0x2e, 0xfc, 0xae, 0x75, 0xaa } };
 	
 	// {503C40C1-ED5B-492E-98D7-DE9EB63D2F81}
 	__declspec(selectany) const GUID cache_v3::class_guid = 

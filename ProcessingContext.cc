@@ -26,29 +26,40 @@ namespace wave
 	{
 	}
 
-	void enqueue(service_ptr_t<cache> cache, const metadb_handle_ptr& p)
+	void enqueue(service_ptr_t<cache> cache, boost::shared_ptr<std::vector<playable_location_impl>> locs)
 	{
-		shared_ptr<get_request> request(new get_request);
-		request->location.copy(p->get_location());
-		request->user_requested = true;
-		cache->get_waveform(request);
+		for (auto I = locs->begin(); I != locs->end(); ++I)
+		{
+			shared_ptr<get_request> request(new get_request);
+			auto const& loc = *I;
+			request->location = loc;
+			request->user_requested = true;
+			cache->get_waveform(request);
+		}
 	}
 
-	void remove(service_ptr_t<cache_v2> cache, const metadb_handle_ptr& p)
+	void remove(service_ptr_t<cache_v2> cache, boost::shared_ptr<std::vector<playable_location_impl>> locs)
 	{
-		cache->remove_waveform(p->get_location());
+		for (auto I = locs->begin(); I != locs->end(); ++I)
+		{
+			auto const& loc = *I;
+			cache->remove_waveform(loc);
+		}
 	}
 
 	void processing_contextmenu_item::context_command(unsigned p_index, metadb_handle_list_cref p_data, const GUID& p_caller)
 	{
-		auto infoCache = standard_api_create_t<cache_v2>();
+		auto infoCache = standard_api_create_t<cache_v4>();
+		auto locs = boost::make_shared<std::vector<playable_location_impl>>();
+		locs->reserve(p_data.get_size());
 		p_data.enumerate([&](metadb_handle_ptr p)
 		{
-			if (p_index == 0)
-				enqueue(infoCache, p);
-			if (p_index == 1)
-				remove(infoCache, p);
+			locs->push_back(p->get_location());
 		});
+		if (p_index == 0)
+			infoCache->defer_action(boost::bind(&enqueue, infoCache, locs));
+		if (p_index == 1)
+			infoCache->defer_action(boost::bind(&remove, infoCache, locs));
 	}
 
 	GUID processing_contextmenu_item::get_item_guid(unsigned p_index)
