@@ -31,7 +31,7 @@ namespace wave
         seek_position, seeking,
         viewport_size, replaygain,
         orientation, flipped, shade_played,
-        waveform_data;
+        waveform_data, channel_magnitude, track_magnitude;
     };
 
     struct effect_parameters
@@ -93,6 +93,9 @@ namespace wave
       CComPtr<ID3DXEffect> select_effect();
 
       D3DPRESENT_PARAMETERS pp;
+
+	  std::map<unsigned, D3DXVECTOR4> channel_magnitudes;
+	  D3DXVECTOR4 track_magnitude;
 
     private: // Host references
       visual_frontend_callback& callback;
