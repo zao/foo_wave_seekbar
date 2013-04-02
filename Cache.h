@@ -14,7 +14,9 @@ namespace wave {
 
 	struct get_response
 	{
+		get_response() : valid_bucket_count(2048) {}
 		ref_ptr<waveform> waveform;
+		size_t valid_bucket_count;
 	};
 
 	struct get_request

@@ -164,6 +164,8 @@ namespace wave
 				HRESULT hr = S_OK;
 				hr = dev->BeginScene();
 				effect_params.set(parameters::waveform_data, channel_textures[ch]);
+				effect_params.set(parameters::channel_magnitude, channel_magnitudes[ch]);
+				effect_params.set(parameters::track_magnitude, track_magnitude);
 
 				CComPtr<ID3DXEffect> fx = select_effect();
 				effect_params.apply_to(fx);
@@ -316,7 +318,10 @@ namespace wave
 				flipped = "FLIPPED",
 				shade_played = "SHADEPLAYED",
 			
-				waveform_data = "WAVEFORMDATA";
+				waveform_data = "WAVEFORMDATA",
+
+				channel_magnitude = "CHANNELMAGNITUDE",
+				track_magnitude = "TRACKMAGNITUDE";
 		}
 
 		struct attribute_setter : boost::static_visitor<void>
