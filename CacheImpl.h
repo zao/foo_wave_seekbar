@@ -48,7 +48,8 @@ namespace wave
 		void load_data(shared_ptr<boost::barrier>);
 		void try_delayed_init();
 		void delayed_init();
-		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested);
+		typedef boost::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
+		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, boost::shared_ptr<incremental_result_sink> incremental_output = boost::shared_ptr<incremental_result_sink>());
 
 		boost::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;

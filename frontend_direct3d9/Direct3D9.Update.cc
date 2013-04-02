@@ -6,6 +6,7 @@
 #include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include "../frontend_sdk/FrontendHelpers.h"
+#include <sstream>
 
 namespace wave
 {
@@ -51,6 +52,22 @@ namespace wave
 			effect_params.set(parameters::viewport_size, D3DXVECTOR4((float)pp.BackBufferWidth, (float)pp.BackBufferHeight, 0, 0));
 		}
 
+		template <typename I, typename T>
+		T const& min_element_or_default(I first, I last, T const& def)
+		{
+			if (first == last)
+				return def;
+			return *std::min_element(first, last);
+		}
+
+		template <typename I, typename T>
+		T const& max_element_or_default(I first, I last, T const& def)
+		{
+			if (first == last)
+				return def;
+			return *std::max_element(first, last);
+		}
+
 		void frontend_impl::update_data()
 		{
 			if (device_lost)
@@ -66,10 +83,12 @@ namespace wave
 				}
 				channel_numbers = expand_flags(w->get_channel_map());
 
+				D3DXVECTOR4 const init_magnitude(FLT_MAX, -FLT_MAX, 0.0f, 1.0f);
+				track_magnitude = init_magnitude;
 				channel_order.clear();
 				pfc::list_t<channel_info> infos;
 				callback.get_channel_infos(list_array_sink<channel_info>(infos));
-				infos.enumerate([this, &w](channel_info const& info)
+				infos.enumerate([this, &w, init_magnitude](channel_info const& info)
 				{
 					if (!info.enabled)
 						return;
@@ -87,12 +106,31 @@ namespace wave
 						int idx = std::distance(first, I);
 
 						CComPtr<IDirect3DTexture9> tex = channel_textures[info.channel];
+						D3DXVECTOR4& magnitude = channel_magnitudes[info.channel];
+						magnitude = init_magnitude;
 					
 						pfc::list_t<float> avg_min, avg_max, avg_rms;
 						w->get_field("minimum", idx, list_array_sink<float>(avg_min));
 						w->get_field("maximum", idx, list_array_sink<float>(avg_max));
 						w->get_field("rms", idx, list_array_sink<float>(avg_rms));
 
+						{
+							auto min_from = avg_min.get_ptr(), min_to = min_from + avg_min.get_size();
+							auto max_from = avg_max.get_ptr(), max_to = max_from + avg_max.get_size();
+							auto rms_from = avg_rms.get_ptr(), rms_to = rms_from + avg_rms.get_size();
+
+							auto low = min_element_or_default(min_from, min_to, init_magnitude.x);
+							auto high = max_element_or_default(max_from, max_to, init_magnitude.y);
+							auto rms = max_element_or_default(rms_from, rms_to, init_magnitude.z);
+							magnitude.x = (std::min)(magnitude.x, low);
+							magnitude.y = (std::max)(magnitude.y, high);
+							magnitude.z = (std::max)(magnitude.z, rms);
+							track_magnitude.x = (std::min)(track_magnitude.x, magnitude.x);
+							track_magnitude.y = (std::max)(track_magnitude.y, magnitude.y);
+							track_magnitude.z = (std::max)(track_magnitude.z, magnitude.z);
+							if (magnitude == D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f))
+								magnitude = D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+						}
 						for (UINT mip = 0; mip < mip_count; ++mip)
 						{
 							UINT width = 2048 >> mip;
@@ -162,6 +200,8 @@ namespace wave
 						}
 					}
 				});
+				if (track_magnitude == D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f))
+					track_magnitude = D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 			}
 		}
 
