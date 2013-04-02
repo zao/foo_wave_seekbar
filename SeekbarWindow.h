@@ -17,7 +17,7 @@ namespace wave
 {
 	struct frontend_data
 	{
-		frontend_data() : auto_get_serial(0) {}
+		frontend_data() : auto_get_serial(0), valid_buckets(0) {}
 		void clear()
 		{
 			callback.reset();
@@ -29,6 +29,7 @@ namespace wave
 		ref_ptr<visual_frontend> frontend;
 		metadb_handle_ptr displayed_song;
 		uint32_t auto_get_serial;
+		unsigned valid_buckets;
 	};
 
 	struct frontend_module : noncopyable

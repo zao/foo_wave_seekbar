@@ -301,6 +301,9 @@ namespace wave
 			scoped_lock sl(fe->mutex);
 			if (serial != fe->auto_get_serial)
 				return;
+			if (fe->valid_buckets >= response->valid_bucket_count)
+				return;
+			fe->valid_buckets = response->valid_bucket_count;
 			if (fe->callback)
 				fe->callback->set_waveform(response->waveform);
 			if (fe->frontend)
@@ -319,6 +322,7 @@ namespace wave
 				request->user_requested = false;
 				fe->callback->get_playable_location(request->location);
 				uint32_t next_serial = ++fe->auto_get_serial;
+				fe->valid_buckets = 0;
 				shared_ptr<frontend_data> fed = fe;
 				request->completion_handler = [fed, next_serial](shared_ptr<get_response> response)
 				{

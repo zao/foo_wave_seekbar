@@ -143,6 +143,14 @@ namespace wave
 		}
 	}
 
+	void dispatch_partial_response(function<void (shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
+	{
+		auto response = boost::make_shared<get_response>();
+		response->waveform = waveform;
+		response->valid_bucket_count = buckets_filled;
+		completion_handler(response);
+	}
+
 	void cache_impl::get_waveform(shared_ptr<get_request> request)
 	{
 		if (regex_match(request->location.get_path(), boost::regex("\\s*", boost::regex::perl)))
@@ -165,6 +173,7 @@ namespace wave
 		else
 		{
 			response->waveform = make_placeholder_waveform();
+			response->valid_bucket_count = 0;
 			request->completion_handler(response);
 			
 			response.reset(new get_response);
@@ -174,7 +183,8 @@ namespace wave
 			}
 			io.post([this, request, response]()
 			{
-				response->waveform = process_file(request->location, request->user_requested);
+				auto handler = boost::bind(&dispatch_partial_response, request->completion_handler, _1, _2);
+				response->waveform = process_file(request->location, request->user_requested, boost::make_shared<incremental_result_sink>(handler));
 				request->completion_handler(response);
 			});
 		}
