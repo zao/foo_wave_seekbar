@@ -296,7 +296,6 @@ namespace wave
 
 	void waveform_completion_handler(shared_ptr<frontend_data> fe, shared_ptr<get_response> response, uint32_t serial)
 	{
-		in_main_thread([fe, response, serial]()
 		{
 			scoped_lock sl(fe->mutex);
 			if (serial != fe->auto_get_serial)
@@ -304,8 +303,16 @@ namespace wave
 			if (fe->valid_buckets >= response->valid_bucket_count)
 				return;
 			fe->valid_buckets = response->valid_bucket_count;
+			fe->pending_response = *response;
+			fe->pending_serial = serial;
+		}
+		in_main_thread([fe]()
+		{
+			scoped_lock sl(fe->mutex);
+			if (fe->pending_serial != fe->auto_get_serial)
+				return;
 			if (fe->callback)
-				fe->callback->set_waveform(response->waveform);
+				fe->callback->set_waveform(fe->pending_response.waveform);
 			if (fe->frontend)
 				fe->frontend->on_state_changed(visual_frontend::state_data);
 		});

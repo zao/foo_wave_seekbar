@@ -5,11 +5,13 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
     <LocalDebuggerMergeEnvironment>false</LocalDebuggerMergeEnvironment>
+    <LocalDebuggerWorkingDirectory>D:\apps\foobar2000devel\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerCommand>D:\apps\foobar2000devel\foobar2000.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
     <LocalDebuggerMergeEnvironment>false</LocalDebuggerMergeEnvironment>
+    <LocalDebuggerWorkingDirectory>D:\apps\foobar2000devel\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>
