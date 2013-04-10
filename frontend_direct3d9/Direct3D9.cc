@@ -166,6 +166,9 @@ namespace wave
 				effect_params.set(parameters::waveform_data, channel_textures[ch]);
 				effect_params.set(parameters::channel_magnitude, channel_magnitudes[ch]);
 				effect_params.set(parameters::track_magnitude, track_magnitude);
+				effect_params.set(parameters::track_time, (float)callback.get_playback_position());
+				effect_params.set(parameters::track_duration, (float)callback.get_track_length());
+				effect_params.set(parameters::real_time, (float)real_time.get_elapsed());
 
 				CComPtr<ID3DXEffect> fx = select_effect();
 				effect_params.apply_to(fx);
@@ -321,7 +324,11 @@ namespace wave
 				waveform_data = "WAVEFORMDATA",
 
 				channel_magnitude = "CHANNELMAGNITUDE",
-				track_magnitude = "TRACKMAGNITUDE";
+				track_magnitude = "TRACKMAGNITUDE",
+
+				track_time = "TRACKTIME",
+				track_duration = "TRACKDURATION",
+				real_time = "REALTIME";
 		}
 
 		struct attribute_setter : boost::static_visitor<void>
