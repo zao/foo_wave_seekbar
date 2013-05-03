@@ -2,3 +2,4 @@
 *.sln      text merge=union eol=crlf
 *.vcxproj  text merge=union eol=crlf
 *.vcproj   text merge=union eol=crlf
+*.rc       text merge=union eol=crlf
