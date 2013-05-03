@@ -1,3 +1,8 @@
+enable_language(ASM_MASM)
+if(NOT CMAKE_ASM_MASM_COMPILER_WORKS)
+message(FATAL_ERROR "No working MASM found.")
+endif()
+
 set(D3D9_SOURCES
 	"Direct3D9.cc"
 	"Direct3D9.ConfigDialog.cc"
@@ -12,6 +17,8 @@ set(D3D9_SOURCES
 	"resource.h"
 	"Scintilla.h"
 	"frontend_direct3d9.rc"
+	"../util/xpatl.cpp"
+	"../util/xpatlwrap.asm"
 )
 
 add_definitions(-Zm300)

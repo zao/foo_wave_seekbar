@@ -4,10 +4,20 @@ include_directories(${TBB_INCLUDE_DIRS})
 include_directories(AFTER ${DXSDK_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 link_directories(${TBB_LIBRARY_DIRS})
-link_directories(AFTER ${DXSDK_LIBRARY_DIRS})
+link_directories(${DXSDK_LIBRARY_DIRS})
 
 add_subdirectory(waveform_sdk)
 add_subdirectory(frontend_sdk)
+
+enable_language(ASM_MASM)
+if(NOT CMAKE_ASM_MASM_COMPILER_WORKS)
+message(FATAL_ERROR "No working MASM found.")
+endif()
+
+set(XP_SOURCES
+	"util/xpatl.cpp"
+	"util/xpatlwrap.asm"
+)
 
 set(SEEKBAR_SOURCES
 	"BackingStore.cc"
@@ -80,6 +90,21 @@ set(ZLIB_SOURCES
 	"zlib/zutil.c"
 )
 
+set(UTIL_SOURCES
+	"util/Asio.h"
+)
+
+set(TESTS_SOURCES
+	"tests/TestProcessFile.cc"
+)
+
+source_group(contrib\\sqlite3 FILES ${SQLITE_SOURCES})
+source_group(contrib\\lzma FILES ${LZMA_SOURCES})
+source_group(contrib\\zlib FILES ${ZLIB_SOURCES})
+source_group(util FILES ${UTIL_SOURCES})
+source_group(tests FILES ${TESTS_SOURCES})
+
+include_directories(.)
 add_definitions(-Zm300)
 enable_precompiled_headers("PchSeekbar.h" SEEKBAR_SOURCES)
 add_library(foo_wave_seekbar SHARED
@@ -87,6 +112,9 @@ add_library(foo_wave_seekbar SHARED
 	${SQLITE_SOURCES}
 	${LZMA_SOURCES}
 	${ZLIB_SOURCES}
+	${UTIL_SOURCES}
+	${TESTS_SOURCES}
+	${XP_SOURCES}
 )
 
 target_link_libraries(foo_wave_seekbar
@@ -100,16 +128,6 @@ target_link_libraries(foo_wave_seekbar
 	"comdlg32.lib"
 	"rpcrt4.lib"
 	"winmm.lib"
-	debug
-	"libboost_filesystem-mt-sgd.lib"
-	"libboost_regex-mt-sgd.lib"
-	"libboost_system-mt-sgd.lib"
-	"libboost_thread-mt-sgd.lib"
-	optimized
-	"libboost_filesystem-mt-s.lib"
-	"libboost_regex-mt-s.lib"
-	"libboost_system-mt-s.lib"
-	"libboost_thread-mt-s.lib"
 )
 deploy_component(foo_wave_seekbar foo_wave_seekbar)
 
