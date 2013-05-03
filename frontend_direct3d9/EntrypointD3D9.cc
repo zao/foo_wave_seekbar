@@ -10,11 +10,11 @@
 
 #if defined(BOOST_ALL_NO_LIB)
 #  if defined(_DEBUG)
-#    pragma comment(lib, "libboost_filesystem-mt-sgd.lib")
-#    pragma comment(lib, "libboost_system-mt-sgd.lib")
+#    pragma comment(lib, "libboost_filesystem-mt-gd.lib")
+#    pragma comment(lib, "libboost_system-mt-gd.lib")
 #  else
-#    pragma comment(lib, "libboost_filesystem-mt-s.lib")
-#    pragma comment(lib, "libboost_system-mt-s.lib")
+#    pragma comment(lib, "libboost_filesystem-mt.lib")
+#    pragma comment(lib, "libboost_system-mt.lib")
 #  endif
 #endif
 
