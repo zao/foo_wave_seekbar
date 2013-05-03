@@ -5,15 +5,19 @@
 
 #pragma once
 
+#include "util/Asio.h"
 #include "Cache.h"
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
+#include <boost/thread.hpp>
+#include <stack>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
 
 namespace wave
 {
+	using boost::scoped_ptr;
 	inline bool LocationLessThan (const playable_location_impl& x, const playable_location_impl& y)
 	{
 		int cmp = strcmp(x.get_path(), y.get_path());
@@ -43,12 +47,13 @@ namespace wave
 
 		void defer_action(boost::function<void ()> fun) override;
 
+		typedef boost::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
+
 	private:
 		void open_store();
 		void load_data(shared_ptr<boost::barrier>);
 		void try_delayed_init();
 		void delayed_init();
-		typedef boost::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, boost::shared_ptr<incremental_result_sink> incremental_output = boost::shared_ptr<incremental_result_sink>());
 
 		boost::mutex important_mutex;
@@ -73,4 +78,7 @@ namespace wave
 		void on_init();
 		void on_quit();
 	};
+
+	bool try_determine_song_parameters(service_ptr_t<input_decoder>& decoder, t_uint32 subsong,
+		t_int64& sample_rate, t_int64& sample_count, abort_callback& abort_cb);
 }

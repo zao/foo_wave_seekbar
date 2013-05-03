@@ -8,6 +8,16 @@
 #include <boost/filesystem/path.hpp>
 #include <vector>
 
+#if defined(BOOST_ALL_NO_LIB)
+#  if defined(_DEBUG)
+#    pragma comment(lib, "libboost_filesystem-mt-gd.lib")
+#    pragma comment(lib, "libboost_system-mt-gd.lib")
+#  else
+#    pragma comment(lib, "libboost_filesystem-mt.lib")
+#    pragma comment(lib, "libboost_system-mt.lib")
+#  endif
+#endif
+
 static void f() {}
 
 template <class T>

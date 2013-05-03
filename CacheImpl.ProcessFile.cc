@@ -156,31 +156,57 @@ namespace wave
 		unsigned channel_count() const { assert(track_channel_count); return *track_channel_count; }
 	};
 
-	struct waveform_builder
+	class analysis_pass
+	{
+	protected:
+		t_int64 sample_count;
+		bool initialized;
+		unsigned channel_count, channel_map;
+
+	public:
+		virtual ~analysis_pass() {}
+
+		explicit analysis_pass(t_int64 sample_count)
+			: sample_count(sample_count)
+			, initialized(false)
+			, channel_count(0)
+			, channel_map(0)
+		{}
+
+		virtual void consume_input(audio_chunk const& chunk) = 0;
+		virtual bool finished() const = 0;
+	};
+
+	struct waveform_builder : analysis_pass
 	{
 		// buckets with interleaved channels
 		pfc::list_t<audio_sample> minimum, maximum, rms;
-		bool initialized;
-		unsigned channel_count, channel_map;
 		unsigned bucket;
 		t_int64 bucket_begins;
 		t_int64 samples_processed;
-		t_int64 sample_count;
 		bool should_downmix;
 		abort_callback& abort_cb;
 
 		waveform_impl incremental_result;
+		boost::shared_ptr<cache_impl::incremental_result_sink> incremental_output;
 
-		waveform_builder(t_int64 sample_count, bool should_downmix, abort_callback& abort_cb)
-			: initialized(false)
-			, channel_count(0)
-			, channel_map(0)
+		duration_query dur;
+		double last_update;
+		unsigned last_update_bucket;
+		double const update_interval;
+
+		waveform_builder(t_int64 sample_count, bool should_downmix, abort_callback& abort_cb,
+			boost::shared_ptr<cache_impl::incremental_result_sink> incremental_output)
+			: analysis_pass(sample_count)
 			, bucket(0)
 			, bucket_begins(0)
 			, samples_processed(0)
-			, sample_count(sample_count)
 			, should_downmix(should_downmix)
 			, abort_cb(abort_cb)
+			, incremental_output(incremental_output)
+			, last_update(0.0)
+			, last_update_bucket(~0)
+			, update_interval(0.5f)
 		{}
 
 		bool uninitialized() const
@@ -191,6 +217,11 @@ namespace wave
 		bool valid_bucket() const
 		{
 			return bucket < bucket_count;
+		}
+
+		virtual bool finished() const override
+		{
+			return !valid_bucket();
 		}
 
 		t_int64 samples_remaining() const
@@ -222,6 +253,32 @@ namespace wave
 			maximum.add_items_repeat(-FLT_MAX, entry_count);
 			rms.add_items_repeat(0.0f, entry_count);
 			initialized = true;
+		}
+
+		virtual void consume_input(audio_chunk const& chunk) override
+		{
+			t_int64 n = std::min(samples_remaining(), (t_int64)chunk.get_sample_count());
+			audio_sample const* data = chunk.get_data();
+			for (t_int64 i = 0; i < n;)
+			{
+				t_int64 const to_process = std::min(bucket_ends() - samples_processed, n - i);
+				process(data + i*channel_count, to_process);
+				i += to_process;
+				if (bucket_boundary())
+				{
+					finalize_bucket(to_process);
+					double now = dur.get_elapsed();
+					if (g_report_incremental_results.get() &&
+						incremental_output &&
+						last_update + update_interval <= now &&
+						last_update_bucket != bucket)
+					{
+						last_update += update_interval;
+						auto intermediary = finalize_waveform();
+						(*incremental_output)(intermediary, bucket);
+					}
+				}
+			}
 		}
 
 		void process(audio_sample const* data, t_int64 frames)
@@ -279,6 +336,10 @@ namespace wave
 				}
 				channel_count = 1;
 				channel_map = audio_chunk::channel_config_mono;
+				auto new_list_size = (t_size)(bucket_count * channel_count);
+				minimum.set_count(new_list_size);
+				maximum.set_count(new_list_size);
+				rms.set_count(new_list_size);
 			}
 
 			// one inner list per channel
@@ -402,11 +463,6 @@ namespace wave
 
 			input_entry::g_open_for_decoding(decoder, 0, loc.get_path(), abort_cb);
 
-			duration_query dur;
-			double last_update = 0.0;
-			unsigned last_update_bucket = ~0;
-			double const update_interval = 0.5f;
-
 			t_uint32 subsong = loc.get_subsong();
 			{
 				decoder->initialize(subsong, input_flag_simpledecode, abort_cb);
@@ -423,10 +479,10 @@ namespace wave
 					return out;
 
 				audio_chunk_impl chunk;
-				waveform_builder builder(sample_count, should_downmix, abort_cb);
+				waveform_builder builder(sample_count, should_downmix, abort_cb, incremental_output);
 
 				audio_source source(abort_cb, decoder, sample_count);
-				while (builder.valid_bucket())
+				while (!builder.finished())
 				{
 					throw_if_aborting(abort_cb);
 					source.render(chunk);
@@ -434,33 +490,7 @@ namespace wave
 					{
 						builder.initialize(chunk.get_channels(), chunk.get_channel_config());
 					}
-
-					t_int64 n = std::min(builder.samples_remaining(), (t_int64)chunk.get_sample_count());
-					audio_sample const* data = chunk.get_data();
-					for (t_int64 i = 0; i < n;)
-					{
-						t_int64 const to_process = std::min(builder.bucket_ends() - builder.samples_processed, n - i);
-						builder.process(data, to_process);
-						i += to_process;
-						if (builder.bucket_boundary())
-						{
-							builder.finalize_bucket(to_process);
-							if (!builder.valid_bucket())
-							{
-								break;
-							}
-							double now = dur.get_elapsed();
-							if (g_report_incremental_results.get() &&
-								incremental_output &&
-								last_update + update_interval <= now &&
-								last_update_bucket != builder.bucket)
-							{
-								last_update += update_interval;
-								auto intermediary = builder.finalize_waveform();
-								(*incremental_output)(intermediary, builder.bucket);
-							}
-						}
-					}
+					builder.consume_input(chunk);
 				}
 				auto out = builder.finalize_waveform();
 

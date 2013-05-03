@@ -11,6 +11,8 @@
 #include <boost/shared_ptr.hpp>
 
 namespace wave {
+	using boost::function;
+	using boost::shared_ptr;
 
 	struct get_response
 	{

@@ -8,9 +8,6 @@
 #include "SeekTooltip.h"
 #include "Clipboard.h"
 
-#include <wincodec.h>
-#pragma comment(lib, "windowscodecs")
-
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =
 { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
@@ -243,110 +240,6 @@ namespace wave
 		}
 	}
 
-  struct screenshot_saver : screenshot_settings
-  {
-    screenshot_saver(int width, int height)
-    {
-      this->width = width;
-      this->height = height;
-      this->context = this;
-      this->write_screenshot = &save_shot_trampoline;
-      this->flags = 0u;
-    }
-
-    void save_shot(BYTE const* pixels)
-    {
-      CComPtr<IWICImagingFactory> wic_factory;
-      HRESULT hr;
-      hr = CoCreateInstance(
-            CLSID_WICImagingFactory, nullptr,
-            CLSCTX_INPROC_SERVER, IID_IWICImagingFactory,
-            (void**)&wic_factory);
-
-      WICPixelFormatGUID pixel_format = GUID_WICPixelFormat32bppRGBA;
-      GUID container_format = GUID_ContainerFormatPng;
-
-      abort_callback_dummy cb;
-
-      try
-      {
-        filesystem::g_open_tempmem(target_file, cb);
-      }
-      catch (std::exception& e)
-      {
-        console::error(e.what());
-        return;
-      }
-
-      CComPtr<IWICStream> wic_stream;
-      hr = wic_factory->CreateStream(&wic_stream);
-      CComPtr<IStream> mem_stream;
-      hr = CreateStreamOnHGlobal(NULL, TRUE, &mem_stream);
-      hr = wic_stream->InitializeFromIStream(mem_stream);
-
-      {
-        CComPtr<IWICBitmapEncoder> encoder;
-        hr = wic_factory->CreateEncoder(container_format, nullptr, &encoder);
-        hr = encoder->Initialize(wic_stream, WICBitmapEncoderNoCache);
-
-        CComPtr<IWICBitmapFrameEncode> frame_encode;
-        hr = encoder->CreateNewFrame(&frame_encode, nullptr);
-        hr = frame_encode->Initialize(nullptr);
-        hr = frame_encode->SetSize(width, height);
-        
-        hr = frame_encode->SetPixelFormat(&pixel_format);
-        hr = frame_encode->WritePixels(height, width*4, height*width*4, (BYTE*)pixels);
-        hr = frame_encode->Commit();
-        hr = encoder->Commit();
-      }
-
-      LARGE_INTEGER pos;
-      pos.QuadPart = 0;
-      hr = mem_stream->Seek(pos, STREAM_SEEK_SET, NULL);
-
-      uint8_t buf[4096];
-      ULONG amount_read = 0;
-      while (SUCCEEDED(hr = mem_stream->Read(buf, sizeof(buf), &amount_read)) && amount_read > 0)
-      {
-        target_file->write(buf, amount_read, cb);
-      }
-    }
-
-    file_ptr target_file;
-
-    static void save_shot_trampoline(void* self, BYTE const* pixels) { auto p = (screenshot_saver*)self; p->save_shot(pixels); }
-  };
-
-  struct file_uri_builder
-  {
-    file_uri_builder(pfc::string8 src)
-      : protocol("file://")
-    {
-      t_size n = std::min(protocol.get_length(), src.get_length());
-      if (strnicmp(protocol, src, n) == 0)
-      {
-        src = src + protocol.get_length();
-      }
-
-      t_size filename_offset = src.scan_filename();
-      directory.set_string(src, filename_offset);
-      filename.set_string(src + filename_offset);
-    }
-
-    operator pfc::string8 () const
-    {
-      pfc::string8 ret;
-      ret.add_string(protocol);
-      ret.add_string(directory);
-      ret.add_string(filename);
-      return ret;
-    }
-
-    pfc::string8 protocol;
-    pfc::string8 directory;
-    pfc::string8 filename;
-  };
-
 	void seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
 	{
 		if (forward_rightclick())
@@ -358,7 +251,6 @@ namespace wave
 		WTL::CMenu m;
 		m.CreatePopupMenu();
 		m.InsertMenu(-1, MF_BYPOSITION | MF_STRING, 3, L"Configure");
-    m.InsertMenu(-1, MF_BYPOSITION | MF_STRING, 4, L"Capture screenshot");
 		ClientToScreen(&point);
 		BOOL ans = m.TrackPopupMenu(TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, *this, 0);
 		config::frontend old_kind = settings.active_frontend_kind;
@@ -373,73 +265,6 @@ namespace wave
 				config_dialog->Create(*this);
 			}
 			break;
-    case 4:
-      {
-        if (fe && fe->frontend)
-        {
-          metadb_handle_ptr h;
-          titleformat_object::ptr tf_obj;
-
-          {
-            static_api_ptr_t<titleformat_compiler> tfc;
-            pfc::string8 format;
-            g_seekbar_screenshot_filename_format.get(format);
-            if (!tfc->compile(tf_obj, format.get_ptr()))
-            {
-              console::error("Could not take screenshot, invalid filename format specified.");
-              return;
-            }
-            
-            playable_location_impl loc;
-            fe->callback->get_playable_location(loc);
-            static_api_ptr_t<metadb>()->handle_create(h, loc);
-          }
-
-          pfc::string8 formatted;
-          if (!h->format_title(nullptr, formatted, tf_obj, nullptr))
-          {
-            console::error("Could not format filename for screenshot, file information not available yet.");
-            return;
-          }
-          
-          abort_callback_dummy cb;
-
-          // cases:
-          // format is a full path: use as-is
-          // format is a filename: put in My Pictures
-
-          file_uri_builder uri = formatted;
-
-          if (uri.directory.is_empty())
-          {
-            wchar_t pictures[MAX_PATH+1] = {};
-            SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, pictures);
-            uri.directory = pfc::stringcvt::string_utf8_from_wide(pictures);
-            uri.directory.add_char('\\');
-          }
-
-          pfc::string8 target_filename = uri;
-          
-          screenshot_saver saver(
-            (int)g_seekbar_screenshot_width,
-            (int)g_seekbar_screenshot_height);
-          fe->frontend->make_screenshot(&saver);
-          if (saver.target_file.is_valid())
-          {
-            file_ptr target;
-            try
-            {
-              filesystem::g_open_write_new(target, target_filename, cb);
-              file::g_transfer_file(saver.target_file, target, cb);
-            }
-            catch (std::exception& e)
-            {
-              console::error(e.what());
-              return;
-            }
-          }
-        }
-      }
 		default:
 			return;
 		}

@@ -6,13 +6,10 @@
 #pragma once
 #pragma warning(disable: 4005)
 #define D3D_DEBUG_INFO
-#define _WIN32_WINNT 0x0501
-#define BOOST_SPIRIT_USE_PHOENIX_V3
 
-#define NOMINMAX
-#define BOOST_ASIO_NO_WIN32_LEAN_AND_MEAN
+#include "util/Asio.h"
+
 #include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
 #include <boost/assign.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>

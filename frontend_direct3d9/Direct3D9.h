@@ -16,6 +16,23 @@ namespace wave
 {
   bool has_direct3d9();
 
+  struct duration_query
+  {
+    LARGE_INTEGER then;
+    duration_query()
+    {
+        QueryPerformanceCounter(&then);
+    }
+
+    double get_elapsed() const
+    {
+      LARGE_INTEGER now, freq;
+      QueryPerformanceCounter(&now);
+      QueryPerformanceFrequency(&freq);
+      return (double)(now.QuadPart - then.QuadPart) / (double)freq.QuadPart;
+    }
+  };
+
   namespace direct3d9
   {
     struct config_dialog;
@@ -31,7 +48,8 @@ namespace wave
         seek_position, seeking,
         viewport_size, replaygain,
         orientation, flipped, shade_played,
-        waveform_data, channel_magnitude, track_magnitude;
+        waveform_data, channel_magnitude, track_magnitude,
+		track_time, track_duration, real_time;
     };
 
     struct effect_parameters
@@ -77,6 +95,7 @@ namespace wave
     private: // Misc state
       CComPtr<IDirect3D9> d3d;
       CComPtr<IDirect3DDevice9> dev;
+	  duration_query real_time;
 
       std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
       std::vector<unsigned> channel_numbers;

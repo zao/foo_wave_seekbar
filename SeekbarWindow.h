@@ -30,6 +30,8 @@ namespace wave
 		metadb_handle_ptr displayed_song;
 		uint32_t auto_get_serial;
 		unsigned valid_buckets;
+		get_response pending_response;
+		uint32_t pending_serial;
 	};
 
 	struct frontend_module : noncopyable
