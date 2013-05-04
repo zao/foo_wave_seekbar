@@ -229,8 +229,8 @@ namespace wave
 			struct color_info
 			{
 				CStatic box;
-				CBrush brush;
 				color color;
+				COLORREF color_ref;
 				UINT display_id;
 				UINT use_id;
 			};

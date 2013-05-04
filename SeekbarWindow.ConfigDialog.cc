@@ -52,7 +52,6 @@ namespace wave
 			bool override = sw.settings.override_colors[i];
 			CheckDlgButton(colors[i].use_id, override ? BST_CHECKED : BST_UNCHECKED);
 			colors[i].box.EnableWindow(override);
-			colors[i].box.InvalidateRect(0);
 		}
 
 		// Set up misc settings
@@ -151,9 +150,13 @@ namespace wave
 			return 0;
 		for (int i = 0; i < config::color_count; ++i)
 			if (wnd == colors[i].box)
-				return colors[i].box.IsWindowEnabled()
-					? colors[i].brush
+			{
+				bool enabled = !!colors[i].box.IsWindowEnabled();
+				dc.SetDCBrushColor(colors[i].color_ref);
+				return enabled
+					? (HBRUSH)GetStockObject(DC_BRUSH)
 					: GetSysColorBrush(COLOR_BTNFACE);
+			}
 		return 0;
 	}
 
@@ -191,11 +194,10 @@ namespace wave
 
 		if (ChooseColor(&cc))
 		{
-			ci.brush.DeleteObject();
-			ci.brush.CreateSolidBrush(cc.rgbResult);
-			ci.box.InvalidateRect(0);
 			ci.color = xbgr_to_color(cc.rgbResult);
+			ci.color_ref = cc.rgbResult;
 			sw.set_color(idx, ci.color, true);
+			ci.box.InvalidateRect(0);
 		}
 	}
 
@@ -224,7 +226,7 @@ namespace wave
 		bool override = !!IsDlgButtonChecked(id);
 		sw.set_color_override(idx, override);
 		colors[idx].box.EnableWindow(override);
-		colors[idx].box.InvalidateRect(0);
+		colors[idx].box.Invalidate();
 	}
 
 	void seekbar_window::configuration_dialog::on_display_select(UINT code, int id, CWindow control)
@@ -363,7 +365,7 @@ namespace wave
 		color_info& ci = colors[what];
 
 		ci.box = GetDlgItem(display_id);
-		ci.brush.CreateSolidBrush(color_to_xbgr(c));
+		ci.color_ref = color_to_xbgr(c);
 		ci.color = c;
 		ci.display_id = display_id;
 		ci.use_id = use_id;
