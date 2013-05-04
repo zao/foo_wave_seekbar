@@ -14,21 +14,15 @@
 #define IDC_COLOR_FOREGROUND            1005
 #define IDC_COLOR_HIGHLIGHT             1006
 #define IDC_COLOR_SELECTION             1007
-#define IDC_PICK_BACKGROUND             1008
-#define IDC_PICK_HIGHLIGHT              1009
 #define IDC_USE_BACKGROUND              1009
-#define IDC_PICK_SELECTION              1010
 #define IDC_USE_FOREGROUND              1010
-#define IDC_PICK_FOREGROUND             1011
 #define IDC_USE_HIGHLIGHT               1011
 #define IDC_USE_SELECTION               1012
 #define IDC_SHADEPLAYED                 1013
 #define IDC_CHANNEL_ADD                 1018
 #define IDC_DISPLAYMODE                 1024
 #define IDC_DOWNMIX                     1025
-#define IDC_MIRROR_DISPLAY              1026
 #define IDC_MIRRORDISPLAY               1026
-#define IDC_USED_CHANNELS               1027
 #define IDC_CHANNELS                    1027
 #define IDC_CHANNEL_UP                  1030
 #define IDC_CHANNEL_DOWN                1031
@@ -37,7 +31,6 @@
 #define IDC_EFFECT_SOURCE               1035
 #define IDC_EFFECT_ERRORS               1036
 #define IDC_EFFECT_RESET                1037
-#define IDC_BUTTON2                     1038
 #define IDC_EFFECT_DEFAULT              1038
 
 // Next default values for new objects
