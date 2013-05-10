@@ -9,16 +9,6 @@ link_directories(${DXSDK_LIBRARY_DIRS})
 add_subdirectory(waveform_sdk)
 add_subdirectory(frontend_sdk)
 
-enable_language(ASM_MASM)
-if(NOT CMAKE_ASM_MASM_COMPILER_WORKS)
-message(FATAL_ERROR "No working MASM found.")
-endif()
-
-set(XP_SOURCES
-	"util/xpatl.cpp"
-	"util/xpatlwrap.asm"
-)
-
 set(SEEKBAR_SOURCES
 	"BackingStore.cc"
 	"CacheImpl.cc"
@@ -114,7 +104,6 @@ add_library(foo_wave_seekbar SHARED
 	${ZLIB_SOURCES}
 	${UTIL_SOURCES}
 	${TESTS_SOURCES}
-	${XP_SOURCES}
 )
 
 target_link_libraries(foo_wave_seekbar
