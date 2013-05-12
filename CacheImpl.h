@@ -28,7 +28,9 @@ namespace wave
 
 	struct backing_store;
 
-	struct cache_impl : cache_v4
+	bool is_of_forbidden_protocol(playable_location const& loc);
+
+	struct cache_impl : cache_v5
 	{
 		cache_impl();
 		~cache_impl();
@@ -46,6 +48,9 @@ namespace wave
 		void compression_bench() override;
 
 		void defer_action(boost::function<void ()> fun) override;
+
+		bool is_location_forbidden(playable_location const& loc) override;
+		bool get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out) override;
 
 		typedef boost::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
 

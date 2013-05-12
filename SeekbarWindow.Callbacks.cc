@@ -114,6 +114,65 @@ namespace wave
 	{
 	}
 
+	void seekbar_window::on_waveform(ref_ptr<waveform> wf)
+	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_waveform(wf);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_data);
+		repaint();
+	}
+
+	void seekbar_window::on_time(double t)
+	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_playback_position(t);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
+		repaint();
+	}
+
+	void seekbar_window::on_duration(double t)
+	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_cursor_visible(true);
+		fe->callback->set_playback_position(0.0);
+		fe->callback->set_track_length(t);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position | visual_frontend::state_track));
+		repaint();
+	}
+
+	void seekbar_window::on_location(playable_location const& loc)
+	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_playable_location(loc);
+		fe->callback->set_cursor_visible(true);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position | visual_frontend::state_track));
+		repaint();
+	}
+	
+	void seekbar_window::on_play()
+	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_cursor_visible(true);
+		fe->callback->set_playback_position(0.0);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
+		repaint();
+	}
+
+	void seekbar_window::on_stop()
+	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_cursor_visible(false);
+		fe->callback->set_playback_position(0.0);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
+		repaint();
+	}
+
 	static const GUID order_default = { 0xbfc61179, 0x49ad, 0x4e95, { 0x8d, 0x60, 0xa2, 0x27, 0x06, 0x48, 0x55, 0x05 } };
 	static const GUID order_repeat_playlist = { 0x681cc6ea, 0x60ae, 0x4bf9, { 0x91, 0x3b, 0xbb, 0x5f, 0x4e, 0x86, 0x4f, 0x2a } };
 	static const GUID order_repeat_track = { 0x4bf4b280, 0x0bb4, 0x4dd0, { 0x8e, 0x84, 0x37, 0xc3, 0x20, 0x9c, 0x3d, 0xa2 } };

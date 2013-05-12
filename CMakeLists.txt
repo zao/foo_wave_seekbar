@@ -9,48 +9,54 @@ link_directories(${DXSDK_LIBRARY_DIRS})
 add_subdirectory(waveform_sdk)
 add_subdirectory(frontend_sdk)
 
-set(SEEKBAR_SOURCES
+set(CACHE_SOURCES
 	"BackingStore.cc"
+	"BackingStore.h"
+	"Cache.h"
 	"CacheImpl.cc"
+	"CacheImpl.h"
 	"CacheImpl.ProcessFile.cc"
-	"Clipboard.cc"
-	"GdiFallback.cc"
+	"Job.h"
 	"MainCache.cc"
-	"MainSeekbar.cc"
 	"MenuCommands.cc"
 	"Pack.cc"
-	"PersistentSettings.cc"
+	"Pack.h"
 	"ProcessingContext.cc"
+	"ProcessingContext.h"
+)
+set(SEEKBAR_SOURCES
+	"Clipboard.cc"
+	"Clipboard.h"
+	"FrontendCallbackImpl.h"
+	"FrontendConfigImpl.h"
+	"GdiFallback.cc"
+	"GdiFallback.h"
+	"Helpers.h"
+	"InstanceTracker.h"
+	"MainSeekbar.cc"
+	"PchSeekbar.h"
+	"PersistentSettings.cc"
+	"PersistentSettings.h"
+	"PfcSpirit.h"
 	"SeekbarCui.cc"
+	"SeekbarCui.h"
 	"SeekbarDui.cc"
+	"SeekbarDui.h"
+	"SeekbarState.h"
 	"SeekbarWindow.Callbacks.cc"
 	"SeekbarWindow.cc"
 	"SeekbarWindow.ConfigDialog.cc"
 	"SeekbarWindow.Events.cc"
-	"utf8_codecvt_facet.cpp"
-	"BackingStore.h"
-	"Cache.h"
-	"CacheImpl.h"
-	"Clipboard.h"
-	"FrontendCallbackImpl.h"
-	"FrontendConfigImpl.h"
-	"GdiFallback.h"
-	"Helpers.h"
-	"InstanceTracker.h"
-	"Job.h"
-	"Pack.h"
-	"PchSeekbar.h"
-	"PersistentSettings.h"
-	"PfcSpirit.h"
-	"ProcessingContext.h"
-	"resource.h"
-	"SeekbarCui.h"
-	"SeekbarDui.h"
-	"SeekbarState.h"
 	"SeekbarWindow.h"
 	"SeekCallback.h"
 	"SeekTooltip.h"
+	"Player.cc"
+	"Player.h"
+	"utf8_codecvt_facet.cpp"
+)
+set(RESOURCE_SOURCES
 	"foo_wave_seekbar.rc"
+	"resource.h"
 )
 set(SQLITE_SOURCES
 	"sqlite3.c"
@@ -88,6 +94,9 @@ set(TESTS_SOURCES
 	"tests/TestProcessFile.cc"
 )
 
+source_group(seekbar FILES ${SEEKBAR_SOURCES})
+source_group(cache FILES ${CACHE_SOURCES})
+source_group(resource FILES ${RESOURCE_SOURCES})
 source_group(contrib\\sqlite3 FILES ${SQLITE_SOURCES})
 source_group(contrib\\lzma FILES ${LZMA_SOURCES})
 source_group(contrib\\zlib FILES ${ZLIB_SOURCES})
@@ -98,6 +107,8 @@ include_directories(.)
 add_definitions(-Zm300)
 enable_precompiled_headers("PchSeekbar.h" SEEKBAR_SOURCES)
 add_library(foo_wave_seekbar SHARED
+	${RESOURCE_SOURCES}
+	${CACHE_SOURCES}
 	${SEEKBAR_SOURCES}
 	${SQLITE_SOURCES}
 	${LZMA_SOURCES}
