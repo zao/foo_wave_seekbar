@@ -57,8 +57,6 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 
 	virtual void on_playback_new_track(metadb_handle_ptr meta) override
 	{
-		console::info("on_playback_new_track");
-		console::info_location(meta);
 		auto duration = meta->get_length();
 		auto const& loc = meta->get_location();
 		ref_ptr<waveform> wf;
@@ -96,13 +94,11 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 
 	virtual void on_playback_seek(double t) override
 	{
-		console::info("on_playback_seek");
 		update_time(t);
 	}
 
 	virtual void on_playback_stop(playback_control::t_stop_reason) override
 	{
-		console::info("on_playback_stop");
 		static_api_ptr_t<player> p;
 		p->enumerate_listeners([&](waveform_listener* l) {
 			l->on_stop();
@@ -111,7 +107,6 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 
 	virtual void on_playback_time(double t) override
 	{
-		console::info("on_playback_time");
 		update_time(t);
 	}
 	

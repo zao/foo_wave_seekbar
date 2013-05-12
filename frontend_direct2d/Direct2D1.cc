@@ -177,10 +177,9 @@ namespace wave
 		}
 
 		ref_ptr<waveform> wf;
-		if (callback.get_waveform(wf))
-		{
-			trigger_texture_update(wf, size);
-		}
+		if (!callback.get_waveform(wf))
+			wf = make_placeholder_waveform();
+		trigger_texture_update(wf, size);
 	}
 
 	void direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
@@ -382,10 +381,9 @@ namespace wave
 	void direct2d1_frontend::update_data()
 	{
 		ref_ptr<waveform> wf;
-		if (callback.get_waveform(wf))
-		{
-			trigger_texture_update(wf, callback.get_size());
-		}
+		if (!callback.get_waveform(wf))
+			wf = make_placeholder_waveform();
+		trigger_texture_update(wf, callback.get_size());
 	}
 
 	void direct2d1_frontend::regenerate_brushes()
