@@ -151,6 +151,13 @@ namespace wave
 		completion_handler(response);
 	}
 
+	bool cache_impl::get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out)
+	{
+		if (has_waveform(loc))
+			return store->get(out, loc);
+		return false;
+	}
+
 	void cache_impl::get_waveform(shared_ptr<get_request> request)
 	{
 		if (regex_match(request->location.get_path(), boost::regex("\\s*", boost::regex::perl)))
@@ -252,6 +259,11 @@ namespace wave
 	{
 		try_delayed_init();
 		io.post(fun);
+	}
+
+	bool cache_impl::is_location_forbidden(playable_location const& loc)
+	{
+		return is_of_forbidden_protocol(loc);
 	}
 
 	bool cache_impl::has_waveform(playable_location const& loc)
