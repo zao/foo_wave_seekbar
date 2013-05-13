@@ -88,24 +88,12 @@ namespace wave
 		void on_wm_size(UINT wparam, CSize size);
 		void on_wm_timer(UINT_PTR wparam);
 
-		void on_playback_starting(playback_control::t_track_command,bool);
-		void on_playback_new_track(metadb_handle_ptr);
-		void on_playback_stop(playback_control::t_stop_reason);
-		void on_playback_seek(double);
-		void on_playback_pause(bool);
-		void on_playback_edited(metadb_handle_ptr);
-		void on_playback_dynamic_info(const file_info &);
-		void on_playback_dynamic_info_track(const file_info &);
-		void on_playback_time(double);
-		void on_volume_change(float);
-
 		virtual void on_waveform(ref_ptr<waveform>) override;
 		virtual void on_time(double t) override;
 		virtual void on_duration(double t) override;
 		virtual void on_location(playable_location const& loc) override;
 		virtual void on_play() override;
 		virtual void on_stop() override;
-
 
 	protected:
 		void set_cursor_position(float f);

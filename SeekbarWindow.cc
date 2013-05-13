@@ -43,12 +43,6 @@ namespace wave
 
 		static_api_ptr_t<player> p;
 		p->register_waveform_listener(this);
-
-		static_api_ptr_t<playback_control> pc;
-		metadb_handle_ptr mh;
-		if (pc->get_now_playing(mh)) {
-			on_playback_new_track(mh);
-		}
 	}
 
 	seekbar_window::~seekbar_window()
