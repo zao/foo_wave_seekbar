@@ -32,8 +32,7 @@ static advconfig_integer_factory g_presentation_scale("Percentage of base displa
 namespace wave
 {
 	seekbar_window::seekbar_window()
-		: play_callback_impl_base(play_callback::flag_on_playback_all), playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
-		, placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
+		: placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
 		, drag_state(MouseDragNone), possible_next_enqueued(false), repaint_timer_id(0)
 	{
 		fe->callback.reset(new frontend_callback_impl);
@@ -41,15 +40,15 @@ namespace wave
 		fe->callback->set_waveform(placeholder_waveform);
 
 		load_frontend_modules();
-		static_api_ptr_t<playback_control> pc;
-		metadb_handle_ptr mh;
-		if (pc->get_now_playing(mh)) {
-			on_playback_new_track(mh);
-		}
+
+		static_api_ptr_t<player> p;
+		p->register_waveform_listener(this);
 	}
 
 	seekbar_window::~seekbar_window()
 	{
+		static_api_ptr_t<player> p;
+		p->deregister_waveform_listener(this);
 	}
 
 	frontend_module::frontend_module(HMODULE module, frontend_entrypoint* entry)

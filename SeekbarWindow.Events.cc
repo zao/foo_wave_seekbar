@@ -108,13 +108,9 @@ namespace wave
 	{
 		if (wparam == REPAINT_TIMER_ID && core_api::are_services_available())
 		{
-			scoped_lock sl(fe->mutex);
 			static_api_ptr_t<playback_control> pc;
 			double t = pc->playback_get_position();
-			set_cursor_position((float)t);
-			if (fe->frontend)
-				fe->frontend->on_state_changed(visual_frontend::state_position);
-			repaint();
+			on_time(t);
 		}
 	}
 

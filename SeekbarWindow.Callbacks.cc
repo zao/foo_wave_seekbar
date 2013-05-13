@@ -20,98 +20,79 @@ namespace wave
 		c->get_waveform(request);
 	}
 
-	void seekbar_window::on_playback_order_changed(t_size new_index)
+	void seekbar_window::on_waveform(ref_ptr<waveform> wf)
 	{
-		test_playback_order(new_index);
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_waveform(wf);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_data);
+		repaint();
 	}
 
-	void seekbar_window::on_playback_starting(playback_control::t_track_command,bool)
+	void seekbar_window::on_time(double t)
 	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_playback_position(t);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
+		repaint();
 	}
 
-	void seekbar_window::on_playback_new_track(metadb_handle_ptr ptr)
+	void seekbar_window::on_duration(double t)
 	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_cursor_visible(true);
+		fe->callback->set_playback_position(0.0);
+		fe->callback->set_track_length(t);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position | visual_frontend::state_track));
+		repaint();
+	}
+
+	void seekbar_window::on_location(playable_location const& loc)
+	{
+		scoped_lock sl(fe->mutex);
 		{
-			scoped_lock sl(fe->mutex);
-			fe->displayed_song = ptr;
-			fe->callback->set_track_length(ptr->get_length());
-			file_info_impl info;
-			ptr->get_info(info);
-
+			static_api_ptr_t<metadb> db;
+			service_ptr_t<metadb_handle> meta;
+			db->handle_create(meta, loc);
+			file_info_const_impl info;
+			meta->get_info(info);
 			replaygain_info rg = info.get_replaygain();
 #define SET_REPLAYGAIN(Name) fe->callback->set_replaygain(visual_frontend_callback::replaygain_##Name, rg.m_##Name);
 			SET_REPLAYGAIN(album_gain)
 			SET_REPLAYGAIN(track_gain)
 			SET_REPLAYGAIN(album_peak)
 			SET_REPLAYGAIN(track_peak)
-#undef  SET_REPLAYGAIN
-
-			set_cursor_position(0.0f);
-			set_cursor_visibility(true);
-			fe->callback->set_playable_location(ptr->get_location());
-
-			if (fe->frontend)
-				fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_replaygain | visual_frontend::state_position | visual_frontend::state_track));
-
-			possible_next_enqueued = false;
+#undef SET_REPLAYGAIN
 		}
 
-		try_get_data();
+		set_cursor_position(0.0f);
+		fe->callback->set_playable_location(loc);
+		fe->callback->set_cursor_visible(true);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_replaygain | visual_frontend::state_position | visual_frontend::state_track));
 		repaint();
 	}
-
-	void seekbar_window::on_playback_stop(playback_control::t_stop_reason)
+	
+	void seekbar_window::on_play()
 	{
 		scoped_lock sl(fe->mutex);
-		set_cursor_visibility(false);
+		fe->callback->set_cursor_visible(true);
+		fe->callback->set_playback_position(0.0);
 		if (fe->frontend)
-			fe->frontend->on_state_changed(visual_frontend::state_position);
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
 		repaint();
 	}
 
-	void seekbar_window::on_playback_seek(double t)
+	void seekbar_window::on_stop()
 	{
 		scoped_lock sl(fe->mutex);
-		set_cursor_position((float)t);
-		set_cursor_visibility(true);
+		fe->callback->set_cursor_visible(false);
+		fe->callback->set_playback_position(0.0);
 		if (fe->frontend)
-			fe->frontend->on_state_changed(visual_frontend::state_position);
+			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
 		repaint();
-	}
-
-	void seekbar_window::on_playback_pause(bool)
-	{
-	}
-
-	void seekbar_window::on_playback_edited(metadb_handle_ptr)
-	{
-	}
-
-	void seekbar_window::on_playback_dynamic_info(const file_info &)
-	{
-	}
-
-	void seekbar_window::on_playback_dynamic_info_track(const file_info &)
-	{
-	}
-
-	void seekbar_window::on_playback_time(double t)
-	{
-		scoped_lock sl(fe->mutex);
-		if (t > 1.0 && !possible_next_enqueued)
-		{
-			static_api_ptr_t<playlist_manager> pm;
-			test_playback_order(pm->playback_order_get_active());
-		}
-		set_cursor_visibility(true);
-
-		if (fe->frontend)
-			fe->frontend->on_state_changed(visual_frontend::state_position);
-		repaint();
-	}
-
-	void seekbar_window::on_volume_change(float)
-	{
 	}
 
 	static const GUID order_default = { 0xbfc61179, 0x49ad, 0x4e95, { 0x8d, 0x60, 0xa2, 0x27, 0x06, 0x48, 0x55, 0x05 } };

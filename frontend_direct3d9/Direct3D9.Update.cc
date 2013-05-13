@@ -74,7 +74,9 @@ namespace wave
 				return;
 
 			ref_ptr<waveform> w;
-			if (callback.get_waveform(w))
+			if (!callback.get_waveform(w))
+				w = make_placeholder_waveform();
+
 			{
 				switch (callback.get_downmix_display())
 				{
