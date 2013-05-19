@@ -80,6 +80,7 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		p->enumerate_listeners([&](waveform_listener* l) {
 			l->on_duration(duration);
 			l->on_time(0.0);
+			l->on_location(loc);
 			l->on_play();
 		});
 	}
