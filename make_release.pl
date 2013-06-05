@@ -56,6 +56,8 @@ if (!-e $rel_file) {
 }
 if (!-e $arch_file) {
 	&archive($arch_file, [
+				"$comp_dir/mscvp110.dll",
+				"$comp_dir/mscvr110.dll",
 				"$comp_dir/SciLexer.*",
 				"$comp_dir/frontend_*.*",
 				"$comp_dir/foo_wave_seekbar.*"]);
