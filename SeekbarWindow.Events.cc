@@ -7,6 +7,7 @@
 #include "SeekbarWindow.h"
 #include "SeekTooltip.h"
 #include "Clipboard.h"
+#include "FrontendLoader.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =
@@ -114,8 +115,29 @@ namespace wave
 		}
 	}
 
+	LRESULT seekbar_window::on_wm_create(LPCREATESTRUCT)
+	{
+		console::printf("Cseekbar_window(): %x\n", this);
+		fe->callback.reset(new frontend_callback_impl);
+		fe->conf.reset(new frontend_config_impl(settings));
+		fe->callback->set_waveform(placeholder_waveform);
+
+		wait_for_frontend_module_load();
+
+		decltype(deferred_init) v;
+		v.swap(deferred_init);
+		for (auto f : v) {
+			f();
+		}
+		static_api_ptr_t<player> p;
+		p->register_waveform_listener(this);
+		return 0;
+	}
+
 	void seekbar_window::on_wm_destroy()
 	{
+		static_api_ptr_t<player> p;
+		p->deregister_waveform_listener(this);
 		if (repaint_timer_id)
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
