@@ -49,6 +49,8 @@ my $arch_file = "foo_wave_seekbar-$release-archive.fb2k-component";
 
 if (!-e $rel_file) {
 	&archive($rel_file, [
+				"$comp_dir/msvcp110.dll",
+				"$comp_dir/msvcr110.dll",
 				"$comp_dir/SciLexer.dll",
 				"$comp_dir/frontend_*.dll",
 				"$comp_dir/foo_wave_seekbar.dll"]);
@@ -56,8 +58,8 @@ if (!-e $rel_file) {
 }
 if (!-e $arch_file) {
 	&archive($arch_file, [
-				"$comp_dir/mscvp110.dll",
-				"$comp_dir/mscvr110.dll",
+				"$comp_dir/msvcp110.dll",
+				"$comp_dir/msvcr110.dll",
 				"$comp_dir/SciLexer.*",
 				"$comp_dir/frontend_*.*",
 				"$comp_dir/foo_wave_seekbar.*"]);
