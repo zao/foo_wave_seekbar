@@ -35,16 +35,6 @@ namespace wave
 		uint32_t pending_serial;
 	};
 
-	struct frontend_module : noncopyable
-	{
-		frontend_module(HMODULE module, frontend_entrypoint* entry);
-		~frontend_module();
-		ref_ptr<visual_frontend> instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf);
-
-		HMODULE module;
-		frontend_entrypoint* entry;
-	};
-
 	enum mouse_drag_state
 	{
 		MouseDragNone, MouseDragSeeking, MouseDragSelection
@@ -111,7 +101,6 @@ namespace wave
 		void load_frontend_modules();
 		ref_ptr<visual_frontend> create_frontend(config::frontend id);
 
-		std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
 		ref_ptr<waveform> placeholder_waveform;
 
 		shared_ptr<frontend_data> fe;

@@ -9,6 +9,7 @@
 //#include "Direct2D.h"
 #include "GdiFallback.h"
 #include "waveform_sdk/WaveformImpl.h"
+#include "FrontendLoader.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -43,82 +44,14 @@ namespace wave
 
 		static_api_ptr_t<player> p;
 		p->register_waveform_listener(this);
+		console::printf(" seekbar_window(): %x\n", this);
 	}
 
 	seekbar_window::~seekbar_window()
 	{
 		static_api_ptr_t<player> p;
 		p->deregister_waveform_listener(this);
-	}
-
-	frontend_module::frontend_module(HMODULE module, frontend_entrypoint* entry)
-		: module(module), entry(entry)
-	{
-	}
-
-	frontend_module::~frontend_module()
-	{
-		if (module) {
-			FreeLibrary(module);
-		}
-	}
-
-	boost::filesystem::path file_location_to_path(char const* fb2k_file)
-	{
-		pfc::string8 native;
-
-		// foobar2000_io::extract_native_path() can strip out file://, but will
-		// currently (2011-08-14) break if fed a native path, thus this test.
-		if (boost::algorithm::starts_with(fb2k_file, "file://"))
-		{
-			foobar2000_io::extract_native_path(fb2k_file, native);
-		}
-		else
-		{
-			native = fb2k_file;
-		}
-
-		native.replace_byte('/', '\\', 0);
-
-		auto first = native.get_ptr(), last = first + native.get_length();		
-		return boost::filesystem::path(first, last, utf8::utf8_codecvt_facet());
-	}
-
-	void seekbar_window::load_frontend_modules()
-	{
-		frontend_modules.push_back(boost::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
-		try
-		{
-			namespace fs = boost::filesystem;
-			boost::filesystem::path path = file_location_to_path(core_api::get_my_full_path());
-			path = path.remove_filename();
-			fs::directory_iterator I = fs::directory_iterator(path), last;
-			for (; I != last; ++I)
-			{
-				fs::path p = *I;
-				if (p.extension() != L".dll")
-					continue;
-
-				HMODULE lib = LoadLibraryW(p.wstring().c_str());
-				if (lib)
-				{
-					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
-					if (entry)
-					{
-						auto mod = boost::make_shared<frontend_module>(lib, entry());
-						frontend_modules.push_back(mod);
-					}
-					else
-					{
-						FreeLibrary(lib);
-					}
-				}
-			}
-		}
-		catch (std::exception& e)
-		{
-			console::complain("Seekbar: couldn't load optional frontends", e);
-		}
+		console::printf("~seekbar_window(): %x\n", this);
 	}
 
 	void seekbar_window::repaint()
@@ -172,9 +105,9 @@ namespace wave
 	{
 		ref_ptr<visual_frontend> ret;
 		auto sz = client_rect.Size();
-		for (auto I = frontend_modules.begin(); I != frontend_modules.end(); ++I)
+		for (auto module : list_frontend_modules())
 		{
-			ret = (*I)->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf);
+			ret = module->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf);
 			if (ret)
 				return ret;
 		}
