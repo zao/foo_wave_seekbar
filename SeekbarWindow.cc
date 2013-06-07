@@ -36,21 +36,11 @@ namespace wave
 		: placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
 		, drag_state(MouseDragNone), possible_next_enqueued(false), repaint_timer_id(0)
 	{
-		fe->callback.reset(new frontend_callback_impl);
-		fe->conf.reset(new frontend_config_impl(settings));
-		fe->callback->set_waveform(placeholder_waveform);
-
-		load_frontend_modules();
-
-		static_api_ptr_t<player> p;
-		p->register_waveform_listener(this);
 		console::printf(" seekbar_window(): %x\n", this);
 	}
 
 	seekbar_window::~seekbar_window()
 	{
-		static_api_ptr_t<player> p;
-		p->deregister_waveform_listener(this);
 		console::printf("~seekbar_window(): %x\n", this);
 	}
 
@@ -333,6 +323,11 @@ namespace wave
 
 	void seekbar_window::set_color(config::color which, color what, bool override)
 	{
+		if (!m_hWnd) {
+			deferred_init.push_back(std::bind(&seekbar_window::set_color, this, which, what, override));
+			return;
+		}
+		console::printf("set_color(%d): %x\n", which, this);
 		if (override)
 			settings.colors[which] = what;
 		else

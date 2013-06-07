@@ -56,6 +56,7 @@ namespace wave
 		DECLARE_WND_CLASS_EX(L"seekbar_dui", CS_HREDRAW | CS_VREDRAW, 0)
 
 		BEGIN_MSG_MAP(seekbar_window)
+			MSG_WM_CREATE(on_wm_create);
 			MSG_WM_DESTROY(on_wm_destroy);
 			MSG_WM_ERASEBKGND(on_wm_erasebkgnd)
 			MSG_WM_LBUTTONDOWN(on_wm_lbuttondown)
@@ -68,6 +69,7 @@ namespace wave
 		END_MSG_MAP()
 
 	private:
+		LRESULT on_wm_create(LPCREATESTRUCT cs);
 		void on_wm_destroy();
 		LRESULT on_wm_erasebkgnd(HDC dc);
 		void on_wm_lbuttondown(UINT wparam, CPoint point);
@@ -123,6 +125,7 @@ namespace wave
 
 		boost::shared_ptr<seek_callback> tooltip;
 		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
+		std::vector<std::function<void ()>> deferred_init;
 
 	private:
 		void initialize_frontend();
