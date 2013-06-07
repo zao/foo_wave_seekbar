@@ -27,6 +27,8 @@ set(CACHE_SOURCES
 set(SEEKBAR_SOURCES
 	"Clipboard.cc"
 	"Clipboard.h"
+	"FrontendLoader.cc"
+	"FrontendLoader.h"
 	"FrontendCallbackImpl.h"
 	"FrontendConfigImpl.h"
 	"GdiFallback.cc"

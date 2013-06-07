@@ -54,12 +54,18 @@ namespace wave
 
 		typedef boost::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
 
+		void kick_dynamic_init();
+
 	private:
 		void open_store();
 		void load_data(shared_ptr<boost::barrier>);
 		void try_delayed_init();
 		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, boost::shared_ptr<incremental_result_sink> incremental_output = boost::shared_ptr<incremental_result_sink>());
+
+		tbb::atomic<bool> is_initialized;
+		boost::barrier init_barrier;
+		boost::mutex init_mutex;
 
 		boost::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;
@@ -69,7 +75,6 @@ namespace wave
 		boost::asio::io_service io;
 		scoped_ptr<boost::asio::io_service::work> idle_work;
 		boost::thread_group work_threads;
-		long initialized;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
 		std::deque<job> job_flush_queue;

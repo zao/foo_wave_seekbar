@@ -35,16 +35,6 @@ namespace wave
 		uint32_t pending_serial;
 	};
 
-	struct frontend_module : noncopyable
-	{
-		frontend_module(HMODULE module, frontend_entrypoint* entry);
-		~frontend_module();
-		ref_ptr<visual_frontend> instantiate(config::frontend id, HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config& conf);
-
-		HMODULE module;
-		frontend_entrypoint* entry;
-	};
-
 	enum mouse_drag_state
 	{
 		MouseDragNone, MouseDragSeeking, MouseDragSelection
@@ -66,6 +56,7 @@ namespace wave
 		DECLARE_WND_CLASS_EX(L"seekbar_dui", CS_HREDRAW | CS_VREDRAW, 0)
 
 		BEGIN_MSG_MAP(seekbar_window)
+			MSG_WM_CREATE(on_wm_create);
 			MSG_WM_DESTROY(on_wm_destroy);
 			MSG_WM_ERASEBKGND(on_wm_erasebkgnd)
 			MSG_WM_LBUTTONDOWN(on_wm_lbuttondown)
@@ -78,6 +69,7 @@ namespace wave
 		END_MSG_MAP()
 
 	private:
+		LRESULT on_wm_create(LPCREATESTRUCT cs);
 		void on_wm_destroy();
 		LRESULT on_wm_erasebkgnd(HDC dc);
 		void on_wm_lbuttondown(UINT wparam, CPoint point);
@@ -111,7 +103,6 @@ namespace wave
 		void load_frontend_modules();
 		ref_ptr<visual_frontend> create_frontend(config::frontend id);
 
-		std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
 		ref_ptr<waveform> placeholder_waveform;
 
 		shared_ptr<frontend_data> fe;
@@ -134,6 +125,7 @@ namespace wave
 
 		boost::shared_ptr<seek_callback> tooltip;
 		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
+		std::vector<std::function<void ()>> deferred_init;
 
 	private:
 		void initialize_frontend();
