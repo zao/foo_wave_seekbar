@@ -27,8 +27,10 @@ static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if r
 namespace wave
 {
 	cache_impl::cache_impl()
-		: idle_work(new boost::asio::io_service::work(io)), initialized(0)
+		: idle_work(new boost::asio::io_service::work(io))
+		, init_barrier(2)
 	{
+		is_initialized = false;
 	}
 
 	cache_impl::~cache_impl()
@@ -108,6 +110,8 @@ namespace wave
 
 	void cache_impl::delayed_init()
 	{
+		boost::lock_guard<boost::mutex> sl(init_mutex);
+		init_barrier.wait();
 		shared_ptr<boost::barrier> load_barrier(new boost::barrier(2));
 		io.post([this, load_barrier]()
 		{
@@ -132,15 +136,13 @@ namespace wave
 				load_barrier->wait();
 			}
 		}
+		is_initialized = true;
 	}
 
 	void cache_impl::try_delayed_init()
 	{
-		boost::mutex::scoped_lock sl(cache_mutex);
-		if (!InterlockedCompareExchange(&initialized, 1, 0))
-		{
-			delayed_init();
-		}
+		if (!is_initialized)
+			boost::lock_guard<boost::mutex> sl(init_mutex);
 	}
 
 	void dispatch_partial_response(function<void (shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
@@ -153,6 +155,7 @@ namespace wave
 
 	bool cache_impl::get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out)
 	{
+		try_delayed_init();
 		if (has_waveform(loc))
 			return store->get(out, loc);
 		return false;
@@ -295,12 +298,31 @@ namespace wave
 			try
 			{
 				static_api_ptr_t<cache> c;
-				if (c.get_ptr())
-					c->flush();
+				c->flush();
 			}
 			catch (std::exception&)
 			{
 			}
 		}
 	}
+
+	void cache_impl::kick_dynamic_init()
+	{
+		boost::thread(std::bind(&cache_impl::delayed_init, this)).detach();
+		init_barrier.wait();
+	}
+
+	struct cache_init_stage : init_stage_callback
+	{
+		void on_init_stage(t_uint32 stage) override
+		{
+			if (stage == init_stages::before_config_read) {
+				static_api_ptr_t<cache> c;
+				auto* p = dynamic_cast<cache_impl*>(c.get_ptr());
+				p->kick_dynamic_init();
+			}
+		}
+	};
 }
+
+static service_factory_single_t<wave::cache_init_stage> g_cache_init_stage;
