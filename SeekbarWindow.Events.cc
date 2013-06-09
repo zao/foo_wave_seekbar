@@ -117,7 +117,6 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_create(LPCREATESTRUCT)
 	{
-		console::printf("Cseekbar_window(): %x\n", this);
 		fe->callback.reset(new frontend_callback_impl);
 		fe->conf.reset(new frontend_config_impl(settings));
 		fe->callback->set_waveform(placeholder_waveform);

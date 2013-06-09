@@ -35,14 +35,10 @@ namespace wave
 	seekbar_window::seekbar_window()
 		: placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
 		, drag_state(MouseDragNone), possible_next_enqueued(false), repaint_timer_id(0)
-	{
-		console::printf(" seekbar_window(): %x\n", this);
-	}
+	{}
 
 	seekbar_window::~seekbar_window()
-	{
-		console::printf("~seekbar_window(): %x\n", this);
-	}
+	{}
 
 	void seekbar_window::repaint()
 	{
