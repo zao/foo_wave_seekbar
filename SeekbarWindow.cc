@@ -323,7 +323,6 @@ namespace wave
 			deferred_init.push_back(std::bind(&seekbar_window::set_color, this, which, what, override));
 			return;
 		}
-		console::printf("set_color(%d): %x\n", which, this);
 		if (override)
 			settings.colors[which] = what;
 		else
