@@ -9,7 +9,7 @@
 template <typename T>
 void get_downmix_coefficients(t_size n, pfc::list_t<T>& left, pfc::list_t<T>& right)
 {
-	T zero = T(0.0), one = T(1.0), sqrt_half = T(0.70710678118654752440084436210485);
+	T zero = T(0.0), one = T(1.0), sqrt_half = T(0.70710678118654752440084436210485), half = T(0.5);
 	switch (n)
 	{
 	case 1:
@@ -38,14 +38,14 @@ void get_downmix_coefficients(t_size n, pfc::list_t<T>& left, pfc::list_t<T>& ri
 		}
 	case 6:
 		{	//      { left , right , center    , LFE  , surr-left , surr-right }
-			T l[] = { one  , zero  , sqrt_half , zero , sqrt_half , zero       }; left = l;
-			T r[] = { zero , one   , sqrt_half , zero , zero      , sqrt_half  }; right = r;
+			T l[] = { one  , zero  , sqrt_half , half , sqrt_half , zero       }; left = l;
+			T r[] = { zero , one   , sqrt_half , half , zero      , sqrt_half  }; right = r;
 			break;
 		}
 	case 8:
 		{	//      { left , right , center    , LFE  , surr-left , surr-right , back-left , back-right }
-			T l[] = { one  , zero  , sqrt_half , zero , sqrt_half , zero       , sqrt_half , zero       }; left = l;
-			T r[] = { zero , one   , sqrt_half , zero , zero      , sqrt_half  , zero      , sqrt_half  }; right = r;
+			T l[] = { one  , zero  , sqrt_half , half , sqrt_half , zero       , sqrt_half , zero       }; left = l;
+			T r[] = { zero , one   , sqrt_half , half , zero      , sqrt_half  , zero      , sqrt_half  }; right = r;
 			break;
 		}
 	default:
