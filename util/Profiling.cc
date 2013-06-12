@@ -63,7 +63,7 @@ bool is_recording_enabled()
 	return logging;
 }
 
-static tbb::atomic<uint64_t> id_source;
+static tbb::atomic<uint32_t> id_source;
 uint64_t generate_recording_id()
 {
 	return id_source++;
