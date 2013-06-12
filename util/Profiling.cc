@@ -69,7 +69,8 @@ uint64_t generate_recording_id()
 	return id_source++;
 }
 
-void record_event(Phase phase, char const* category, char const* name, uint64_t const* id)
+void record_event(Phase phase, char const* category, char const* name, uint64_t const* id,
+	EventArgs const* args)
 {
 	std::lock_guard<std::mutex> lock(logging_mutex);
 	if (!initialized) {
@@ -88,6 +89,11 @@ void record_event(Phase phase, char const* category, char const* name, uint64_t 
 			std::ostringstream oss;
 			oss << "0x" << std::hex << *id;
 			event_node["id"] = oss.str();
+		}
+		if (args) {
+			auto& node = event_node["args"] = Json::Value(Json::objectValue);
+			for (auto& arg : *args)
+				node[arg.first] = arg.second;
 		}
 		auto s = event_node.toStyledString();
 		if (s.size() > 0xFFFFu) {
