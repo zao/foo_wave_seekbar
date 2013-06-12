@@ -452,6 +452,13 @@ namespace wave
 			}
 		}
 
+		std::string location_string;
+		{
+			std::ostringstream oss;
+			oss << "\"" << loc.get_path() << "\" / index: " << loc.get_subsong_index();
+			location_string = oss.str();
+		}
+		util::AsyncEvent ae("Cache processing", location_string.c_str());
 		try
 		{
 			bool should_downmix = g_downmix_in_analysis.get();

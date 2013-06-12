@@ -70,8 +70,7 @@ float downmix_to_mono(pfc::list_t<T> frame)
 	T ret = T(0.0);
 	for (t_size i = 0; i < n_ch; ++i)
 	{
-		ret += T(0.5) * left[i] * frame[i];
-		ret += T(0.5) * right[i] * frame[i];
+		ret += T(0.5) * (left[i] * frame[i] + right[i] * frame[i]);
 	}
 	return ret;
 }

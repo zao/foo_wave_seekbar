@@ -122,7 +122,7 @@ namespace clipboard
 			char* dst = static_cast<char*>(GlobalLock(mem)) + data_offset + frames_written * nch * sizeof(float);
 			float const* src = chunk.get_data();
 			size_t n = std::min(chunk.get_sample_count(), (size_t)(frame_count - frames_written));
-			std::copy_n(src, nch * n, reinterpret_cast<float*>(dst));
+			std::memcpy(dst, src, nch*n*sizeof(float));
 			GlobalUnlock(mem);
 			frames_written += n;
 			return !is_full();
@@ -149,9 +149,9 @@ namespace clipboard
 		auto chunk_id = mpl::c_str<traits::tag>::value;
 		uint32_t chunk_size = traits::size(chunk);
 		uint32_t self_size = traits::self_size(chunk);
-		buf = std::copy_n(chunk_id, 4, buf);
-		buf = std::copy_n((char*)&chunk_size, 4, buf);
-		buf = std::copy_n((char*)&chunk, self_size, buf);
+		std::memcpy(buf, chunk_id, 4); buf += 4;
+		std::memcpy(buf, &chunk_size, 4); buf += 4;
+		std::memcpy(buf, &chunk, self_size); buf += 4;
 		return buf;
 	}
 

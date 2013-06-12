@@ -22,6 +22,7 @@ namespace wave
 
 	void seekbar_window::on_waveform(ref_ptr<waveform> wf)
 	{
+		util::ScopedEvent se("Callbacks", "on_waveform");
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_waveform(wf);
 		if (fe->frontend)
@@ -31,6 +32,7 @@ namespace wave
 
 	void seekbar_window::on_time(double t)
 	{
+		util::ScopedEvent se("Callbacks", "on_time");
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_playback_position(t);
 		if (fe->frontend)
@@ -40,6 +42,7 @@ namespace wave
 
 	void seekbar_window::on_duration(double t)
 	{
+		util::ScopedEvent se("Callbacks", "on_duration");
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
@@ -51,6 +54,7 @@ namespace wave
 
 	void seekbar_window::on_location(playable_location const& loc)
 	{
+		util::ScopedEvent se("Callbacks", "on_location");
 		scoped_lock sl(fe->mutex);
 		{
 			static_api_ptr_t<metadb> db;
@@ -77,6 +81,7 @@ namespace wave
 	
 	void seekbar_window::on_play()
 	{
+		util::ScopedEvent se("Callbacks", "on_play");
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
@@ -87,6 +92,7 @@ namespace wave
 
 	void seekbar_window::on_stop()
 	{
+		util::ScopedEvent se("Callbacks", "on_stop");
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_cursor_visible(false);
 		fe->callback->set_playback_position(0.0);

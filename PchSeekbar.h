@@ -8,6 +8,7 @@
 #define D3D_DEBUG_INFO
 
 #include "util/Asio.h"
+#include "util/Profiling.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/assign.hpp>

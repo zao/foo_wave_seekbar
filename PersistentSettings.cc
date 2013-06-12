@@ -223,8 +223,8 @@ namespace wave
 		, display_mode(config::display_normal), flip_display(false), downmix_display(config::downmix_none)
 		, generic_strings(&less_guid)
 	{
-		std::fill_n(colors.begin(), colors.size(), color());
-		std::fill_n(override_colors.begin(), override_colors.size(), false);
+		std::fill(colors.begin(), colors.end(), color());
+		std::fill(override_colors.begin(), override_colors.end(), false);
 		channel_order = map_list_of
 			(audio_chunk::channel_back_left, true)
 			(audio_chunk::channel_front_left, true)
@@ -293,7 +293,10 @@ namespace wave
 		if (version >= 9)
 		{
 			settings.channel_order.clear();
-			extract_vector(node->first_node("channel_order"), settings.channel_order, phx::bind(&extract_pair<int, bool>, phxph::arg1, phxph::arg2, &extract_int<int>, &extract_bool));
+			extract_vector(node->first_node("channel_order"), settings.channel_order, [](rxml::xml_node<>* node, std::pair<int, bool>& pair)
+			{
+				extract_pair<int, bool>(node, pair, &extract_int<int>, &extract_bool);
+			});
 			settings.insert_remaining_channels();
 		}
 		if (version >= 10)

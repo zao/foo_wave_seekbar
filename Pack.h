@@ -100,7 +100,7 @@ namespace pack
 				auto dst = (uint8_t*)buf;
 
 				size_t n = std::min(2048u, std::min(*size, self->cb));
-				std::copy(self->src, self->src + n, dst);
+				std::memcpy(dst, self->src, n);
 
 				self->cb -= n;
 				self->src += n;
