@@ -8,6 +8,7 @@
 #include "SeekTooltip.h"
 #include "Clipboard.h"
 #include "FrontendLoader.h"
+#include "util/Profiling.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =
@@ -68,6 +69,7 @@ namespace wave
 {
 	void seekbar_window::on_wm_paint(HDC dc)
 	{
+		util::record_event(util::Phase::INSTANT, "Windowing", "WM_PAINT");
 		GetClientRect(client_rect);
 		if (!(client_rect.right > 1 && client_rect.bottom > 1))
 		{
@@ -117,6 +119,7 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_create(LPCREATESTRUCT)
 	{
+		util::ScopedEvent se("Windowing", "seekbar creation");
 		fe->callback.reset(new frontend_callback_impl);
 		fe->conf.reset(new frontend_config_impl(settings));
 		fe->callback->set_waveform(placeholder_waveform);

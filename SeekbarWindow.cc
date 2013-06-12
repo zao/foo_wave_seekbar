@@ -21,6 +21,8 @@
 #include <boost/property_tree/detail/rapidxml.hpp>
 namespace pt = boost::property_tree;
 
+#include "util/Profiling.h"
+
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
 
@@ -35,10 +37,14 @@ namespace wave
 	seekbar_window::seekbar_window()
 		: placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
 		, drag_state(MouseDragNone), possible_next_enqueued(false), repaint_timer_id(0)
-	{}
+	{
+		util::record_event(util::Phase::BEGIN_EVENT, "Windowing", "seekbar lifetime");
+	}
 
 	seekbar_window::~seekbar_window()
-	{}
+	{
+		util::record_event(util::Phase::END_EVENT, "Windowing", "seekbar lifetime");
+	}
 
 	void seekbar_window::repaint()
 	{
