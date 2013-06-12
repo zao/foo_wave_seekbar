@@ -253,11 +253,11 @@ namespace wave
 				float4 tc;
 
 				float squash = (float)quad_index / (float)index_count;
-				auto& outer_size = size;
-				CSize size(outer_size.cx, outer_size.cy / index_count);
 
+				util::ScopedEvent se2("GDI Frontend", "Shading loop");
 				float dx = 1.0f / (float)size.cx;
 				float dy = 1.0f / (float)size.cy;
+				std::vector<float4> samples(size.cx);
 				for (size_t x = 0; x < (size_t)size.cx; ++x)
 				{
 					tc.x = (float)x / (float)size.cx;
@@ -265,8 +265,59 @@ namespace wave
 					if (flip)
 						ix = 2047ul - ix;
 
-					float4 sample(avg_min[ix], avg_max[ix], avg_rms[ix], 1);
-		#if 1
+					samples[x] = float4(avg_min[ix], avg_max[ix], avg_rms[ix], 1);
+				}
+				BITMAPINFO bmi = {};
+				{
+					auto& h = bmi.bmiHeader;
+					h.biSize = sizeof(h);
+					h.biWidth = size.cx;
+					h.biHeight = 1;
+					h.biPlanes = 1;
+					h.biBitCount = 32;
+					h.biCompression = BI_RGB;
+				}
+				#if 1
+				size_t target_rows = vertical ? size.cx : size.cy;
+				size_t target_cols = vertical ? size.cy : size.cx;
+				std::vector<DWORD> line_storage(target_cols);
+				for (size_t target_y = 0; target_y < target_rows; ++target_y) {
+					for (size_t target_x = 0; target_x < target_cols; ++target_x) {
+						auto x = vertical ? target_y : target_x;
+						auto y = vertical ? target_x : target_y;
+						float4 c;
+						tc.y = 1.0f - 2.0f * (float)y / (float)size.cy;
+						auto sample = samples[x];
+						float below = tc.y - sample.x;
+						float above = tc.y - sample.y;
+						float factor = std::min(fabs(below), fabs(above));
+						bool outside = (below < 0 || above > 0);
+						bool inside_rms = fabs(tc.y) <= sample.z;
+
+						if (outside)
+							c = backgroundColor;
+						else
+							lerp(&c, &backgroundColor, &textColor, 7.0f * factor);
+						
+						saturate(&c);
+						color cc(c.x, c.y, c.z, c.w);
+
+						line_storage[target_x] = color_to_xrgb(cc);
+					}
+					size_t channel_offset = (size_t)(outer_size.cy * squash);
+					if (vertical) {
+						wave_dc->SetDIBitsToDevice(channel_offset, target_y, line_storage.size(), 1, 0, 0, 0, 1,
+							line_storage.data(), &bmi, DIB_RGB_COLORS);
+					}
+					else {
+						wave_dc->SetDIBitsToDevice(0, target_y + channel_offset, line_storage.size(), 1, 0, 0, 0, 1,
+							line_storage.data(), &bmi, DIB_RGB_COLORS);
+					}
+				}
+				#else
+				for (size_t x = 0; x < (size_t)size.cx; ++x)
+				{	
+					auto sample = samples[x];
 					for (size_t y = 0; y < (size_t)size.cy; ++y)
 					{
 						size_t out_y = y + (size_t)(outer_size.cy * squash);
@@ -288,14 +339,8 @@ namespace wave
 
 						wave_dc->SetPixelV(vertical ? out_y : x, vertical ? x : out_y, color_to_xbgr(cc));
 					}
-		#else
-					size_t ix = std::min(2047ul, x * 2048ul / size.cx);
-					CPoint p1(x, (int)(size.cy * (0.5 - avg_min[ix] * 0.5)));
-					CPoint p2(x, (int)(size.cy * (0.5 - avg_max[ix] * 0.5)));
-					wave_dc->MoveTo(orientate(p1));
-					wave_dc->LineTo(orientate(p2));
-		#endif
 				}
+				#endif
 				++quad_index;
 			});
 		}

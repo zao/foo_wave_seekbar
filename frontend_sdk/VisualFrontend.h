@@ -117,6 +117,15 @@ namespace wave
 		      b = GetBValue(c) / 255.f;
 		return color(r, g, b, a / 255.f);
 	}
+	
+	inline COLORREF color_to_xrgb(color c)
+	{
+		return RGB(
+			(BYTE)(c.a * c.b * 255),
+			(BYTE)(c.a * c.g * 255),
+			(BYTE)(c.a * c.r * 255)
+			);
+	}
 
 	inline COLORREF color_to_xbgr(color c)
 	{
