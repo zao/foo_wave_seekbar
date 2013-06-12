@@ -150,6 +150,12 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_erasebkgnd(HDC dc)
 	{
+		if (!fe->frontend) {
+			SetDCBrushColor(dc, color_to_xbgr(fe->callback->get_color(config::color_background)));
+			auto sz = fe->callback->get_size();
+			CRect r(0, 0, sz.cx, sz.cy);
+			FillRect(dc, r, GetStockBrush(DC_BRUSH));
+		}
 		return 1;
 	}
 
