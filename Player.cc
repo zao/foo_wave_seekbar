@@ -44,6 +44,9 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 	void on_waveform_result(playable_location_impl loc, shared_ptr<get_response> resp)
 	{
 		in_main_thread([=]{
+			util::EventArgs ea;
+			ea["valid_bucket_count"] = std::to_string(resp->valid_bucket_count);
+			util::ScopedEvent se("Player", "on_waveform_result", &ea);
 			static_api_ptr_t<player> p;
 			static_api_ptr_t<playback_control_v2> pc;
 			service_ptr_t<metadb_handle> meta;

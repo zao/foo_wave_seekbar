@@ -182,9 +182,11 @@ namespace wave
 
 	void gdi_fallback_frontend::update_data()
 	{
+		util::ScopedEvent se("GDI Frontend", "update_data");
 		auto size = callback.get_size();
 
 		{
+			util::ScopedEvent se("GDI Frontend", "DC reset");
 			CClientDC win_dc(wnd);
 			back_dc.reset(new mem_dc(win_dc, size));
 			wave_dc.reset(new mem_dc(win_dc, size));
@@ -201,10 +203,13 @@ namespace wave
 		ref_ptr<waveform> w;
 		if (callback.get_waveform(w))
 		{
-			switch (callback.get_downmix_display())
-			{
-			case config::downmix_mono:   if (w->get_channel_count() > 1) w = downmix_waveform(w, 1); break;
-			case config::downmix_stereo: if (w->get_channel_count() > 2) w = downmix_waveform(w, 2); break;
+			if (callback.get_downmix_display() != config::downmix_none) {
+				util::ScopedEvent se("Mixing", "Downmix waveform");
+				switch (callback.get_downmix_display())
+				{
+				case config::downmix_mono:   if (w->get_channel_count() > 1) w = downmix_waveform(w, 1); break;
+				case config::downmix_stereo: if (w->get_channel_count() > 2) w = downmix_waveform(w, 2); break;
+				}
 			}
 
 			pfc::list_t<channel_info> infos;
@@ -229,6 +234,12 @@ namespace wave
 			auto index_count = channel_indices.get_count();
 			channel_indices.enumerate([&, index_count](int index)
 			{
+				auto& outer_size = size;
+				CSize size(outer_size.cx, outer_size.cy / index_count);
+				util::EventArgs ea;
+				ea["channel"] = std::to_string(index);
+				ea["dimensions"] = std::to_string(size.cx) + "x" + std::to_string(size.cy);
+				util::ScopedEvent se("GDI Frontend", "Shade channel", &ea);
 				pfc::list_t<float> avg_min, avg_max, avg_rms;
 				w->get_field("minimum", index, list_array_sink<float>(avg_min));
 				w->get_field("maximum", index, list_array_sink<float>(avg_max));
