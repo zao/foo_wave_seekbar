@@ -87,11 +87,16 @@ set(ZLIB_SOURCES
 	"zlib/uncompr.c"
 	"zlib/zutil.c"
 )
-
+set(JSON_SOURCES
+	"json/json.h"
+	"json/jsoncpp.cpp"
+	"json/json-forwards.h"
+)
 set(UTIL_SOURCES
 	"util/Asio.h"
+	"util/Profiling.cc"
+	"util/Profiling.h"
 )
-
 set(TESTS_SOURCES
 	"tests/TestProcessFile.cc"
 )
@@ -102,6 +107,7 @@ source_group(resource FILES ${RESOURCE_SOURCES})
 source_group(contrib\\sqlite3 FILES ${SQLITE_SOURCES})
 source_group(contrib\\lzma FILES ${LZMA_SOURCES})
 source_group(contrib\\zlib FILES ${ZLIB_SOURCES})
+source_group(contrib\\json FILES ${JSON_SOURCES})
 source_group(util FILES ${UTIL_SOURCES})
 source_group(tests FILES ${TESTS_SOURCES})
 
@@ -115,6 +121,7 @@ add_library(foo_wave_seekbar SHARED
 	${SQLITE_SOURCES}
 	${LZMA_SOURCES}
 	${ZLIB_SOURCES}
+	${JSON_SOURCES}
 	${UTIL_SOURCES}
 	${TESTS_SOURCES}
 )
