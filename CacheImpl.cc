@@ -316,10 +316,12 @@ namespace wave
 	{
 		void on_init_stage(t_uint32 stage) override
 		{
-			if (stage == init_stages::before_config_read) {
-				static_api_ptr_t<cache> c;
-				auto* p = dynamic_cast<cache_impl*>(c.get_ptr());
-				p->kick_dynamic_init();
+			if (!core_api::is_quiet_mode_enabled()) {
+				if (stage == init_stages::before_config_read) {
+					static_api_ptr_t<cache> c;
+					auto* p = dynamic_cast<cache_impl*>(c.get_ptr());
+					p->kick_dynamic_init();
+				}
 			}
 		}
 	};
