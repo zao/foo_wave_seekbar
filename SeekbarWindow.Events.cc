@@ -69,7 +69,6 @@ namespace wave
 {
 	void seekbar_window::on_wm_paint(HDC dc)
 	{
-		util::record_event(util::Phase::INSTANT, "Windowing", "WM_PAINT");
 		GetClientRect(client_rect);
 		if (!(client_rect.right > 1 && client_rect.bottom > 1))
 		{

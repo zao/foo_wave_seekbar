@@ -27,7 +27,6 @@ namespace wave
 
 	void gdi_fallback_frontend::draw()
 	{
-		util::ScopedEvent se("Windowing", "GDI draw");
 		if (CPaintDC dc = wnd)
 		{
 			auto size = callback.get_size(), true_size = size;
