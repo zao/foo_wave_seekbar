@@ -131,6 +131,9 @@ namespace wave
 		for (auto f : v) {
 			f();
 		}
+
+		apply_settings();
+
 		static_api_ptr_t<player> p;
 		p->register_waveform_listener(this);
 		return 0;

@@ -107,7 +107,8 @@ namespace wave
 	}
 
 	void seekbar_window::initialize_frontend()
-	{		
+	{
+		util::ScopedEvent se("Windowing", "initialize_frontend");
 		scoped_lock sl(fe->mutex);
 		double present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
 		DWORD present_interval = 100;
