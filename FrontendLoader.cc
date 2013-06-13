@@ -108,17 +108,12 @@ struct frontend_module_init_stage : init_stage_callback
 {
 	void on_init_stage(t_uint32 stage) override
 	{
-		if (stage == init_stages::before_config_read)
-			load_frontend_modules();
+		if (!core_api::is_quiet_mode_enabled()) {
+			if (stage == init_stages::before_config_read)
+				load_frontend_modules();
+		}
 	}
-};
-
-struct frontend_module_initquit : initquit
-{
-	void on_quit() override
-	{}
 };
 }
 
 static service_factory_single_t<wave::frontend_module_init_stage> g_frontend_module_init_stage;
-static service_factory_single_t<wave::frontend_module_initquit> g_frontend_module_initquit;
