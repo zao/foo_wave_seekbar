@@ -50,8 +50,7 @@ namespace wave
 
 		CWindow wnd;
 
-		scoped_ptr<mem_dc> back_dc, wave_dc;
-		scoped_ptr<mem_dc> shade_dc;
+		scoped_ptr<mem_dc> wave_dc, shaded_wave_dc;
 		scoped_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
 		scoped_ptr<CBrush> brush_background;
 

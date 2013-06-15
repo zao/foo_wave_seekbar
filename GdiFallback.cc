@@ -25,71 +25,152 @@ namespace wave
 	void gdi_fallback_frontend::clear()
 	{}
 
+	CRect reorient_rect(CRect rect, CSize canvas_size, bool vertical, bool reverse_major_axis) {
+		if (reverse_major_axis) {
+			rect.left = canvas_size.cx - rect.left;
+			rect.right = canvas_size.cx - rect.right;
+			CRect::SwapLeftRight(&rect);
+		}
+		if (vertical) {
+			std::swap(rect.left, rect.top);
+			std::swap(rect.right, rect.bottom);
+		}
+		return rect;
+	}
+
+	CSize reorient_size(CSize size, CSize canvas_size, bool vertical, bool reverse_major_axis) {
+		if (reverse_major_axis) {
+			size.cx = canvas_size.cx - size.cx;
+		}
+		if (vertical) {
+			std::swap(size.cx, size.cy);
+		}
+		return size;
+	}
+	
+	CPoint reorient_point(CPoint point, CSize canvas_size, bool vertical, bool reverse_major_axis) {
+		if (reverse_major_axis) {
+			point.x = canvas_size.cx - point.x;
+		}
+		if (vertical) {
+			std::swap(point.x, point.y);
+		}
+		return point;
+	}
+
+	void unity_blit(HDC dst_dc, CRect rect, HDC src_dc)
+	{
+		CDCHandle h = dst_dc;
+		h.BitBlt(rect.left, rect.top, rect.Width(), rect.Height(),
+			src_dc, rect.left, rect.top, SRCCOPY);
+	}
+
+	std::pair<CRect, CRect> split_rect(CRect rect, unsigned where)
+	{
+		CRect other = rect;
+		other.left = where+1;
+		rect.right = where;
+		return std::make_pair(rect, other);
+	}
+
+	// returns rect+shadedness
+	std::vector<std::pair<CRect, bool>> compute_waveform_rects(CSize canvas_size, unsigned const* position, unsigned const* seek_position)
+	{
+		bool const SHADED = true;
+		bool const UNSHADED = false;
+		typedef std::pair<CRect, bool> augmented_rect;
+		CRect canvas_rect(CPoint(0, 0), canvas_size);
+		if (!position) {
+			if (seek_position) {
+				/* [u) S [u) */
+				auto halves = split_rect(canvas_rect, *seek_position);
+				std::array<augmented_rect, 2> rects = {
+					augmented_rect(halves.first, UNSHADED),
+					augmented_rect(halves.second, UNSHADED) };
+				return std::vector<augmented_rect>(rects.begin(), rects.end());
+			}
+			/* [u) */
+			return std::vector<augmented_rect>(1, augmented_rect(canvas_rect, UNSHADED));
+		}
+		if (seek_position) {
+			auto const S = *seek_position;
+			auto const P = *position;
+			auto outer_halves = split_rect(canvas_rect, P);
+			if (S < P) {
+				/* [s) S [s) P [u) : S<P */
+				auto inner_halves = split_rect(outer_halves.first, S);
+				std::array<augmented_rect, 3> rects = {
+					augmented_rect(inner_halves.first, SHADED),
+					augmented_rect(inner_halves.second, SHADED),
+					augmented_rect(outer_halves.second, UNSHADED) };
+				return std::vector<augmented_rect>(rects.begin(), rects.end());
+			}
+			else if (*seek_position > *position) {
+				/* [s) P [u) S [u) : S>P */
+				auto inner_halves = split_rect(outer_halves.second, S);
+				std::array<augmented_rect, 3> rects = {
+					augmented_rect(outer_halves.first, SHADED),
+					augmented_rect(inner_halves.first, UNSHADED),
+					augmented_rect(inner_halves.second, UNSHADED) };
+				return std::vector<augmented_rect>(rects.begin(), rects.end());
+			}
+			/* [s) S [u) : S=P */
+			std::array<augmented_rect, 2> rects = {
+				augmented_rect(outer_halves.first, SHADED),
+				augmented_rect(outer_halves.second, UNSHADED) };
+			return std::vector<augmented_rect>(rects.begin(), rects.end());
+		}
+		/* [s) P [u) */
+		auto halves = split_rect(canvas_rect, *position);
+		std::array<augmented_rect, 2> rects = {
+			augmented_rect(halves.first, SHADED),
+			augmented_rect(halves.second, UNSHADED) };
+		return std::vector<augmented_rect>(rects.begin(), rects.end());
+	}
+
 	void gdi_fallback_frontend::draw()
 	{
+		bool vertical = callback.get_orientation() == config::orientation_vertical;
+		bool flip = callback.get_flip_display();
+		auto draw_bar = [&](HDC dc, CPoint p1, CPoint p2)
+		{
+			CDCHandle h = dc;
+			h.SelectPen(*pen_selection);
+			h.MoveTo(p1);
+			h.LineTo(p2);
+		};
 		if (CPaintDC dc = wnd)
 		{
+			bool has_cursor = callback.is_cursor_visible();
+			bool is_seeking = callback.is_seeking();
 			auto size = callback.get_size(), true_size = size;
-			back_dc->BitBlt(0, 0, size.cx, size.cy, *wave_dc, 0, 0, SRCCOPY);
-
-			bool vertical = callback.get_orientation() == config::orientation_vertical;
-			if (vertical)
-				std::swap(size.cx, size.cy);
-
-			bool flip = callback.get_flip_display();
-
-			auto draw_bar = [&](CPoint p1, CPoint p2)
-			{
-				if (flip)
-				{
-					p1.x = size.cx - p1.x;
-					p2.x = size.cx - p2.x;
-				}
-				back_dc->SelectPen(*pen_selection);
-				back_dc->MoveTo(orientate(p1));
-				back_dc->LineTo(orientate(p2));
-			};
-
+			auto canvas_size = CSize(size.cx, size.cy);
 			auto pos = callback.get_playback_position();
+			auto seek_pos = callback.get_seek_position();
 			auto len = callback.get_track_length();
-			
-			if (callback.get_shade_played())
-			{
-				color c = callback.get_color(config::color_highlight);
-				c.a = 0.3f;
-				CPoint p = orientate(CPoint((int)(pos * size.cx / len), size.cy));
-				BLENDFUNCTION bf = { AC_SRC_OVER, 0, 0x40, 0 };
-				if (p.x * p.y)
-				{
-					if (!flip)
-						back_dc->AlphaBlend(0, 0, p.x, p.y, *shade_dc, 0, 0, 1, 1, bf);
-					else
-					{
-						CPoint LR = orientate(CPoint(size.cx, size.cy));
-						if (vertical)
-							p = CPoint(0, LR.y - p.y);
-						else
-							p = CPoint(size.cx - p.x, 0);
-						back_dc->AlphaBlend(p.x, p.y, LR.x, LR.y, *shade_dc, 0, 0, 1, 1, bf);
-					}
+			auto position = (unsigned)(pos * size.cx / len);
+			auto seek_position = (unsigned)(seek_pos * size.cx / len);
+
+			auto rects = compute_waveform_rects(canvas_size, has_cursor ? &position : nullptr,
+				is_seeking ? &seek_position : nullptr);
+
+			for (auto ar : rects) {
+				auto rect = reorient_rect(ar.first, canvas_size, vertical, flip);
+				auto is_shaded = ar.second;
+				if (!rect.IsRectEmpty()) {
+					unity_blit(dc, rect, is_shaded ? *shaded_wave_dc : *wave_dc);
 				}
 			}
-
-			if (callback.is_cursor_visible())
-			{
-				draw_bar(
-					CPoint((int)(pos * size.cx / len), 0),
-					CPoint((int)(pos * size.cx / len), size.cy));
-
-				if (callback.is_seeking())
-				{
-					auto seek_pos = callback.get_seek_position();
-					draw_bar(
-						CPoint((int)(seek_pos * size.cx / len), 0),
-						CPoint((int)(seek_pos * size.cx / len), size.cy));
-				}
+			if (is_seeking) {
+				auto from = reorient_point(CPoint(seek_position, 0), canvas_size, vertical, flip);
+				auto to = reorient_point(CPoint(seek_position, size.cx), canvas_size, vertical, flip);
+				draw_bar(dc, from, to);
 			}
-			dc.BitBlt(0, 0, true_size.cx, true_size.cy, *back_dc, 0, 0, SRCCOPY);
+			if (has_cursor && (!is_seeking || position != seek_position)) {
+				auto from = reorient_point(CPoint(position, 0), canvas_size, vertical, flip);
+				auto to = reorient_point(CPoint(position, size.cx), canvas_size, vertical, flip);
+				draw_bar(dc, from, to);
+			}
 		}
 	}
 
@@ -135,14 +216,6 @@ namespace wave
 		pen_from_color(config::color_highlight, pen_highlight);
 		pen_from_color(config::color_selection, pen_selection);
 		solid_brush_from_color(config::color_background, brush_background);
-		
-		if (!shade_dc)
-		{
-			CClientDC dc(wnd);
-			shade_dc.reset(new mem_dc(dc, wave::size(1, 1)));
-		}
-		color c = callback.get_color(config::color_highlight);
-		shade_dc->SetPixel(0, 0, color_to_xbgr(c));
 	}
 
 	void gdi_fallback_frontend::release_objects()
@@ -187,11 +260,9 @@ namespace wave
 		{
 			util::ScopedEvent se("GDI Frontend", "DC reset");
 			CClientDC win_dc(wnd);
-			back_dc.reset(new mem_dc(win_dc, size));
 			wave_dc.reset(new mem_dc(win_dc, size));
+			shaded_wave_dc.reset(new mem_dc(win_dc, size));
 		}
-
-		wave_dc->FillRect(CRect(0, 0, size.cx, size.cy), *brush_background);
 
 		bool vertical = callback.get_orientation() == config::orientation_vertical;
 		if (vertical)
@@ -243,12 +314,13 @@ namespace wave
 				w->get_field("minimum", index, list_array_sink<float>(avg_min));
 				w->get_field("maximum", index, list_array_sink<float>(avg_max));
 				w->get_field("rms", index, list_array_sink<float>(avg_rms));
-				wave_dc->SelectPen(*pen_foreground);
 
 				color bg = callback.get_color(config::color_background);
 				color txt = callback.get_color(config::color_foreground);
+				color hi = callback.get_color(config::color_highlight);
 				float4 backgroundColor(bg.r, bg.g, bg.b, bg.a);
 				float4 textColor(txt.r, txt.g, txt.b, txt.a);
+				float4 hilightColor(hi.r, hi.g, hi.b, hi.a);
 				float4 tc;
 
 				float squash = (float)quad_index / (float)index_count;
@@ -276,10 +348,10 @@ namespace wave
 					h.biBitCount = 32;
 					h.biCompression = BI_RGB;
 				}
-				#if 1
 				size_t target_rows = vertical ? size.cx : size.cy;
 				size_t target_cols = vertical ? size.cy : size.cx;
-				std::vector<DWORD> line_storage(target_cols);
+				std::vector<DWORD> unshaded_row(target_cols);
+				std::vector<DWORD> shaded_row(target_cols);
 				for (size_t target_y = 0; target_y < target_rows; ++target_y) {
 					for (size_t target_x = 0; target_x < target_cols; ++target_x) {
 						auto x = vertical ? target_y : target_x;
@@ -299,47 +371,28 @@ namespace wave
 							lerp(&c, &backgroundColor, &textColor, 7.0f * factor);
 						
 						saturate(&c);
+						float4 shaded;
+						lerp(&shaded, &hilightColor, &c, 0.75f);
 						color cc(c.x, c.y, c.z, c.w);
+						color ac(shaded.x, shaded.y, shaded.z, 1.0f);
 
-						line_storage[target_x] = color_to_xrgb(cc);
+						unshaded_row[target_x] = color_to_xrgb(cc);
+						shaded_row[target_x] = color_to_xrgb(ac);
 					}
 					size_t channel_offset = (size_t)(outer_size.cy * squash);
 					if (vertical) {
-						wave_dc->SetDIBitsToDevice(channel_offset, target_y, line_storage.size(), 1, 0, 0, 0, 1,
-							line_storage.data(), &bmi, DIB_RGB_COLORS);
+						wave_dc->SetDIBitsToDevice(channel_offset, target_y, unshaded_row.size(), 1, 0, 0, 0, 1,
+							unshaded_row.data(), &bmi, DIB_RGB_COLORS);
+						shaded_wave_dc->SetDIBitsToDevice(channel_offset, target_y, shaded_row.size(), 1, 0, 0, 0, 1,
+							shaded_row.data(), &bmi, DIB_RGB_COLORS);
 					}
 					else {
-						wave_dc->SetDIBitsToDevice(0, target_y + channel_offset, line_storage.size(), 1, 0, 0, 0, 1,
-							line_storage.data(), &bmi, DIB_RGB_COLORS);
+						wave_dc->SetDIBitsToDevice(0, target_y + channel_offset, unshaded_row.size(), 1, 0, 0, 0, 1,
+							unshaded_row.data(), &bmi, DIB_RGB_COLORS);
+						shaded_wave_dc->SetDIBitsToDevice(channel_offset, target_y, shaded_row.size(), 1, 0, 0, 0, 1,
+							shaded_row.data(), &bmi, DIB_RGB_COLORS);
 					}
 				}
-				#else
-				for (size_t x = 0; x < (size_t)size.cx; ++x)
-				{	
-					auto sample = samples[x];
-					for (size_t y = 0; y < (size_t)size.cy; ++y)
-					{
-						size_t out_y = y + (size_t)(outer_size.cy * squash);
-						float4 c;
-						tc.y = 1.0f - 2.0f * (float)y / (float)size.cy;
-						float below = tc.y - sample.x;
-						float above = tc.y - sample.y;
-						float factor = std::min(fabs(below), fabs(above));
-						bool outside = (below < 0 || above > 0);
-						bool inside_rms = fabs(tc.y) <= sample.z;
-
-						if (outside)
-							c = backgroundColor;
-						else
-							lerp(&c, &backgroundColor, &textColor, 7.0f * factor);
-						
-						saturate(&c);
-						color cc(c.x, c.y, c.z, c.w);
-
-						wave_dc->SetPixelV(vertical ? out_y : x, vertical ? x : out_y, color_to_xbgr(cc));
-					}
-				}
-				#endif
 				++quad_index;
 			});
 		}
