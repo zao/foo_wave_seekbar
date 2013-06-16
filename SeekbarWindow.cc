@@ -49,7 +49,7 @@ namespace wave
 	void seekbar_window::repaint()
 	{
 		if ((HWND)*this)
-			Invalidate();
+			;//Invalidate();
 	}
 
 	void seekbar_window::toggle_orientation(frontend_callback_impl& cb, persistent_settings& s)
@@ -310,6 +310,8 @@ namespace wave
 		if (repaint_timer_id)
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
+		if (*this)
+			Invalidate(FALSE);
 	}
 
 	void seekbar_window::set_border_visibility(bool visible)

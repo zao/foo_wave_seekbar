@@ -119,15 +119,15 @@ namespace wave
 
 		void frontend_impl::draw()
 		{
-      draw_to_target(pp.BackBufferWidth, pp.BackBufferHeight, NULL);
-    }
+			draw_to_target(pp.BackBufferWidth, pp.BackBufferHeight, NULL);
+		}
 
-    bool frontend_impl::draw_to_target(int target_width, int target_height, IDirect3DSurface9* render_target)
-    {
+		bool frontend_impl::draw_to_target(int target_width, int target_height, IDirect3DSurface9* render_target)
+		{
 			if (device_still_lost())
 				return false;
 
-      dev->SetRenderTarget(0, render_target);
+			dev->SetRenderTarget(0, render_target);
 
 			//D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
 			auto draw_quad = [&,this](int idx, int ch, int n)
@@ -195,7 +195,7 @@ namespace wave
 			{
 				draw_quad(idx, I->channel, num);
 			}
-      return true;
+			return true;
 		}
 
 		void frontend_impl::present()
@@ -235,6 +235,8 @@ namespace wave
 				update_flipped();
 			if (s & state_shade_played)
 				update_shade_played();
+			CWindow wnd = this->pp.hDeviceWindow;
+			wnd.Invalidate(FALSE);
 		}
 
 		bool frontend_impl::device_still_lost()
@@ -265,23 +267,23 @@ namespace wave
 			}
 		}
 
-    void frontend_impl::make_screenshot(screenshot_settings const* settings)
-    {
-      CComPtr<IDirect3DSurface9> rt;
-      HRESULT hr = dev->CreateRenderTarget(settings->width, settings->height, D3DFMT_A8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &rt, nullptr);
-      if (FAILED(hr))
-        return;
-      
-      IDirect3DSurface9* old_rt = nullptr;
-      dev->GetRenderTarget(0, &old_rt);
-      if (draw_to_target(settings->width, settings->height, rt))
-      {
-        D3DLOCKED_RECT r = {};
-        rt->LockRect(&r, NULL, 0);
-        settings->write_screenshot(settings->context, (BYTE*)r.pBits);
-      }
-      dev->SetRenderTarget(0, old_rt);
-    }
+		void frontend_impl::make_screenshot(screenshot_settings const* settings)
+		{
+			CComPtr<IDirect3DSurface9> rt;
+			HRESULT hr = dev->CreateRenderTarget(settings->width, settings->height, D3DFMT_A8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &rt, nullptr);
+			if (FAILED(hr))
+				return;
+
+			IDirect3DSurface9* old_rt = nullptr;
+			dev->GetRenderTarget(0, &old_rt);
+			if (draw_to_target(settings->width, settings->height, rt))
+			{
+				D3DLOCKED_RECT r = {};
+				rt->LockRect(&r, NULL, 0);
+				settings->write_screenshot(settings->context, (BYTE*)r.pBits);
+			}
+			dev->SetRenderTarget(0, old_rt);
+		}
 
 		void frontend_impl::get_effect_compiler(ref_ptr<effect_compiler>& out)
 		{

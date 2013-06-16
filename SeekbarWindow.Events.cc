@@ -103,7 +103,6 @@ namespace wave
 		fe->callback->set_size(wave::size(size.cx, size.cy));
 		if (fe->frontend)
 			fe->frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
-		repaint();
 	}
 
 	void seekbar_window::on_wm_timer(UINT_PTR wparam)
@@ -152,12 +151,10 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_erasebkgnd(HDC dc)
 	{
-		if (!fe->frontend) {
-			SetDCBrushColor(dc, color_to_xbgr(fe->callback->get_color(config::color_background)));
-			auto sz = fe->callback->get_size();
-			CRect r(0, 0, sz.cx, sz.cy);
-			FillRect(dc, r, GetStockBrush(DC_BRUSH));
-		}
+		SetDCBrushColor(dc, color_to_xbgr(fe->callback->get_color(config::color_background)));
+		auto sz = fe->callback->get_size();
+		CRect r(0, 0, sz.cx, sz.cy);
+		FillRect(dc, r, GetStockBrush(DC_BRUSH));
 		return 1;
 	}
 
@@ -191,7 +188,6 @@ namespace wave
 		}
 
 		SetCapture();
-		repaint();
 	}
 
 	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
