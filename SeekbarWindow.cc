@@ -215,10 +215,6 @@ namespace wave
 
 	void seekbar_window::set_playback_time(double t)
 	{
-		util::record_value("Callbacks", "playback_time", t);
-		util::EventArgs ea;
-		ea["time"] = std::to_string(t);
-		util::ScopedEvent se("Callbacks", "set_playback_time", &ea);
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_playback_position(t);
 		if (fe->frontend)
