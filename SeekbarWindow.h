@@ -92,6 +92,7 @@ namespace wave
 		void set_cursor_visibility(bool b);
 		double compute_position(CPoint point);
 		void set_seek_position(CPoint point);
+		void set_playback_time(double t);
 
 		persistent_settings settings;
 		static void load_settings(persistent_settings& s, std::vector<char> const& in);

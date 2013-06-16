@@ -31,11 +31,7 @@ namespace wave
 
 	void seekbar_window::on_time(double t)
 	{
-		util::ScopedEvent se("Callbacks", "on_time");
-		scoped_lock sl(fe->mutex);
-		fe->callback->set_playback_position(t);
-		if (fe->frontend)
-			fe->frontend->on_state_changed(visual_frontend::state_position);
+		if (t == 0.0) set_playback_time(t);
 	}
 
 	void seekbar_window::on_duration(double t)

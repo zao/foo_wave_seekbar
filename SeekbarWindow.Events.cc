@@ -111,7 +111,7 @@ namespace wave
 		{
 			static_api_ptr_t<playback_control> pc;
 			double t = pc->playback_get_position();
-			on_time(t);
+			set_playback_time(t);
 		}
 	}
 
