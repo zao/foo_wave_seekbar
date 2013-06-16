@@ -46,12 +46,6 @@ namespace wave
 		util::record_event(util::Phase::END_EVENT, "Windowing", "seekbar lifetime");
 	}
 
-	void seekbar_window::repaint()
-	{
-		if ((HWND)*this)
-			Invalidate();
-	}
-
 	void seekbar_window::toggle_orientation(frontend_callback_impl& cb, persistent_settings& s)
 	{
 		config::orientation o = config::orientation_horizontal;
@@ -219,6 +213,14 @@ namespace wave
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
+	void seekbar_window::set_playback_time(double t)
+	{
+		scoped_lock sl(fe->mutex);
+		fe->callback->set_playback_position(t);
+		if (fe->frontend)
+			fe->frontend->on_state_changed(visual_frontend::state_position);
+	}
+
 	void waveform_completion_handler(shared_ptr<frontend_data> fe, shared_ptr<get_response> response, uint32_t serial)
 	{
 		{
@@ -310,6 +312,8 @@ namespace wave
 		if (repaint_timer_id)
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
+		if (*this)
+			Invalidate(FALSE);
 	}
 
 	void seekbar_window::set_border_visibility(bool visible)

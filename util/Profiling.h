@@ -14,6 +14,7 @@ enum class Phase
 	BEGIN_EVENT = 'B', END_EVENT = 'E',
 	INSTANT = 'I',
 	ASYNC_START = 'S', ASYNC_FINISH = 'F',
+	COUNTER = 'C',
 };
 
 typedef std::unordered_map<std::string, std::string> EventArgs;
@@ -21,6 +22,7 @@ typedef std::unordered_map<std::string, std::string> EventArgs;
 bool is_recording_enabled();
 void record_event(Phase phase, char const* category, char const* name, uint64_t const* id = nullptr,
 	EventArgs const* args = nullptr);
+void record_value(char const* category, char const* name, double d);
 uint64_t generate_recording_id();
 
 template <Phase FromPhase, Phase ToPhase>

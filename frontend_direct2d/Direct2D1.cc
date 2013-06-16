@@ -209,6 +209,7 @@ namespace wave
 			regenerate_brushes();
 		if (s & (state_data | state_color | state_channel_order | state_downmix_display | state_flip_display))
 			update_data();
+		InvalidateRect(wnd, nullptr, FALSE);
 	}
 
 	D2D1_POINT_2F round_point(D2D1_POINT_2F p)

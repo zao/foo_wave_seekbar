@@ -108,4 +108,11 @@ void record_event(Phase phase, char const* category, char const* name, uint64_t 
 		boost::asio::write(log_socket, boost::asio::buffer(s), ec);
 	}
 }
+
+void record_value(char const* category, char const* name, double d)
+{
+	EventArgs ea;
+	ea["value"] = std::to_string(d);
+	record_event(Phase::COUNTER, category, name, nullptr, &ea);
+}
 }

@@ -45,13 +45,15 @@ namespace wave
 		void create_objects();
 		void release_objects();
 		void update_data();
+		void update_positions();
 
 		CPoint orientate(CPoint);
 
 		CWindow wnd;
+		boost::optional<CRect> last_play_rect;
+		boost::optional<CRect> last_seek_rect;
 
-		scoped_ptr<mem_dc> back_dc, wave_dc;
-		scoped_ptr<mem_dc> shade_dc;
+		scoped_ptr<mem_dc> wave_dc, shaded_wave_dc;
 		scoped_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
 		scoped_ptr<CBrush> brush_background;
 
