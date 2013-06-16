@@ -73,6 +73,26 @@ namespace wave
 		return std::make_pair(rect, other);
 	}
 
+	struct cursor_info
+	{
+		unsigned seeking_offset, position_offset;
+		bool has_seeking, has_position;
+	};
+
+	cursor_info make_cursor_info(visual_frontend_callback const& callback)
+	{
+		auto seek_pos = callback.get_seek_position();
+		auto playback_pos = callback.get_playback_position();
+		auto track_length = callback.get_track_length();
+		auto size = callback.get_size();
+		cursor_info info = {
+			(unsigned)(seek_pos * size.cx / track_length),
+			(unsigned)(playback_pos * size.cx / track_length),
+			callback.is_seeking(),
+			callback.is_cursor_visible() };
+		return info;
+	}
+
 	// returns rect+shadedness
 	std::vector<std::pair<CRect, bool>> compute_waveform_rects(CSize canvas_size, unsigned const* position, unsigned const* seek_position)
 	{
@@ -141,15 +161,14 @@ namespace wave
 		};
 		if (CPaintDC dc = wnd)
 		{
-			bool has_cursor = callback.is_cursor_visible();
-			bool is_seeking = callback.is_seeking();
+			auto cursors = make_cursor_info(callback);
+			auto has_cursor = cursors.has_position;
+			auto is_seeking = cursors.has_seeking;
 			auto size = callback.get_size(), true_size = size;
 			auto canvas_size = CSize(size.cx, size.cy);
-			auto pos = callback.get_playback_position();
-			auto seek_pos = callback.get_seek_position();
 			auto len = callback.get_track_length();
-			auto position = (unsigned)(pos * size.cx / len);
-			auto seek_position = (unsigned)(seek_pos * size.cx / len);
+			auto position = cursors.position_offset;
+			auto seek_position = cursors.seeking_offset;
 
 			auto rects = compute_waveform_rects(canvas_size, has_cursor ? &position : nullptr,
 				is_seeking ? &seek_position : nullptr);
@@ -185,6 +204,12 @@ namespace wave
 		if (s & state_replaygain)
 			update_replaygain();
 #endif
+		if (s & state_position) {
+			update_positions();
+		}
+		if (s & state_shade_played) {
+			// invalidate shaded side
+		}
 		if (s & state_color)
 		{
 			release_objects();
@@ -256,6 +281,8 @@ namespace wave
 	{
 		util::ScopedEvent se("GDI Frontend", "update_data");
 		auto size = callback.get_size();
+		last_play_rect = CRect(0, 0, size.cx, size.cy);
+		last_seek_rect = CRect(0, 0, size.cx, size.cy);
 
 		{
 			util::ScopedEvent se("GDI Frontend", "DC reset");
@@ -396,6 +423,48 @@ namespace wave
 				++quad_index;
 			});
 		}
+		wnd.Invalidate(FALSE);
+	}
+
+	void gdi_fallback_frontend::update_positions()
+	{
+		auto size = callback.get_size();
+		CSize canvas_size(size.cx, size.cy);
+		auto vertical = callback.get_orientation() == config::orientation_vertical;
+		auto flip = callback.get_flip_display();
+		auto shade_played = callback.get_shade_played();
+		auto cursors = make_cursor_info(callback);
+		boost::optional<CRect> play_rect;
+		boost::optional<CRect> seek_rect;
+		if (cursors.has_position) {
+			CRect r(cursors.position_offset, 0, cursors.position_offset+1, size.cy);
+			play_rect = reorient_rect(r, canvas_size, vertical, flip);
+		}
+		if (cursors.has_seeking) {
+			CRect r(cursors.seeking_offset, 0, cursors.seeking_offset+1, size.cy);
+			seek_rect = reorient_rect(r, canvas_size, vertical, flip);
+		}
+		if (last_play_rect != play_rect) {
+			if (shade_played && last_play_rect) {
+				CRect extent = play_rect ? *play_rect
+					: reorient_rect(CRect(0, 0, 1, size.cy), canvas_size, vertical, flip);
+				CRect combined_play_rect;
+				combined_play_rect.UnionRect(extent, &*last_play_rect);
+				InvalidateRect(wnd, &combined_play_rect, FALSE);
+			}
+			else {
+				if (play_rect)
+					InvalidateRect(wnd, &*play_rect, FALSE);
+				if (last_play_rect)
+					InvalidateRect(wnd, &*last_play_rect, FALSE);
+			}
+		}
+		if (seek_rect)
+			InvalidateRect(wnd, &*seek_rect, FALSE);
+		if (last_seek_rect)
+			InvalidateRect(wnd, &*last_seek_rect, FALSE);
+		last_play_rect = play_rect;
+		last_seek_rect = seek_rect;
 	}
 
 	CPoint gdi_fallback_frontend::orientate(CPoint p)
