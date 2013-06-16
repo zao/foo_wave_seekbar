@@ -203,7 +203,6 @@ namespace wave
 				set_seek_position(point);
 				if (fe->frontend)
 					fe->frontend->on_state_changed(visual_frontend::state_position);
-				repaint();
 				static_api_ptr_t<playback_control> pc;
 				pc->playback_seek(fe->callback->get_seek_position());
 			}
@@ -253,7 +252,6 @@ namespace wave
 				{
 					fe->frontend->on_state_changed(visual_frontend::state_position);
 				}
-				repaint();
 			}
 			else if (drag_state == MouseDragSelection)
 			{

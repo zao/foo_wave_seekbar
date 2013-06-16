@@ -46,12 +46,6 @@ namespace wave
 		util::record_event(util::Phase::END_EVENT, "Windowing", "seekbar lifetime");
 	}
 
-	void seekbar_window::repaint()
-	{
-		if ((HWND)*this)
-			;//Invalidate();
-	}
-
 	void seekbar_window::toggle_orientation(frontend_callback_impl& cb, persistent_settings& s)
 	{
 		config::orientation o = config::orientation_horizontal;

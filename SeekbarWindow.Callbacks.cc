@@ -27,7 +27,6 @@ namespace wave
 		fe->callback->set_waveform(wf);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_data);
-		repaint();
 	}
 
 	void seekbar_window::on_time(double t)
@@ -37,7 +36,6 @@ namespace wave
 		fe->callback->set_playback_position(t);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
-		repaint();
 	}
 
 	void seekbar_window::on_duration(double t)
@@ -49,7 +47,6 @@ namespace wave
 		fe->callback->set_track_length(t);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position | visual_frontend::state_track));
-		repaint();
 	}
 
 	void seekbar_window::on_location(playable_location const& loc)
@@ -76,7 +73,6 @@ namespace wave
 		fe->callback->set_cursor_visible(true);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_replaygain | visual_frontend::state_position | visual_frontend::state_track));
-		repaint();
 	}
 	
 	void seekbar_window::on_play()
@@ -87,7 +83,6 @@ namespace wave
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
-		repaint();
 	}
 
 	void seekbar_window::on_stop()
@@ -98,7 +93,6 @@ namespace wave
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
-		repaint();
 	}
 
 	static const GUID order_default = { 0xbfc61179, 0x49ad, 0x4e95, { 0x8d, 0x60, 0xa2, 0x27, 0x06, 0x48, 0x55, 0x05 } };

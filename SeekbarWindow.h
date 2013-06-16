@@ -116,7 +116,6 @@ namespace wave
 
 		void try_get_data();
 		void flush_frontend();
-		void repaint();
 
 		CRect client_rect;
 		UINT_PTR repaint_timer_id;
