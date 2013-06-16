@@ -25,23 +25,66 @@ namespace wave
 	void gdi_fallback_frontend::clear()
 	{}
 
-	CRect reorient_rect(CRect rect, CSize canvas_size, bool vertical, bool reverse_major_axis) {
+	inclusive_rect make_inclusive_rect(int left, int top, int right, int bottom)
+	{
+		inclusive_rect r = { left, top, right, bottom };
+		return r;
+	}
+
+	inclusive_rect make_inclusive_rect(point p, size dimension)
+	{
+		return make_inclusive_rect(p.x, p.y, p.x+dimension.cx-1, p.y+dimension.cy-1);
+	}
+
+	point make_point(int x, int y)
+	{
+		point p = { x, y };
+		return p;
+	}
+
+	inclusive_rect transpose(inclusive_rect rect)
+	{
+		std::swap(rect.left, rect.top);
+		std::swap(rect.right, rect.bottom);
+		return rect;
+	}
+
+	inclusive_rect right_align(inclusive_rect rect, int new_right)
+	{
+		int delta = new_right - rect.right;
+		rect.right += delta;
+		rect.left += delta;
+		return rect;
+	}
+
+	inclusive_rect bottom_align(inclusive_rect rect, int new_bottom)
+	{
+		int delta = new_bottom - rect.bottom;
+		rect.bottom += delta;
+		rect.top += delta;
+		return rect;
+	}
+
+	inclusive_rect rect_union(inclusive_rect a, inclusive_rect b)
+	{
+		a.left = std::min(a.left, b.left);
+		a.top = std::min(a.top, b.top);
+		a.right = std::max(a.right, b.right);
+		a.bottom = std::max(a.bottom, b.bottom);
+		return a;
+	}
+
+	inclusive_rect reorient_rect(inclusive_rect rect, int max_major_point, bool vertical, bool reverse_major_axis) {
 		if (reverse_major_axis) {
-			rect.left = canvas_size.cx - rect.left;
-			rect.right = canvas_size.cx - rect.right;
-			CRect::SwapLeftRight(&rect);
+			rect = right_align(rect, max_major_point);
 		}
 		if (vertical) {
-			std::swap(rect.left, rect.top);
-			std::swap(rect.right, rect.bottom);
+			rect = transpose(rect);
 		}
 		return rect;
 	}
 
-	CSize reorient_size(CSize size, CSize canvas_size, bool vertical, bool reverse_major_axis) {
-		if (reverse_major_axis) {
-			size.cx = canvas_size.cx - size.cx;
-		}
+	wave::size reorient_size(wave::size size, bool vertical) {
 		if (vertical) {
 			std::swap(size.cx, size.cy);
 		}
@@ -65,12 +108,23 @@ namespace wave
 			src_dc, rect.left, rect.top, SRCCOPY);
 	}
 
-	std::pair<CRect, CRect> split_rect(CRect rect, unsigned where)
+	void unity_blit(HDC dst_dc, inclusive_rect rect, HDC src_dc)
 	{
-		CRect other = rect;
+		CRect r(rect.left, rect.top, rect.right+1, rect.bottom+1);
+		unity_blit(dst_dc, r, src_dc);
+	}
+
+	std::pair<boost::optional<inclusive_rect>, boost::optional<inclusive_rect>> split_rect(inclusive_rect rect, unsigned where)
+	{
+		inclusive_rect other = rect;
+		rect.right = where-1;
 		other.left = where+1;
-		rect.right = where;
-		return std::make_pair(rect, other);
+		boost::optional<inclusive_rect> first, second;
+		if (rect.right >= rect.left)
+			first = rect;
+		if (other.right >= other.left)
+			second = other;
+		return std::make_pair(first, second);
 	}
 
 	struct cursor_info
@@ -85,67 +139,88 @@ namespace wave
 		auto playback_pos = callback.get_playback_position();
 		auto track_length = callback.get_track_length();
 		auto size = callback.get_size();
+		auto major_axis_length = callback.get_orientation() == config::orientation_vertical
+			? size.cy
+			: size.cx;
 		cursor_info info = {
-			(unsigned)(seek_pos * size.cx / track_length),
-			(unsigned)(playback_pos * size.cx / track_length),
+			(unsigned)(seek_pos * major_axis_length / track_length),
+			(unsigned)(playback_pos * major_axis_length / track_length),
 			callback.is_seeking(),
 			callback.is_cursor_visible() };
 		return info;
 	}
 
-	// returns rect+shadedness
-	std::vector<std::pair<CRect, bool>> compute_waveform_rects(CSize canvas_size, unsigned const* position, unsigned const* seek_position)
+	enum class Shade
 	{
-		bool const SHADED = true;
-		bool const UNSHADED = false;
-		typedef std::pair<CRect, bool> augmented_rect;
-		CRect canvas_rect(CPoint(0, 0), canvas_size);
+		SHADED, UNSHADED
+	};
+
+	size contract_size(size s)
+	{
+		return size(s.cx-1, s.cy-1);
+	}
+
+	typedef std::pair<inclusive_rect, Shade> augmented_rect;
+	template <typename IndirectRect>
+	static void append_if_valid(std::vector<augmented_rect>& v, IndirectRect p, Shade shade)
+	{
+		if (p) v.push_back(augmented_rect(*p, shade));
+	}
+
+	// returns rect+shadedness
+	std::vector<std::pair<inclusive_rect, Shade>> compute_waveform_rects(wave::size canvas_size, unsigned const* position, unsigned const* seek_position)
+	{
+		std::vector<augmented_rect> ret;
+		auto canvas_rect = make_inclusive_rect(make_point(0, 0), canvas_size);
 		if (!position) {
 			if (seek_position) {
-				/* [u) S [u) */
+				/* [u] S [u] */
 				auto halves = split_rect(canvas_rect, *seek_position);
-				std::array<augmented_rect, 2> rects = {
-					augmented_rect(halves.first, UNSHADED),
-					augmented_rect(halves.second, UNSHADED) };
-				return std::vector<augmented_rect>(rects.begin(), rects.end());
+				append_if_valid(ret, halves.first, Shade::UNSHADED);
+				append_if_valid(ret, halves.second, Shade::UNSHADED);
+				return ret;
 			}
-			/* [u) */
-			return std::vector<augmented_rect>(1, augmented_rect(canvas_rect, UNSHADED));
+			else {
+				/* [u] */
+				append_if_valid(ret, &canvas_rect, Shade::UNSHADED);
+			}
 		}
-		if (seek_position) {
-			auto const S = *seek_position;
+		else {
 			auto const P = *position;
 			auto outer_halves = split_rect(canvas_rect, P);
-			if (S < P) {
-				/* [s) S [s) P [u) : S<P */
-				auto inner_halves = split_rect(outer_halves.first, S);
-				std::array<augmented_rect, 3> rects = {
-					augmented_rect(inner_halves.first, SHADED),
-					augmented_rect(inner_halves.second, SHADED),
-					augmented_rect(outer_halves.second, UNSHADED) };
-				return std::vector<augmented_rect>(rects.begin(), rects.end());
+			if (seek_position) {
+				auto const S = *seek_position;
+				if (S < P) {
+					/* [s] S [s] P [u] : S<P */
+					append_if_valid(ret, outer_halves.second, Shade::UNSHADED);
+					if (outer_halves.first) {
+						auto inner_halves = split_rect(*outer_halves.first, S);
+						append_if_valid(ret, inner_halves.first, Shade::SHADED);
+						append_if_valid(ret, inner_halves.second, Shade::SHADED);
+					}
+				}
+				else if (*seek_position > *position) {
+					/* [s] P [u] S [u] : S>P */
+					append_if_valid(ret, outer_halves.first, Shade::SHADED);
+					if (outer_halves.second) {
+						auto inner_halves = split_rect(*outer_halves.second, S);
+						append_if_valid(ret, inner_halves.first, Shade::UNSHADED);
+						append_if_valid(ret, inner_halves.second, Shade::UNSHADED);
+					}
+				}
+				else {
+					/* [s] S [u] : S=P */
+					append_if_valid(ret, outer_halves.first, Shade::SHADED);
+					append_if_valid(ret, outer_halves.second, Shade::UNSHADED);
+				}
 			}
-			else if (*seek_position > *position) {
-				/* [s) P [u) S [u) : S>P */
-				auto inner_halves = split_rect(outer_halves.second, S);
-				std::array<augmented_rect, 3> rects = {
-					augmented_rect(outer_halves.first, SHADED),
-					augmented_rect(inner_halves.first, UNSHADED),
-					augmented_rect(inner_halves.second, UNSHADED) };
-				return std::vector<augmented_rect>(rects.begin(), rects.end());
+			else {
+				/* [s] P [u] */
+				append_if_valid(ret, outer_halves.first, Shade::SHADED);
+				append_if_valid(ret, outer_halves.second, Shade::UNSHADED);
 			}
-			/* [s) S [u) : S=P */
-			std::array<augmented_rect, 2> rects = {
-				augmented_rect(outer_halves.first, SHADED),
-				augmented_rect(outer_halves.second, UNSHADED) };
-			return std::vector<augmented_rect>(rects.begin(), rects.end());
 		}
-		/* [s) P [u) */
-		auto halves = split_rect(canvas_rect, *position);
-		std::array<augmented_rect, 2> rects = {
-			augmented_rect(halves.first, SHADED),
-			augmented_rect(halves.second, UNSHADED) };
-		return std::vector<augmented_rect>(rects.begin(), rects.end());
+		return ret;
 	}
 
 	void gdi_fallback_frontend::draw()
@@ -164,30 +239,32 @@ namespace wave
 			auto cursors = make_cursor_info(callback);
 			auto has_cursor = cursors.has_position;
 			auto is_seeking = cursors.has_seeking;
-			auto size = callback.get_size(), true_size = size;
-			auto canvas_size = CSize(size.cx, size.cy);
+			auto size = callback.get_size();
+			auto canvas_size = size;
+			auto object_size = reorient_size(canvas_size, vertical);
+			auto far_corner = make_point(size.cx-1, size.cy-1);
 			auto len = callback.get_track_length();
 			auto position = cursors.position_offset;
 			auto seek_position = cursors.seeking_offset;
+			auto shade_enabled = callback.get_shade_played();
 
-			auto rects = compute_waveform_rects(canvas_size, has_cursor ? &position : nullptr,
+			auto rects = compute_waveform_rects(canvas_size,
+				has_cursor ? &position : nullptr,
 				is_seeking ? &seek_position : nullptr);
 
 			for (auto ar : rects) {
-				auto rect = reorient_rect(ar.first, canvas_size, vertical, flip);
-				auto is_shaded = ar.second;
-				if (!rect.IsRectEmpty()) {
-					unity_blit(dc, rect, is_shaded ? *shaded_wave_dc : *wave_dc);
-				}
+				auto rect = reorient_rect(ar.first, far_corner.x, false, flip);
+				auto is_shaded = shade_enabled && ar.second == Shade::SHADED;
+				unity_blit(dc, rect, is_shaded ? *shaded_wave_dc : *wave_dc);
 			}
 			if (is_seeking) {
-				auto from = reorient_point(CPoint(seek_position, 0), canvas_size, vertical, flip);
-				auto to = reorient_point(CPoint(seek_position, size.cx), canvas_size, vertical, flip);
+				auto from = reorient_point(CPoint(seek_position, 0), far_corner.x, vertical, flip);
+				auto to = reorient_point(CPoint(seek_position, canvas_size.cy), far_corner.x, vertical, flip);
 				draw_bar(dc, from, to);
 			}
 			if (has_cursor && (!is_seeking || position != seek_position)) {
-				auto from = reorient_point(CPoint(position, 0), canvas_size, vertical, flip);
-				auto to = reorient_point(CPoint(position, size.cx), canvas_size, vertical, flip);
+				auto from = reorient_point(CPoint(position, 0), far_corner.x, vertical, flip);
+				auto to = reorient_point(CPoint(position, canvas_size.cy), far_corner.x, vertical, flip);
 				draw_bar(dc, from, to);
 			}
 		}
@@ -204,11 +281,11 @@ namespace wave
 		if (s & state_replaygain)
 			update_replaygain();
 #endif
+		if (s & state_shade_played) {
+			wnd.Invalidate(false);
+		}
 		if (s & state_position) {
 			update_positions();
-		}
-		if (s & state_shade_played) {
-			// invalidate shaded side
 		}
 		if (s & state_color)
 		{
@@ -217,10 +294,6 @@ namespace wave
 		}
 		if (s & (state_data | state_size | state_orientation | state_color | state_channel_order | state_downmix_display | state_flip_display))
 			update_data();
-#if 0
-		if (s & state_shade_played)
-			update_shade_played();
-#endif
 	}
 
 	void gdi_fallback_frontend::create_objects()
@@ -281,8 +354,8 @@ namespace wave
 	{
 		util::ScopedEvent se("GDI Frontend", "update_data");
 		auto size = callback.get_size();
-		last_play_rect = CRect(0, 0, size.cx, size.cy);
-		last_seek_rect = CRect(0, 0, size.cx, size.cy);
+		last_play_rect = make_inclusive_rect(make_point(0, 0), size);
+		last_seek_rect = make_inclusive_rect(make_point(0, 0), size);
 
 		{
 			util::ScopedEvent se("GDI Frontend", "DC reset");
@@ -332,7 +405,9 @@ namespace wave
 			channel_indices.enumerate([&, index_count](int index)
 			{
 				auto& outer_size = size;
-				CSize size(outer_size.cx, outer_size.cy / index_count);
+				unsigned low_y = (unsigned)(quad_index * outer_size.cy / index_count);
+				unsigned high_y = (unsigned)((quad_index+1) * outer_size.cy / index_count);
+				CSize size(outer_size.cx, high_y - low_y);
 				util::EventArgs ea;
 				ea["channel"] = std::to_string(index);
 				ea["dimensions"] = std::to_string(size.cx) + "x" + std::to_string(size.cy);
@@ -349,8 +424,6 @@ namespace wave
 				float4 textColor(txt.r, txt.g, txt.b, txt.a);
 				float4 hilightColor(hi.r, hi.g, hi.b, hi.a);
 				float4 tc;
-
-				float squash = (float)quad_index / (float)index_count;
 
 				util::ScopedEvent se2("GDI Frontend", "Shading loop");
 				float dx = 1.0f / (float)size.cx;
@@ -406,7 +479,7 @@ namespace wave
 						unshaded_row[target_x] = color_to_xrgb(cc);
 						shaded_row[target_x] = color_to_xrgb(ac);
 					}
-					size_t channel_offset = (size_t)(outer_size.cy * squash);
+					size_t channel_offset = low_y;
 					if (vertical) {
 						wave_dc->SetDIBitsToDevice(channel_offset, target_y, unshaded_row.size(), 1, 0, 0, 0, 1,
 							unshaded_row.data(), &bmi, DIB_RGB_COLORS);
@@ -416,7 +489,7 @@ namespace wave
 					else {
 						wave_dc->SetDIBitsToDevice(0, target_y + channel_offset, unshaded_row.size(), 1, 0, 0, 0, 1,
 							unshaded_row.data(), &bmi, DIB_RGB_COLORS);
-						shaded_wave_dc->SetDIBitsToDevice(channel_offset, target_y, shaded_row.size(), 1, 0, 0, 0, 1,
+						shaded_wave_dc->SetDIBitsToDevice(0, target_y + channel_offset, shaded_row.size(), 1, 0, 0, 0, 1,
 							shaded_row.data(), &bmi, DIB_RGB_COLORS);
 					}
 				}
@@ -426,43 +499,48 @@ namespace wave
 		wnd.Invalidate(FALSE);
 	}
 
+	bool invalidate_rect(HWND wnd, inclusive_rect rect, bool erase = false)
+	{
+		CRect r(rect.left, rect.top, rect.right+1, rect.bottom+1);
+		return InvalidateRect(wnd, &r, erase ? TRUE : FALSE) == TRUE;
+	}
+
 	void gdi_fallback_frontend::update_positions()
 	{
-		auto size = callback.get_size();
-		CSize canvas_size(size.cx, size.cy);
+		auto canvas_size = callback.get_size();
+		auto far_corner = make_point(canvas_size.cx-1, canvas_size.cy-1);
 		auto vertical = callback.get_orientation() == config::orientation_vertical;
 		auto flip = callback.get_flip_display();
 		auto shade_played = callback.get_shade_played();
 		auto cursors = make_cursor_info(callback);
-		boost::optional<CRect> play_rect;
-		boost::optional<CRect> seek_rect;
+		boost::optional<inclusive_rect> play_rect;
+		boost::optional<inclusive_rect> seek_rect;
 		if (cursors.has_position) {
-			CRect r(cursors.position_offset, 0, cursors.position_offset+1, size.cy);
-			play_rect = reorient_rect(r, canvas_size, vertical, flip);
+			auto r = make_inclusive_rect(cursors.position_offset, 0, cursors.position_offset, far_corner.y);
+			play_rect = reorient_rect(r, far_corner.x, vertical, flip);
 		}
 		if (cursors.has_seeking) {
-			CRect r(cursors.seeking_offset, 0, cursors.seeking_offset+1, size.cy);
-			seek_rect = reorient_rect(r, canvas_size, vertical, flip);
+			auto r = make_inclusive_rect(cursors.seeking_offset, 0, cursors.seeking_offset, far_corner.y);
+			seek_rect = reorient_rect(r, far_corner.x, vertical, flip);
 		}
 		if (last_play_rect != play_rect) {
 			if (shade_played && last_play_rect) {
-				CRect extent = play_rect ? *play_rect
-					: reorient_rect(CRect(0, 0, 1, size.cy), canvas_size, vertical, flip);
-				CRect combined_play_rect;
-				combined_play_rect.UnionRect(extent, &*last_play_rect);
-				InvalidateRect(wnd, &combined_play_rect, FALSE);
+				auto extent = play_rect ? *play_rect
+					: reorient_rect(make_inclusive_rect(0, 0, 0, far_corner.y), far_corner.x, vertical, flip);
+				auto combined_play_rect = rect_union(extent, *last_play_rect);
+				invalidate_rect(wnd, combined_play_rect);
 			}
 			else {
 				if (play_rect)
-					InvalidateRect(wnd, &*play_rect, FALSE);
+					invalidate_rect(wnd, *play_rect);
 				if (last_play_rect)
-					InvalidateRect(wnd, &*last_play_rect, FALSE);
+					invalidate_rect(wnd, *last_play_rect);
 			}
 		}
 		if (seek_rect)
-			InvalidateRect(wnd, &*seek_rect, FALSE);
+			invalidate_rect(wnd, *seek_rect);
 		if (last_seek_rect)
-			InvalidateRect(wnd, &*last_seek_rect, FALSE);
+			invalidate_rect(wnd, *last_seek_rect);
 		last_play_rect = play_rect;
 		last_seek_rect = seek_rect;
 	}

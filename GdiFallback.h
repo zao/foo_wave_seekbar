@@ -31,6 +31,36 @@ namespace wave
 		}
 	};
 
+	struct inclusive_rect
+	{
+		int left, top, right, bottom;
+	};
+
+	inline int compare(inclusive_rect a, inclusive_rect b) {return std::memcmp(&a, &b, sizeof(inclusive_rect));}
+
+	inline bool operator <  (inclusive_rect a, inclusive_rect b) {return compare(a, b) <  0;}
+	inline bool operator <= (inclusive_rect a, inclusive_rect b) {return compare(a, b) <= 0;}
+	inline bool operator >  (inclusive_rect a, inclusive_rect b) {return compare(a, b) >  0;}
+	inline bool operator >= (inclusive_rect a, inclusive_rect b) {return compare(a, b) >= 0;}
+	inline bool operator == (inclusive_rect a, inclusive_rect b) {return compare(a, b) == 0;}
+	inline bool operator != (inclusive_rect a, inclusive_rect b) {return compare(a, b) != 0;}
+
+	struct point
+	{
+		int x, y;
+	};
+
+	inclusive_rect make_inclusive_rect(int left, int top, int right, int bottom);
+	inclusive_rect make_inclusive_rect(point p, size dimension);
+	point make_point(int x, int y);
+
+	inclusive_rect transpose(inclusive_rect rect);
+	inclusive_rect right_align(inclusive_rect rect);
+	inclusive_rect bottom_align(inclusive_rect rect);
+	inclusive_rect rect_union(inclusive_rect a, inclusive_rect b);
+
+	size contract_size(size s);
+
 	struct gdi_fallback_frontend : visual_frontend
 	{
 		gdi_fallback_frontend(HWND wnd, wave::size, visual_frontend_callback& callback, visual_frontend_config& conf);
@@ -50,8 +80,8 @@ namespace wave
 		CPoint orientate(CPoint);
 
 		CWindow wnd;
-		boost::optional<CRect> last_play_rect;
-		boost::optional<CRect> last_seek_rect;
+		boost::optional<inclusive_rect> last_play_rect;
+		boost::optional<inclusive_rect> last_seek_rect;
 
 		scoped_ptr<mem_dc> wave_dc, shaded_wave_dc;
 		scoped_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
