@@ -104,8 +104,8 @@ namespace wave
 	{
 		util::ScopedEvent se("Windowing", "initialize_frontend");
 		scoped_lock sl(fe->mutex);
-		double present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
-		DWORD present_interval = 100;
+		present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
+		present_interval = 100;
 		try
 		{
 			OSVERSIONINFOEX osv = {};
@@ -161,9 +161,16 @@ namespace wave
 
 		if (fe->frontend)
 		{
+			if (repaint_timer_id) {
+				KillTimer(repaint_timer_id);
+				repaint_timer_id = 0;
+			}
 			try_get_data();
 			fe->frontend->on_state_changed((visual_frontend::state)~0);
-			repaint_timer_id = SetTimer(REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
+			static_api_ptr_t<playback_control> pc;
+			if (pc->is_playing()) {
+				repaint_timer_id = SetTimer(REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
+			}
 		}
 	}
 

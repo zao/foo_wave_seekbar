@@ -77,8 +77,10 @@ namespace wave
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
-		if (fe->frontend)
+		if (fe->frontend) {
+			repaint_timer_id = SetTimer(REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
+		}
 	}
 
 	void seekbar_window::on_stop()
@@ -87,8 +89,11 @@ namespace wave
 		scoped_lock sl(fe->mutex);
 		fe->callback->set_cursor_visible(false);
 		fe->callback->set_playback_position(0.0);
-		if (fe->frontend)
+		if (fe->frontend) {
+			KillTimer(repaint_timer_id);
+			repaint_timer_id = 0;
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
+		}
 	}
 
 	static const GUID order_default = { 0xbfc61179, 0x49ad, 0x4e95, { 0x8d, 0x60, 0xa2, 0x27, 0x06, 0x48, 0x55, 0x05 } };

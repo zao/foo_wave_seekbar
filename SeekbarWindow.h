@@ -119,6 +119,8 @@ namespace wave
 		void flush_frontend();
 
 		CRect client_rect;
+		double present_scale;
+		DWORD present_interval;
 		UINT_PTR repaint_timer_id;
 
 		CPoint last_seek_point;
