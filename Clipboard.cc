@@ -155,9 +155,9 @@ namespace clipboard
 		return buf;
 	}
 
-	shared_ptr<storage> make_storage(unsigned channel_count, unsigned channel_config, unsigned sample_rate, double sample_length)
+	std::shared_ptr<storage> make_storage(unsigned channel_count, unsigned channel_config, unsigned sample_rate, double sample_length)
 	{
-		shared_ptr<storage> ret = make_shared<storage>();
+		auto ret = std::make_shared<storage>();
 		ret->frame_count = (t_int64)(sample_rate * sample_length);
 		ret->data_offset = 8 + chunk_traits<riff_chunk>::size(ret->framing);
 		
@@ -213,7 +213,7 @@ namespace clipboard
 			std::deque<audio_chunk_impl> chunks;
 			t_int64 samples_decoded = 0;
 
-			shared_ptr<storage> clip_storage;
+			std::shared_ptr<storage> clip_storage;
 
 			while (true)
 			{

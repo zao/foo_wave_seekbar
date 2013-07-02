@@ -28,7 +28,7 @@ namespace wave
 		void get_all(pfc::list_t<playable_location_impl>&);
 
 	private:
-		shared_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
-		shared_ptr<sqlite3> backing_db;
+		std::shared_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
+		std::shared_ptr<sqlite3> backing_db;
 	};
 }

@@ -11,7 +11,7 @@ namespace wave
 static std::atomic<bool> modules_loaded;
 static std::mutex module_load_mutex;
 static boost::barrier module_load_barrier(2);
-static std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
+static std::vector<std::shared_ptr<frontend_module>> frontend_modules;
 
 void wait_for_frontend_module_load()
 {
@@ -19,7 +19,7 @@ void wait_for_frontend_module_load()
 		std::lock_guard<std::mutex> lg(module_load_mutex);
 }
 
-std::vector<boost::shared_ptr<frontend_module>> list_frontend_modules()
+std::vector<std::shared_ptr<frontend_module>> list_frontend_modules()
 {
 	if (!modules_loaded)
 		std::lock_guard<std::mutex> lg(module_load_mutex);
@@ -65,7 +65,7 @@ static void load_frontend_modules()
 		modules_loaded = false;
 		std::lock_guard<std::mutex> lg(module_load_mutex);
 		module_load_barrier.wait();
-		frontend_modules.push_back(boost::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
+		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		try
 		{
 			namespace fs = boost::filesystem;
@@ -84,7 +84,7 @@ static void load_frontend_modules()
 					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
 					if (entry)
 					{
-						auto mod = boost::make_shared<frontend_module>(lib, entry());
+						auto mod = std::make_shared<frontend_module>(lib, entry());
 						frontend_modules.push_back(mod);
 					}
 					else

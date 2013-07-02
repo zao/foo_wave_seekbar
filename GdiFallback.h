@@ -53,9 +53,9 @@ namespace wave
 		boost::optional<CRect> last_play_rect;
 		boost::optional<CRect> last_seek_rect;
 
-		scoped_ptr<mem_dc> wave_dc, shaded_wave_dc;
-		scoped_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
-		scoped_ptr<CBrush> brush_background;
+		std::unique_ptr<mem_dc> wave_dc, shaded_wave_dc;
+		std::unique_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
+		std::unique_ptr<CBrush> brush_background;
 
 		visual_frontend_callback& callback;
 	};

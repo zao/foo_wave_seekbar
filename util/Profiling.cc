@@ -1,7 +1,7 @@
 #include "PchSeekbar.h"
 #include "Profiling.h"
 #include <mutex>
-#include <boost/atomic.hpp>
+#include <atomic>
 #include "json/json.h"
 #include <ctime>
 #include <fstream>
@@ -11,10 +11,10 @@
 namespace util
 {
 static std::string target_filename;
-static boost::atomic<bool> initialized, logging;
+static std::atomic<bool> initialized, logging;
 static std::mutex logging_mutex;
-static boost::asio::io_service io;
-static boost::asio::ip::tcp::socket log_socket(io);
+static asio::io_service io;
+static asio::ip::tcp::socket log_socket(io);
 static LARGE_INTEGER start_time_counter;
 
 static double now()
@@ -39,11 +39,11 @@ static void lazy_recording_init(std::lock_guard<std::mutex> const&)
 				port = (uint16_t)*p;
 			UnmapViewOfFile(p);
 			CloseHandle(shared_mapping);
-			boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address_v4::loopback(), port);
-			boost::system::error_code ec;
+			asio::ip::tcp::endpoint endpoint(asio::ip::address_v4::loopback(), port);
+			asio::error_code ec;
 			log_socket.connect(endpoint, ec);
 			uint8_t handshake[] = { 0u };
-			boost::asio::write(log_socket, boost::asio::buffer(handshake, 1), ec);
+			asio::write(log_socket, asio::buffer(handshake, 1), ec);
 			if (!ec) {
 				logging = true;
 				QueryPerformanceCounter(&start_time_counter);
@@ -63,7 +63,7 @@ bool is_recording_enabled()
 	return logging;
 }
 
-static boost::atomic<uint32_t> id_source;
+static std::atomic<uint32_t> id_source;
 uint64_t generate_recording_id()
 {
 	return id_source++;
@@ -100,12 +100,12 @@ void record_event(Phase phase, char const* category, char const* name, uint64_t 
 			console::warning("Seekbar: Oversized trace message, dropping it.");
 			return;
 		}
-		boost::system::error_code ec;
+		asio::error_code ec;
 		uint8_t op = 0u; // OP_ENTRY
 		uint16_t num_bytes = htons((uint16_t)s.size());
-		boost::asio::write(log_socket, boost::asio::buffer(&op, 1), ec);
-		boost::asio::write(log_socket, boost::asio::buffer(&num_bytes, 2), ec);
-		boost::asio::write(log_socket, boost::asio::buffer(s), ec);
+		asio::write(log_socket, asio::buffer(&op, 1), ec);
+		asio::write(log_socket, asio::buffer(&num_bytes, 2), ec);
+		asio::write(log_socket, asio::buffer(s), ec);
 	}
 }
 

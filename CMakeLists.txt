@@ -1,4 +1,6 @@
+set(ASIO_ROOT "" CACHE FILEPATH "Locates an extracted or installed Asio tree")
 include_directories(${WTL_INCLUDE_DIRS})
+include_directories("${ASIO_ROOT}/include")
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${TBB_INCLUDE_DIRS})
 include_directories(AFTER ${DXSDK_INCLUDE_DIRS})
@@ -44,7 +46,6 @@ set(SEEKBAR_SOURCES
 	"SeekbarCui.h"
 	"SeekbarDui.cc"
 	"SeekbarDui.h"
-	"SeekbarState.h"
 	"SeekbarWindow.Callbacks.cc"
 	"SeekbarWindow.cc"
 	"SeekbarWindow.ConfigDialog.cc"

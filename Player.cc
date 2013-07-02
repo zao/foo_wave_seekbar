@@ -4,6 +4,7 @@
 #include "Helpers.h"
 
 #include <mutex>
+#include <set>
 
 namespace wave
 {
@@ -41,7 +42,7 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		, playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 	{}
 
-	void on_waveform_result(playable_location_impl loc, shared_ptr<get_response> resp)
+	void on_waveform_result(playable_location_impl loc, std::shared_ptr<get_response> resp)
 	{
 		in_main_thread([=]{
 			util::EventArgs ea;
@@ -69,14 +70,14 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		static_api_ptr_t<cache>()->service_query_t(c);
 		if (! c->get_waveform_sync(loc, wf) && ! c->is_location_forbidden(loc)) {
 			// if not, schedule a scan
-			auto req = boost::make_shared<get_request>();
-			req->completion_handler = boost::bind(&callbacks::on_waveform_result, this, playable_location_impl(loc), _1);
+			auto req = std::make_shared<get_request>();
+			req->completion_handler = std::bind(&callbacks::on_waveform_result, this, playable_location_impl(loc), std::placeholders::_1);
 			req->location = loc;
 			req->user_requested = false;
 			c->get_waveform(req);
 		}
 		else {
-			auto resp = boost::make_shared<get_response>();
+			auto resp = std::make_shared<get_response>();
 			resp->waveform = wf;
 			on_waveform_result(loc, resp);
 		}

@@ -225,13 +225,13 @@ namespace wave
 
 	void gdi_fallback_frontend::create_objects()
 	{
-		auto pen_from_color = [&](config::color color, scoped_ptr<CPen>& out)
+		auto pen_from_color = [&](config::color color, std::unique_ptr<CPen>& out)
 		{
 			auto c = callback.get_color(color);
 			out.reset(new CPen);
 			out->CreatePen(PS_SOLID, 0, color_to_xbgr(c));
 		};
-		auto solid_brush_from_color = [&](config::color color, scoped_ptr<CBrush>& out)
+		auto solid_brush_from_color = [&](config::color color, std::unique_ptr<CBrush>& out)
 		{
 			auto c = callback.get_color(color);
 			out.reset(new CBrush);

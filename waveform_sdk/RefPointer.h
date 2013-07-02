@@ -4,7 +4,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include <boost/atomic.hpp>
+#include <atomic>
 
 struct ref_base
 {
@@ -16,7 +16,7 @@ struct ref_base
 private:
 	ref_base& operator = (ref_base const&);
 	ref_base(ref_base const&);
-	boost::atomic<int> ref;
+	std::atomic<int> ref;
 };
 
 template <typename T>

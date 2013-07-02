@@ -141,21 +141,25 @@ namespace wave
 				if (callback.get_orientation() == config::orientation_horizontal)
 				{
 					viewport.y /= (float)n;
-					buf +=
+					float arr[] = {
 						// position2f, texcoord2f
 						-1.0f, lerp(-1.0f, 1.0f, sides.x), -1.0f, -1.0f,
 						-1.0f, lerp(-1.0f, 1.0f, sides.y), -1.0f,  1.0f,
 						 1.0f, lerp(-1.0f, 1.0f, sides.x),  1.0f, -1.0f,
-						 1.0f, lerp(-1.0f, 1.0f, sides.y),  1.0f,  1.0f;
+						 1.0f, lerp(-1.0f, 1.0f, sides.y),  1.0f,  1.0f
+					};
+					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
 				}
 				else
 				{
 					viewport.x /= (float)n;
-					buf +=
+					float arr[] = {
 						lerp(1.0f, -1.0f, sides.x), -1.0f, -1.0f, -1.0f,
 						lerp(1.0f, -1.0f, sides.y), -1.0f,  1.0f, -1.0f,
 						lerp(1.0f, -1.0f, sides.x),  1.0f, -1.0f,  1.0f,
-						lerp(1.0f, -1.0f, sides.y),  1.0f,  1.0f,  1.0f;
+						lerp(1.0f, -1.0f, sides.y),  1.0f,  1.0f,  1.0f
+					};
+					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
 				}
 
 				effect_params.set(parameters::viewport_size, viewport);

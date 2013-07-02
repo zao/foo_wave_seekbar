@@ -7,13 +7,9 @@
 
 #include <vector>
 #include "waveform_sdk/Waveform.h"
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
 
-namespace wave {
-	using boost::function;
-	using boost::shared_ptr;
-
+namespace wave
+{
 	struct get_response
 	{
 		get_response() : valid_bucket_count(2048) {}
@@ -24,16 +20,16 @@ namespace wave {
 	struct get_request
 	{
 		get_request()
-			: completion_handler([](shared_ptr<get_response>) {})
+			: completion_handler([](std::shared_ptr<get_response>) {})
 		{}
 		playable_location_impl location;
 		bool user_requested;
-		function<void (shared_ptr<get_response>)> completion_handler;
+		std::function<void (std::shared_ptr<get_response>)> completion_handler;
 	};
 
 	struct cache : service_base
 	{
-		virtual void get_waveform(shared_ptr<get_request> request) abstract;
+		virtual void get_waveform(std::shared_ptr<get_request> request) abstract;
 		virtual void remove_dead_waveforms() abstract;
 		virtual void compact_storage() abstract;
 		virtual void rescan_waveforms() abstract;
@@ -60,7 +56,7 @@ namespace wave {
 
 	struct cache_v4 : cache_v3
 	{
-		virtual void defer_action(boost::function<void ()> fun) abstract;
+		virtual void defer_action(std::function<void ()> fun) abstract;
 
 		FB2K_MAKE_SERVICE_INTERFACE(cache_v4, cache_v3)
 	};

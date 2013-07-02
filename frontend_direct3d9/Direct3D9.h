@@ -7,6 +7,8 @@
 #include "../frontend_sdk/VisualFrontend.h"
 #include <array>
 #include <map>
+#include <memory>
+#include <stack>
 #include "resource.h"
 #include "Scintilla.h"
 
