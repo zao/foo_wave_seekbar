@@ -63,7 +63,7 @@ namespace wave
 		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, boost::shared_ptr<incremental_result_sink> incremental_output = boost::shared_ptr<incremental_result_sink>());
 
-		tbb::atomic<bool> is_initialized;
+		boost::atomic<bool> is_initialized;
 		boost::barrier init_barrier;
 		boost::mutex init_mutex;
 
