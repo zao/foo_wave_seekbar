@@ -11,18 +11,6 @@
 #define NOMINMAX
 using std::min; using std::max;
 
-#include <boost/assign.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/range/algorithm/for_each.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/variant.hpp>
-
-using boost::noncopyable;
-using boost::scoped_ptr;
-using boost::shared_ptr;
-using boost::weak_ptr;
-
 #include <atlbase.h>
 #include <atlapp.h>
 #include <atlcom.h>

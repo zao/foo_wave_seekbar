@@ -132,7 +132,6 @@ namespace wave
 			//D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
 			auto draw_quad = [&,this](int idx, int ch, int n)
 			{
-				using namespace boost::assign;
 				D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
 				D3DXVECTOR4 viewport = D3DXVECTOR4((float)target_width, (float)target_height, 0.0f, 0.0f);
 				sides /= (float)n;
@@ -333,36 +332,50 @@ namespace wave
 				real_time = "REALTIME";
 		}
 
-		struct attribute_setter : boost::static_visitor<void>
+		struct attribute_setter
 		{
 			CComPtr<ID3DXEffect> const& fx;
 			std::string const& key;
 			explicit attribute_setter(CComPtr<ID3DXEffect> const& fx, std::string const& key) : fx(fx), key(key) {}
 
-			D3DXHANDLE get() { return fx->GetParameterBySemantic(nullptr, key.c_str()); }
+			D3DXHANDLE get() const { return fx->GetParameterBySemantic(nullptr, key.c_str()); }
+			typedef effect_parameters::attribute attribute;
+
+			void operator () (attribute const& attr) const
+			{
+				switch (attr.kind) {
+					case attribute::FLOAT:   apply(attr.f); break;
+					case attribute::BOOL:    apply(attr.b); break;
+					case attribute::VECTOR4: apply(attr.v); break;
+					case attribute::MATRIX:  apply(attr.m); break;
+					case attribute::TEXTURE: apply(attr.t); break;
+				}
+			}
 
 			// <float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9>
-			void operator () (float const& f)
+			void apply(float const& f) const
 			{
 				if (auto h = get()) fx->SetFloat(h, f);
 			}
 
-			void operator () (bool const& b)
+			void apply(bool const& b) const
 			{
 				if (auto h = get()) fx->SetBool(h, b);
 			}
 
-			void operator () (D3DXVECTOR4 const& v)
+			void apply(std::array<float, 4> const& a) const
 			{
+				auto v = D3DXVECTOR4(a.data());
 				if (auto h = get()) fx->SetVector(h, &v);
 			}
 
-			void operator () (D3DXMATRIX const& m)
+			void apply(std::array<float, 16> const& a) const
 			{
+				auto m = D3DXMATRIX(a.data());
 				if (auto h = get()) fx->SetMatrix(h, &m);
 			}
 
-			void operator () (IDirect3DTexture9* tex)
+			void apply(IDirect3DTexture9* tex) const
 			{
 				if (auto h = get()) fx->SetTexture(h, tex);
 			}
@@ -374,7 +387,7 @@ namespace wave
 				[fx](std::pair<std::string const, attribute>& value)
 				{
 					attribute_setter vtor(fx, value.first);
-					boost::apply_visitor(vtor, value.second);
+					vtor(value.second);
 				});
 		}
 	}

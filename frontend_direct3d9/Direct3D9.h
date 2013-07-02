@@ -5,11 +5,9 @@
 
 #pragma once
 #include "../frontend_sdk/VisualFrontend.h"
+#include <array>
 #include <map>
 #include "resource.h"
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/fusion/include/adapted.hpp>
-#include <boost/optional.hpp>
 #include "Scintilla.h"
 
 namespace wave
@@ -49,18 +47,37 @@ namespace wave
         viewport_size, replaygain,
         orientation, flipped, shade_played,
         waveform_data, channel_magnitude, track_magnitude,
-		track_time, track_duration, real_time;
+        track_time, track_duration, real_time;
     };
 
     struct effect_parameters
     {
-      typedef boost::variant<float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9*> attribute;
+      struct attribute
+      {
+        enum Kind {
+          FLOAT, BOOL, VECTOR4, MATRIX, TEXTURE
+        } kind;
+        union
+        {
+          float f;
+          bool b;
+          std::array<float, 4> v;
+          std::array<float, 16> m;
+          IDirect3DTexture9* t;
+        };
+      };
       std::map<std::string, attribute> attributes;
+
+      void assign(attribute& dst, float f)               {dst.kind = attribute::FLOAT;    dst.f = f;}
+      void assign(attribute& dst, bool b)                {dst.kind = attribute::BOOL;     dst.b = b;}
+      void assign(attribute& dst, D3DXVECTOR4 v)         {dst.kind = attribute::VECTOR4;  memcpy(dst.v.data(), v, sizeof(float)*4);}
+      void assign(attribute& dst, D3DXMATRIX m)          {dst.kind = attribute::MATRIX;   memcpy(dst.m.data(), m, sizeof(float)*16);}
+      void assign(attribute& dst, IDirect3DTexture9* t)  {dst.kind = attribute::TEXTURE;  dst.t = t;}
 
       template <typename T>
       void set(std::string what, T const& t)
       {
-        attributes[what] = t;
+        assign(attributes[what], t);
       }
 
       void apply_to(CComPtr<ID3DXEffect> fx);
@@ -95,7 +112,7 @@ namespace wave
     private: // Misc state
       CComPtr<IDirect3D9> d3d;
       CComPtr<IDirect3DDevice9> dev;
-	  duration_query real_time;
+    duration_query real_time;
 
       std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
       std::vector<unsigned> channel_numbers;
@@ -113,8 +130,8 @@ namespace wave
 
       D3DPRESENT_PARAMETERS pp;
 
-	  std::map<unsigned, D3DXVECTOR4> channel_magnitudes;
-	  D3DXVECTOR4 track_magnitude;
+    std::map<unsigned, D3DXVECTOR4> channel_magnitudes;
+    D3DXVECTOR4 track_magnitude;
 
     private: // Host references
       visual_frontend_callback& callback;
@@ -135,7 +152,7 @@ namespace wave
       bool floating_point_texture;
 
     private: // Configuration
-      scoped_ptr<config_dialog> config;
+      std::unique_ptr<config_dialog> config;
 
       void get_effect_compiler(ref_ptr<effect_compiler>& out);
       void set_effect(ref_ptr<effect_handle> effect, bool permanent);
@@ -218,16 +235,32 @@ namespace wave
           send(SCI_ANNOTATIONCLEARALL);
         }
 
+        static void trim(std::string& in)
+        {
+          if (in.empty())
+            return;
+          auto c = in.c_str();
+          size_t a = 0u;
+          size_t b = in.size()-1;
+          while (isspace(in[b]) && b > a) {
+            --b;
+          }
+          while (isspace(in[a]) && a < b) {
+            ++a;
+          }
+          in = std::string(c + a, b - a);
+        }
+
         void add_annotation(int line, std::string text)
         {
           if (line < 0)
             return;
-          boost::algorithm::trim(text);
+          trim(text);
           std::string& s = annotations[line];
           if (!s.empty())
             s += '\n';
           s += text;
-          boost::algorithm::trim(s);
+          trim(s);
           send(SCI_ANNOTATIONSETTEXT, line, s.c_str());
           send(SCI_ANNOTATIONSETVISIBLE, 2);
         }
@@ -247,77 +280,54 @@ namespace wave
       ref_ptr<effect_handle> fx;
     };
 
-    struct NOVTABLE effect_compiler : ref_base, noncopyable
+    struct NOVTABLE effect_compiler : ref_base
     {
+      effect_compiler() {}
+      effect_compiler(effect_compiler const&);
+      effect_compiler& operator = (effect_compiler const&);
       struct diagnostic_entry
       {
-        struct location
-        {
-          int row, col;
-        };
-
-        boost::optional<location> loc;
-        std::string type, code, message;
+        std::string line;
       };
 
-			struct diagnostic_sink
-			{
-				virtual void on_error(char const* type, char const* code, char const* message) const abstract;
-				virtual void on_error(char const* type, char const* code, char const* message, int row, int col) const abstract;
-			};
+      struct diagnostic_sink
+      {
+        virtual void on_error(char const* line) const abstract;
+      };
 
       virtual ~effect_compiler() {}
       virtual bool compile_fragment(ref_ptr<effect_handle>& effect, diagnostic_sink const& output, char const* data, size_t data_bytes) = 0;
     };
 
-    struct NOVTABLE effect_handle : ref_base, noncopyable
+    struct NOVTABLE effect_handle : ref_base
     {
+      effect_handle() {}
+      effect_handle(effect_handle const&);
+      effect_handle& operator = (effect_handle const&);
       virtual ~effect_handle() {}
       virtual CComPtr<ID3DXEffect> get_effect() const = 0;
     };
-	
-		struct diagnostic_collector : effect_compiler::diagnostic_sink
-		{
-			struct entry
-			{
-				int row, col;
-				bool has_loc;
-				std::string type, code, message;
-			};
 
-			void on_error(char const* type, char const* code, char const* message, int row, int col) const override
-			{
-				entry e = { row, col, true, type, code, message };
-				entries.push_back(e);
-			}
+    struct diagnostic_collector : effect_compiler::diagnostic_sink
+    {
+      struct entry
+      {
+        std::string line;
+      };
 
-			void on_error(char const* type, char const* code, char const* message) const override
-			{
-				on_error(type, code, message, 0, 0);
-				entries.back().has_loc = false;
-			}
+      void on_error(char const* line) const override
+      {
+        entry e = { line };
+        entries.push_back(e);
+      }
 
-			diagnostic_collector(std::deque<entry>& entries)
-				: entries(entries)
-			{
-				entries.clear();
-			}
+      diagnostic_collector(std::deque<entry>& entries)
+        : entries(entries)
+      {
+        entries.clear();
+      }
 
-			std::deque<entry>& entries;
-		};
+      std::deque<entry>& entries;
+    };
   }
 }
-
-BOOST_FUSION_ADAPT_STRUCT(
-  wave::direct3d9::effect_compiler::diagnostic_entry::location,
-  (int, row)
-  (int, col)
-  )
-
-BOOST_FUSION_ADAPT_STRUCT(
-  wave::direct3d9::effect_compiler::diagnostic_entry,
-  (boost::optional<wave::direct3d9::effect_compiler::diagnostic_entry::location>, loc)
-  (std::string, type)
-  (std::string, code)
-  (std::string, message)
-  )
