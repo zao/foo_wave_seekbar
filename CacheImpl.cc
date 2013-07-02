@@ -249,18 +249,6 @@ namespace wave
 		}
 	}
 
-	void cache_impl::compression_bench()
-	{
-		try_delayed_init();
-		if (store)
-		{
-			io.post([this]()
-			{
-				store->bench();
-			});
-		}
-	}
-
 	void cache_impl::defer_action(std::function<void ()> fun)
 	{
 		try_delayed_init();

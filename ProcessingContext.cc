@@ -38,7 +38,7 @@ namespace wave
 		}
 	}
 
-	void remove(service_ptr_t<cache_v2> cache, std::shared_ptr<std::vector<playable_location_impl>> locs)
+	void remove(service_ptr_t<cache> cache, std::shared_ptr<std::vector<playable_location_impl>> locs)
 	{
 		for (auto I = locs->begin(); I != locs->end(); ++I)
 		{
@@ -49,7 +49,7 @@ namespace wave
 
 	void processing_contextmenu_item::context_command(unsigned p_index, metadb_handle_list_cref p_data, const GUID& p_caller)
 	{
-		auto infoCache = standard_api_create_t<cache_v4>();
+		auto infoCache = standard_api_create_t<cache>();
 		auto locs = std::make_shared<std::vector<playable_location_impl>>();
 		locs->reserve(p_data.get_size());
 		p_data.enumerate([&](metadb_handle_ptr p)

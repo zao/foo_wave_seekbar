@@ -38,13 +38,21 @@ frontend_module::~frontend_module()
 	}
 }
 
+static bool starts_with(char const* string, char const* prefix)
+{
+	while (*string && *prefix && *string == *prefix) {
+		++string; ++prefix;
+	}
+	return *prefix == '\0';
+}
+
 static boost::filesystem::path file_location_to_path(char const* fb2k_file)
 {
 	pfc::string8 native;
 
 	// foobar2000_io::extract_native_path() can strip out file://, but will
 	// currently (2011-08-14) break if fed a native path, thus this test.
-	if (boost::algorithm::starts_with(fb2k_file, "file://"))
+	if (starts_with(fb2k_file, "file://"))
 	{
 		foobar2000_io::extract_native_path(fb2k_file, native);
 	}

@@ -8,6 +8,7 @@
 
 #include <boost/mpl/string.hpp>
 #include <mmreg.h>
+#include <deque>
 #include <fstream>
 
 namespace mpl = boost::mpl;

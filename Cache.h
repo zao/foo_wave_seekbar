@@ -36,56 +36,19 @@ namespace wave
 
 		virtual void flush() abstract;
 
-		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(cache)
-	};
-
-	struct cache_v2 : cache
-	{
 		virtual bool has_waveform(playable_location const& loc) abstract;
 		virtual void remove_waveform(playable_location const& loc) abstract;
 
-		FB2K_MAKE_SERVICE_INTERFACE(cache_v2, cache)
-	};
-
-	struct cache_v3 : cache_v2
-	{
-		virtual void compression_bench() abstract;
-
-		FB2K_MAKE_SERVICE_INTERFACE(cache_v3, cache_v2)
-	};
-
-	struct cache_v4 : cache_v3
-	{
 		virtual void defer_action(std::function<void ()> fun) abstract;
 
-		FB2K_MAKE_SERVICE_INTERFACE(cache_v4, cache_v3)
-	};
-
-	struct cache_v5 : cache_v4
-	{
 		virtual bool is_location_forbidden(playable_location const& loc) abstract;
 		virtual bool get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out) abstract;
-
-		FB2K_MAKE_SERVICE_INTERFACE(cache_v5, cache_v4)
+		
+		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(cache)
 	};
 
-	// {A4F5529F-752F-4F13-B703-FD938C211E7D}
-	__declspec(selectany) const GUID cache_v5::class_guid = 
-	{ 0xa4f5529f, 0x752f, 0x4f13, { 0xb7, 0x3, 0xfd, 0x93, 0x8c, 0x21, 0x1e, 0x7d } };
-
-	// {0E58FDB7-0B5B-4727-968A-ED2EFCAE75AA}
-	__declspec(selectany) const GUID cache_v4::class_guid = 
-	{ 0xe58fdb7, 0xb5b, 0x4727, { 0x96, 0x8a, 0xed, 0x2e, 0xfc, 0xae, 0x75, 0xaa } };
-	
-	// {503C40C1-ED5B-492E-98D7-DE9EB63D2F81}
-	__declspec(selectany) const GUID cache_v3::class_guid = 
-	{ 0x503c40c1, 0xed5b, 0x492e, { 0x98, 0xd7, 0xde, 0x9e, 0xb6, 0x3d, 0x2f, 0x81 } };
-
-	// {195F8048-1CF9-467A-AC72-5811E0636D77}
-	__declspec(selectany) const GUID cache_v2::class_guid = 
-	{ 0x195f8048, 0x1cf9, 0x467a, { 0xac, 0x72, 0x58, 0x11, 0xe0, 0x63, 0x6d, 0x77 } };
-	
-	// {5A1DFE0F-B6B8-4891-9798-16230D8C4D21}
+	// {46844662-C924-402B-A0F9-A062B2074698}
 	__declspec(selectany) const GUID cache::class_guid = 
-	{ 0x5a1dfe0f, 0xb6b8, 0x4891, { 0x97, 0x98, 0x16, 0x23, 0xd, 0x8c, 0x4d, 0x21 } };
+	{ 0x46844662, 0xc924, 0x402b, { 0xa0, 0xf9, 0xa0, 0x62, 0xb2, 0x7, 0x46, 0x98 } };
+
 }

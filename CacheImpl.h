@@ -33,7 +33,7 @@ namespace wave
 
 	bool is_of_forbidden_protocol(playable_location const& loc);
 
-	struct cache_impl : cache_v5
+	struct cache_impl : cache
 	{
 		cache_impl();
 		~cache_impl();
@@ -47,8 +47,6 @@ namespace wave
 
 		bool has_waveform(playable_location const& loc) override;
 		void remove_waveform(playable_location const& loc) override;
-
-		void compression_bench() override;
 
 		void defer_action(std::function<void ()> fun) override;
 

@@ -20,7 +20,6 @@ using std::max;
 #include <tuple>
 #include <vector>
 
-#include <boost/algorithm/string.hpp>
 #include <boost/thread.hpp>
 
 #include <comdef.h>

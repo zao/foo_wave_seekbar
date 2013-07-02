@@ -9,15 +9,6 @@
 #include "Helpers.h"
 #include "Pack.h"
 
-#include <boost/range/algorithm.hpp>
-#include <boost/container/stable_vector.hpp>
-#include <boost/container/vector.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics.hpp>
-
-namespace bacc = boost::accumulators;
-namespace boco = boost::container;
-
 namespace wave
 {
 	backing_store::backing_store(pfc::string const& cache_filename)
@@ -326,101 +317,6 @@ namespace wave
 	{
 		sqlite3_exec(backing_db.get(), "VACUUM", 0, 0, 0);
 		console::info("Waveform cache: compacted the database.");
-	}
-
-	struct accumulator
-	{
-		bacc::accumulator_set<long double, bacc::stats<bacc::tag::mean, bacc::tag::variance>> accs[3][2];
-		std::vector<uint8_t> scratch, frob;
-
-		accumulator()
-		{
-			scratch.reserve(1024*1024);
-			frob.reserve(1024*1024);
-		}
-
-		static void func(sqlite3_context* ctx, int argc, sqlite3_value** argv)
-		{
-			static volatile int n = 0;
-			++n;
-			bool compressed = sqlite3_value_type(argv[0]) != SQLITE_NULL;
-			bool zlib_compressed = compressed && sqlite3_value_int(argv[0]) == 0;
-			auto self = (accumulator*)sqlite3_user_data(ctx);
-			auto& scratch = self->scratch;
-			auto& frob = self->frob;
-			for (int i = 0; i < 3; ++i)
-			{
-				auto cb = sqlite3_value_bytes(argv[i+1]);
-				auto bytes = (uint8_t*)sqlite3_value_blob(argv[i+1]);
-
-				scratch.clear();
-				if (zlib_compressed)
-				{
-					pack::z_unpack(bytes, cb, std::back_inserter(scratch));
-				}
-				else if (compressed)
-				{
-					pack::lzma_unpack(bytes, cb, std::back_inserter(scratch));
-				}
-				else
-				{
-					std::copy(bytes, bytes + cb, scratch.begin());
-				}
-
-				frob.clear();
-				pack::z_pack(&scratch[0], scratch.size(), std::back_inserter(frob));
-				self->accs[i][0](frob.size());
-
-				frob.clear();
-				pack::lzma_pack(&scratch[0], scratch.size(), std::back_inserter(frob));
-				self->accs[i][1](frob.size());
-			}
-			sqlite3_result_null(ctx);
-		}
-
-		void resolve(long double* means, long double* stddevs)
-		{
-			for (int i = 0; i < 3; ++i)
-			{
-				means[0 + i*2] = bacc::mean(accs[i][0]);
-				means[1 + i*2] = bacc::mean(accs[i][1]);
-				stddevs[0 + i*2] = sqrt(bacc::variance(accs[i][0]));
-				stddevs[1 + i*2] = sqrt(bacc::variance(accs[i][1]));
-			}
-		}
-	};
-
-	void backing_store::bench()
-	{
-		 accumulator acc;
-
-		sqlite3_create_function(
-			backing_db.get(),
-			"bench", 4, SQLITE_ANY, &acc,
-			&accumulator::func, 0, 0);
-
-		DWORD milli_tic = timeGetTime();
-		auto stmt = prepare_statement("SELECT bench(w.compression, w.min, w.max, w.rms) FROM (SELECT compression, min, max, rms FROM wave) AS w LIMIT 500");
-		while (SQLITE_ROW == sqlite3_step(stmt.get()));
-		DWORD milli_toc = timeGetTime();
-		
-		long double means[6], devs[6];
-		acc.resolve(means, devs);
-
-		char const* mu = "\xCE\xBC=";
-		char const* sigma = ",\xCF\x83=";
-
-		std::ostringstream oss;
-		oss << "Benchmark completed in " << (milli_toc - milli_tic) / 1000.0 << " seconds.\n"
-			<< "zlib min/max/rms: "
-			<< mu << means[0] << sigma << devs[0] << " / "
-			<< mu << means[2] << sigma << devs[2] << " / "
-			<< mu << means[4] << sigma << devs[4] << "\n"
-			<< "lzma min/max/rms: "
-			<< mu << means[1] << sigma << devs[1] << " / "
-			<< mu << means[3] << sigma << devs[3] << " / "
-			<< mu << means[5] << sigma << devs[5] << "\n";
-		console::info(oss.str().c_str());
 	}
 
 	void backing_store::get_all(pfc::list_t<playable_location_impl>& out)
