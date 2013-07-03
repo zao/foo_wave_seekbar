@@ -48,43 +48,28 @@ static void load_frontend_modules()
 		std::lock_guard<std::mutex> lg(module_load_mutex);
 		sync_point.set_value();
 		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
-		HANDLE search_handle = INVALID_HANDLE_VALUE;
-		try
-		{
+		try {
+			auto path = util::file_location_to_wide_path(core_api::get_my_full_path());
+			auto directory = util::extract_directory_name(path);
+			auto glob = directory + L"*.dll";
+			util::enumerate_file_glob(glob, [&](WIN32_FIND_DATAW find_data)
 			{
-				auto path = util::file_location_to_wide_path(core_api::get_my_full_path());
-				auto directory = util::extract_directory_name(path);
-				auto glob = directory + L"*.dll";
-				WIN32_FIND_DATAW find_data = {};
-				auto valid_handle = [](HANDLE h){return h != INVALID_HANDLE_VALUE;};
-				search_handle = FindFirstFileW(glob.c_str(), &find_data);
-				if (valid_handle(search_handle)) {
-					do {
-						auto entry = directory + find_data.cFileName;
-						HMODULE lib = LoadLibraryW(entry.c_str());
-						if (lib)
-						{
-							frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
-							if (entry)
-							{
-								auto mod = std::make_shared<frontend_module>(lib, entry());
-								frontend_modules.push_back(mod);
-							}
-							else
-							{
-								FreeLibrary(lib);
-							}
-						}
-					} while (FindNextFileW(search_handle, &find_data));
-					FindClose(search_handle);
+				auto entry = directory + find_data.cFileName;
+				HMODULE lib = LoadLibraryW(entry.c_str());
+				if (lib) {
+					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
+					if (entry) {
+						auto mod = std::make_shared<frontend_module>(lib, entry());
+						frontend_modules.push_back(mod);
+					}
+					else {
+						FreeLibrary(lib);
+					}
 				}
-			}
+			});
 		}
-		catch (std::exception& e)
-		{
+		catch (std::exception& e) {
 			console::complain("Seekbar: couldn't load optional frontends", e);
-			if (search_handle)
-				FindClose(search_handle);
 		}
 		modules_loaded = true;
 	});

@@ -45,4 +45,24 @@ namespace util
 		auto off = path.find_last_of(L'\\');
 		return path.substr(0, off+1);
 	}
+
+	template <typename F>
+	void enumerate_file_glob(std::wstring glob, F f) {
+		WIN32_FIND_DATAW find_data = {};
+		auto valid_handle = [](HANDLE h){return h != INVALID_HANDLE_VALUE;};
+		auto search_handle = INVALID_HANDLE_VALUE;
+		try {
+			search_handle = FindFirstFileW(glob.c_str(), &find_data);
+			if (valid_handle(search_handle)) {
+				do {
+					f(find_data);
+				} while (FindNextFileW(search_handle, &find_data));
+			}
+		}
+		catch (...) {
+			if (search_handle != INVALID_HANDLE_VALUE) FindClose(search_handle);
+			throw;
+		}
+		FindClose(search_handle);
+	}
 }
