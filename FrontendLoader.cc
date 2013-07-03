@@ -1,7 +1,7 @@
 #include "PchSeekbar.h"
 #include "FrontendLoader.h"
 #include "GdiFallback.h"
-#include <boost/filesystem.hpp>
+#include "util/Filesystem.h"
 #include <atomic>
 #include <condition_variable>
 #include <future>
@@ -40,35 +40,6 @@ frontend_module::~frontend_module()
 	}
 }
 
-static bool starts_with(char const* string, char const* prefix)
-{
-	while (*string && *prefix && *string == *prefix) {
-		++string; ++prefix;
-	}
-	return *prefix == '\0';
-}
-
-static boost::filesystem::path file_location_to_path(char const* fb2k_file)
-{
-	pfc::string8 native;
-
-	// foobar2000_io::extract_native_path() can strip out file://, but will
-	// currently (2011-08-14) break if fed a native path, thus this test.
-	if (starts_with(fb2k_file, "file://"))
-	{
-		foobar2000_io::extract_native_path(fb2k_file, native);
-	}
-	else
-	{
-		native = fb2k_file;
-	}
-
-	native.replace_byte('/', '\\', 0);
-
-	auto first = native.get_ptr(), last = first + native.get_length();		
-	return boost::filesystem::path(first, last, utf8::utf8_codecvt_facet());
-}
-
 static void load_frontend_modules()
 {
 	std::promise<void> sync_point;
@@ -77,37 +48,43 @@ static void load_frontend_modules()
 		std::lock_guard<std::mutex> lg(module_load_mutex);
 		sync_point.set_value();
 		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
+		HANDLE search_handle = INVALID_HANDLE_VALUE;
 		try
 		{
-			namespace fs = boost::filesystem;
-			boost::filesystem::path path = file_location_to_path(core_api::get_my_full_path());
-			path = path.remove_filename();
-			fs::directory_iterator I = fs::directory_iterator(path), last;
-			for (; I != last; ++I)
 			{
-				fs::path p = *I;
-				if (p.extension() != L".dll")
-					continue;
-
-				HMODULE lib = LoadLibraryW(p.wstring().c_str());
-				if (lib)
-				{
-					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
-					if (entry)
-					{
-						auto mod = std::make_shared<frontend_module>(lib, entry());
-						frontend_modules.push_back(mod);
-					}
-					else
-					{
-						FreeLibrary(lib);
-					}
+				auto path = util::file_location_to_wide_path(core_api::get_my_full_path());
+				auto directory = util::extract_directory_name(path);
+				auto glob = directory + L"*.dll";
+				WIN32_FIND_DATAW find_data = {};
+				auto valid_handle = [](HANDLE h){return h != INVALID_HANDLE_VALUE;};
+				search_handle = FindFirstFileW(glob.c_str(), &find_data);
+				if (valid_handle(search_handle)) {
+					do {
+						auto entry = directory + find_data.cFileName;
+						HMODULE lib = LoadLibraryW(entry.c_str());
+						if (lib)
+						{
+							frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
+							if (entry)
+							{
+								auto mod = std::make_shared<frontend_module>(lib, entry());
+								frontend_modules.push_back(mod);
+							}
+							else
+							{
+								FreeLibrary(lib);
+							}
+						}
+					} while (FindNextFileW(search_handle, &find_data));
+					FindClose(search_handle);
 				}
 			}
 		}
 		catch (std::exception& e)
 		{
 			console::complain("Seekbar: couldn't load optional frontends", e);
+			if (search_handle)
+				FindClose(search_handle);
 		}
 		modules_loaded = true;
 	});

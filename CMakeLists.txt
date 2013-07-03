@@ -93,6 +93,7 @@ set(JSON_SOURCES
 )
 set(UTIL_SOURCES
 	"util/Asio.h"
+	"util/Filesystem.h"
 	"util/Profiling.cc"
 	"util/Profiling.h"
 )
