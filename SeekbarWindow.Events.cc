@@ -99,7 +99,7 @@ namespace wave
 			? config::orientation_horizontal
 			: config::orientation_vertical);
 
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_size(wave::size(size.cx, size.cy));
 		if (fe->frontend)
 			fe->frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
@@ -145,7 +145,7 @@ namespace wave
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
 
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->clear();
 	}
 
@@ -164,10 +164,10 @@ namespace wave
 		if (!tooltip)
 		{
 			tooltip.reset(new seek_tooltip(*this));
-			seek_callbacks += tooltip;
+			seek_callbacks.push_back(tooltip);
 		}
 
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		if (drag_state == MouseDragSeeking)
 		{
 			fe->callback->set_seeking(true);
@@ -192,7 +192,7 @@ namespace wave
 
 	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 	{
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		ReleaseCapture();
 		if (drag_state == MouseDragSeeking)
 		{
@@ -235,7 +235,7 @@ namespace wave
 
 			last_seek_point = point;
 
-			scoped_lock sl(fe->mutex);
+			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 			CRect r;
 			GetWindowRect(r);
 			int const N = 40;

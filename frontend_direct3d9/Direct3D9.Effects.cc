@@ -7,15 +7,8 @@
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
 #include "resource.h"
-
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/karma.hpp>
-
-namespace qi = boost::spirit::qi;
-
-namespace ascii = boost::spirit::ascii;
-namespace karma = boost::spirit::karma;
-namespace qi = boost::spirit::qi;
+#include <sstream>
+#include <string>
 
 template <typename Cont, typename Pred>
 typename Cont::size_type nuke_if(Cont& c, Pred p)
@@ -29,41 +22,7 @@ namespace wave
 {
   namespace direct3d9
   {
-    typedef effect_compiler::diagnostic_entry entry;
-    typedef std::deque<entry> entry_list;
-
-    template <typename Iterator>
-    struct error_grammar : qi::grammar<Iterator, entry_list()>
-    {
-      error_grammar()
-        : error_grammar::base_type(root)
-      {
-        using qi::int_;
-        using qi::lexeme;
-        using qi::lit;
-        using qi::omit;
-        using qi::repeat;
-        using qi::eol;
-        using ascii::alpha;
-        using ascii::char_;
-        using ascii::digit;
-        using ascii::string;
-
-        message %= +char_;
-        code %= alpha >> repeat(4)[digit] >> ':';
-        type %= +alpha;
-        position %= '(' >> int_ >> ',' >> int_ >> "):";
-        path %= +(char_ - position);
-        line %= omit[path] >> position >> ' ' >> type >> ' ' >> code >> ' ' >> message;
-        root %= +line;
-      }
-
-      qi::rule<Iterator, entry_list()> root;
-      qi::rule<Iterator, entry()> line;
-      qi::rule<Iterator, std::string()> path;
-      qi::rule<Iterator, entry::location()> position;
-      qi::rule<Iterator, std::string()> type, code, message;
-    };
+    typedef std::deque<std::string> entry_list;
 
     effect_compiler_impl::effect_compiler_impl(CComPtr<IDirect3DDevice9> dev)
       : dev(dev)
@@ -80,10 +39,8 @@ namespace wave
       std::vector<char> fx_body(source, source + source_cb);
       if (size_t diff = nuke_if(fx_body, [](char c) { return (unsigned char)c >= 0x80U; }))
       {
-        auto type = "error";
-        auto code = "";
         auto message = "Effect contained non-ASCII code units. Remove any characters with diacritics or other moonspeak.\n";
-				output.on_error(type, code, message);
+        output.on_error(message);
       }
 
       {
@@ -102,14 +59,11 @@ namespace wave
           if (err)
           {
             iter first = (char*)err->GetBufferPointer(), last = first + err->GetBufferSize();
-            qi::parse(first, last, error_grammar<iter>(), errors);
-						std::for_each(begin(errors), end(errors), [&](diagnostic_entry e)
-						{
-							if (e.loc)
-								output.on_error(e.type.c_str(), e.code.c_str(), e.message.c_str(), e.loc->row, e.loc->col);
-							else
-								output.on_error(e.type.c_str(), e.code.c_str(), e.message.c_str());
-						});
+			std::istringstream iss(std::string(first, last));
+			std::string line;
+			while (std::getline(iss, line)) {
+			  output.on_error(line.c_str());
+			}
           }
           return false;
         }
@@ -125,33 +79,6 @@ namespace wave
     CComPtr<ID3DXEffect> effect_impl::get_effect() const
     {
       return fx;
-    }
-
-    
-    std::string simple_diagnostic_format(std::deque<effect_compiler::diagnostic_entry> const& in)
-    {
-      using karma::int_;
-      using karma::string;
-
-      typedef std::back_insert_iterator<std::string> Iter;
-      karma::rule<Iter, effect_compiler::diagnostic_entry::location()> loc = '(' << int_ << ',' << int_ << "): ";
-
-      std::vector<std::string> lines;
-      std::for_each(in.begin(), in.end(),
-        [&lines, &loc](effect_compiler::diagnostic_entry const& e)
-        {
-          std::string out;
-          auto sink = std::back_inserter(out);
-
-          karma::generate(sink,
-            loc << string << ": " << string << ": " << string , e);
-          lines.push_back(out);
-        });
-
-      std::string out;
-      auto sink = std::back_inserter(out);
-      karma::generate(sink, string % "\n", lines);
-      return out;
     }
   }
 }

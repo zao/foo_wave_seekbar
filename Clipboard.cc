@@ -6,17 +6,14 @@
 #include "PchSeekbar.h"
 #include "Clipboard.h"
 
-#include <boost/mpl/string.hpp>
 #include <mmreg.h>
+#include <deque>
 #include <fstream>
 
 namespace mpl = boost::mpl;
 
 namespace clipboard
 {
-	template <class T>
-	struct is_chunk : mpl::false_ {};
-
 	template <class T>
 	struct chunk_traits;
 
@@ -40,12 +37,9 @@ namespace clipboard
 	};
 
 	template <>
-	struct is_chunk<fmt_chunk> : mpl::true_ {};
-
-	template <>
 	struct chunk_traits<fmt_chunk>
 	{
-		typedef mpl::string<'f', 'm', 't', ' '> tag;
+		static std::array<char, 4> tag() {return { 'f', 'm', 't', ' ' };}
 		static uint32_t size(fmt_chunk const& t)
 		{
 			return self_size(t);
@@ -56,14 +50,11 @@ namespace clipboard
 			return sizeof(fmt_chunk);
 		}
 	};
-	
-	template <>
-	struct is_chunk<data_chunk> : mpl::true_ {};
 
 	template <>
 	struct chunk_traits<data_chunk>
 	{
-		typedef mpl::string<'d', 'a', 't', 'a'> tag;
+		static std::array<char,4> tag() {return { 'd', 'a', 't', 'a' };}
 		static uint32_t size(data_chunk const& t)
 		{
 			return self_size(t) + t.cb;
@@ -74,14 +65,11 @@ namespace clipboard
 			return 0;
 		}
 	};
-	
-	template <>
-	struct is_chunk<riff_chunk> : mpl::true_ {};
 
 	template <>
 	struct chunk_traits<riff_chunk>
 	{
-		typedef mpl::string<'R', 'I', 'F', 'F'> tag;
+		static std::array<char,4> tag() {return { 'R', 'I', 'F', 'F' };}
 		static uint32_t size(riff_chunk const& t)
 		{
 			return self_size(t) +
@@ -146,7 +134,7 @@ namespace clipboard
 	{
 		typedef chunk_traits<Chunk> traits;
 		char* buf = (char*)dst;
-		auto chunk_id = mpl::c_str<traits::tag>::value;
+		auto chunk_id = traits::tag;
 		uint32_t chunk_size = traits::size(chunk);
 		uint32_t self_size = traits::self_size(chunk);
 		std::memcpy(buf, chunk_id, 4); buf += 4;
@@ -155,9 +143,9 @@ namespace clipboard
 		return buf;
 	}
 
-	shared_ptr<storage> make_storage(unsigned channel_count, unsigned channel_config, unsigned sample_rate, double sample_length)
+	std::shared_ptr<storage> make_storage(unsigned channel_count, unsigned channel_config, unsigned sample_rate, double sample_length)
 	{
-		shared_ptr<storage> ret = make_shared<storage>();
+		auto ret = std::make_shared<storage>();
 		ret->frame_count = (t_int64)(sample_rate * sample_length);
 		ret->data_offset = 8 + chunk_traits<riff_chunk>::size(ret->framing);
 		
@@ -213,7 +201,7 @@ namespace clipboard
 			std::deque<audio_chunk_impl> chunks;
 			t_int64 samples_decoded = 0;
 
-			shared_ptr<storage> clip_storage;
+			std::shared_ptr<storage> clip_storage;
 
 			while (true)
 			{

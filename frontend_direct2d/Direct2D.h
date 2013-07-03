@@ -5,15 +5,19 @@
 
 #pragma once
 #pragma warning(disable: 4005)
-#define _WIN32_WINNT 0x600
+#define _WIN32_WINNT 0x0600
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
-#include <boost/asio.hpp>
+#include <Windows.h>
 #include <ShellAPI.h>
 #include <ObjBase.h>
 
 #include <algorithm>
 using std::min; using std::max;
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <thread>
 
 #include "../frontend_sdk/VisualFrontend.h"
 #include <D2D1.h>
@@ -21,9 +25,6 @@ using std::min; using std::max;
 #include <wincodec.h>
 #include <atlbase.h>
 #include <atlcom.h>
-#include <boost/thread.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/asio.hpp>
 
 #include "../waveform_sdk/RefPointer.h"
 
@@ -42,7 +43,7 @@ namespace wave
 
 	brush_set create_brush_set(ID2D1RenderTarget* target, palette pal);
 
-	struct image_cache : boost::enable_shared_from_this<image_cache>
+	struct image_cache
 	{
 		image_cache();
 		~image_cache();
@@ -50,12 +51,22 @@ namespace wave
 
 		void update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip, uint64_t serial);
 
+		struct task_data
+		{
+			D2D1_SIZE_F size;
+			uint64_t serial;
+			ref_ptr<waveform> waveform;
+			pfc::list_t<channel_info> infos;
+			bool vertical;
+			bool flipped;
+		};
+
 		CComPtr<ID2D1Factory> factory;
-		boost::mutex mutex;
-		boost::shared_ptr<boost::asio::io_service> pump;
-		boost::scoped_ptr<boost::asio::io_service::work> pump_work;
-		boost::scoped_ptr<boost::thread> pump_thread;
-		size_t jobs;
+		std::mutex mutex;
+		std::unique_ptr<std::thread> pump_thread;
+		std::condition_variable pump_alert;
+		std::deque<task_data> tasks;
+		std::atomic<bool> should_terminate;
 
 		CComPtr<IWICImagingFactory> wic_factory;
 		CComPtr<IWICBitmap> last_bitmap;
@@ -90,7 +101,7 @@ namespace wave
 		uint64_t bitmap_serial;
 		uint64_t last_serial_issued;
 		
-		boost::shared_ptr<image_cache> cache;
+		std::unique_ptr<image_cache> cache;
 		palette colors;
 
 		brush_set brushes;

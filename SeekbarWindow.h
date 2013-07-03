@@ -4,7 +4,6 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "SeekbarState.h"
 #include "frontend_sdk/VisualFrontend.h"
 #include "resource.h"
 #include "PersistentSettings.h"
@@ -13,6 +12,8 @@
 #include "Helpers.h"
 #include "SeekCallback.h"
 #include "Player.h"
+#include <mutex>
+#include "Cache.h"
 
 namespace wave
 {
@@ -24,9 +25,9 @@ namespace wave
 			callback.reset();
 			frontend.reset();
 		}
-		boost::recursive_mutex mutex;
-		scoped_ptr<frontend_callback_impl> callback;
-		scoped_ptr<frontend_config_impl> conf;
+		std::recursive_mutex mutex;
+		std::unique_ptr<frontend_callback_impl> callback;
+		std::unique_ptr<frontend_config_impl> conf;
 		ref_ptr<visual_frontend> frontend;
 		metadb_handle_ptr displayed_song;
 		uint32_t auto_get_serial;
@@ -48,7 +49,7 @@ namespace wave
 	};
 
 	enum { REPAINT_TIMER_ID = 0x4242 };
-	struct seekbar_window : CWindowImpl<seekbar_window>, waveform_listener, noncopyable
+	struct seekbar_window : CWindowImpl<seekbar_window>, waveform_listener
 	{
 		seekbar_window();
 		~seekbar_window();
@@ -67,6 +68,10 @@ namespace wave
 			MSG_WM_SIZE(on_wm_size)
 			MSG_WM_TIMER(on_wm_timer)
 		END_MSG_MAP()
+
+	private:
+		seekbar_window(seekbar_window const&);
+		seekbar_window& operator = (seekbar_window const&);
 
 	private:
 		LRESULT on_wm_create(LPCREATESTRUCT cs);
@@ -106,13 +111,12 @@ namespace wave
 
 		ref_ptr<waveform> placeholder_waveform;
 
-		shared_ptr<frontend_data> fe;
+		std::shared_ptr<frontend_data> fe;
 
 		bool initializing_graphics;
 		mouse_drag_state drag_state;
 		mouse_drag_data drag_data;
 		bool possible_next_enqueued;
-		seekbar_state state;
 		color global_colors[config::color_count];
 
 		void try_get_data();
@@ -125,8 +129,8 @@ namespace wave
 
 		CPoint last_seek_point;
 
-		boost::shared_ptr<seek_callback> tooltip;
-		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
+		std::shared_ptr<seek_callback> tooltip;
+		std::vector<std::weak_ptr<seek_callback>> seek_callbacks;
 		std::vector<std::function<void ()>> deferred_init;
 
 	private:
@@ -240,6 +244,6 @@ namespace wave
 			void add_item(channel_info const&, CListBox&);
 			void remove_item(int, CListBox&);
 		};
-		scoped_ptr<configuration_dialog> config_dialog;
+		std::unique_ptr<configuration_dialog> config_dialog;
 	};
 }

@@ -8,9 +8,10 @@
 #include "BackingStore.h"
 #include "waveform_sdk/WaveformImpl.h"
 #include "waveform_sdk/Downmix.h"
+#include "waveform_sdk/Optional.h"
 #include "Helpers.h"
-
-#include <boost/regex.hpp>
+#include <future>
+#include <regex>
 
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
 static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
@@ -119,7 +120,7 @@ namespace wave
 		bool exhausted;
 		int64_t sample_count;
 		int64_t generated_samples;
-		optional<unsigned> track_channel_count;
+		wave::optional<unsigned> track_channel_count;
 
 		enum { SilenceChunkFrames = 16384 };
 
@@ -188,7 +189,7 @@ namespace wave
 		abort_callback& abort_cb;
 
 		waveform_impl incremental_result;
-		boost::shared_ptr<cache_impl::incremental_result_sink> incremental_output;
+		std::shared_ptr<cache_impl::incremental_result_sink> incremental_output;
 
 		duration_query dur;
 		double last_update;
@@ -196,7 +197,7 @@ namespace wave
 		double const update_interval;
 
 		waveform_builder(t_int64 sample_count, bool should_downmix, abort_callback& abort_cb,
-			boost::shared_ptr<cache_impl::incremental_result_sink> incremental_output)
+			std::shared_ptr<cache_impl::incremental_result_sink> incremental_output)
 			: analysis_pass(sample_count)
 			, bucket(0)
 			, bucket_begins(0)
@@ -371,11 +372,11 @@ namespace wave
 
 	bool is_of_forbidden_protocol(playable_location const& loc)
 	{
-		auto match_pi = [&](char const* pat){ return regex_match(loc.get_path(), boost::regex(pat, boost::regex::perl | boost::regex::icase)); };
+		auto match_pi = [&](char const* pat){ return std::regex_match(loc.get_path(), std::regex(pat, std::regex_constants::icase)); };
 		return match_pi("(random|record):.*") || match_pi("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*") || match_pi("(cdda)://.*");
 	}
 
-	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested, boost::shared_ptr<incremental_result_sink> incremental_output)
+	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output)
 	{
 		ref_ptr<waveform> out;
 
@@ -387,7 +388,7 @@ namespace wave
 			while (true)
 			{
 				{
-					boost::mutex::scoped_lock sl(important_mutex);
+					std::lock_guard<std::mutex> sl(important_mutex);
 					if (important_queue.empty())
 						break;
 					prio_loc = important_queue.top();
@@ -404,7 +405,7 @@ namespace wave
 		}
 
 		{
-			boost::mutex::scoped_lock sl(cache_mutex);
+			std::lock_guard<std::mutex> sl(cache_mutex);
 			if (!store || flush_callback.is_aborting())
 			{
 				job_flush_queue.push_back(make_job(loc, user_requested));
@@ -423,11 +424,11 @@ namespace wave
 		{
 			struct result
 			{
-				shared_ptr<boost::promise<bool>> p;
-				boost::shared_future<bool> res;
+				std::shared_ptr<std::promise<bool>> p;
+				std::shared_future<bool> res;
 
 				result()
-					: p(new boost::promise<bool>), res(p->get_future())
+					: p(new std::promise<bool>), res(p->get_future())
 				{}
 			} res;
 
@@ -440,10 +441,10 @@ namespace wave
 				res.p->set_value(lib->is_item_in_library(m));
 			});
 			
-			boost::shared_future<bool> f = res.res;
+			std::shared_future<bool> f = res.res;
 			while (!flush_callback.is_aborting())
 			{
-				if (f.timed_wait(boost::posix_time::milliseconds(200)))
+				if (f.wait_for(std::chrono::milliseconds(200)) != std::future_status::timeout)
 				{
 					if (!f.get())
 						return out;
@@ -502,7 +503,7 @@ namespace wave
 				auto out = builder.finalize_waveform();
 
 				console::formatter() << "Wave cache: finished analysis of " << loc;
-				boost::mutex::scoped_lock sl(cache_mutex);
+				std::lock_guard<std::mutex> sl(cache_mutex);
 				open_store();
 				if (store)
 					store->put(out, loc);
@@ -513,7 +514,7 @@ namespace wave
 		}
 		catch (foobar2000_io::exception_aborted&)
 		{
-			boost::mutex::scoped_lock sl(cache_mutex);
+			std::lock_guard<std::mutex> sl(cache_mutex);
 			job_flush_queue.push_back(make_job(loc, user_requested));
 		}
 		catch (foobar2000_io::exception_io_not_found& e)

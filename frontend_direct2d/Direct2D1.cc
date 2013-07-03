@@ -4,12 +4,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "Direct2D.h"
-#include <boost/math/special_functions.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 #include "../frontend_sdk/FrontendHelpers.h"
 
-boost::function<void (boost::function<void ()>)> in_main_thread;
+std::function<void (std::function<void ()>)> in_main_thread;
 
 namespace wave
 {
@@ -45,7 +42,6 @@ namespace wave
 	D2D1_FACTORY_OPTIONS const opts = { };
 
 	image_cache::image_cache()
-		: pump(new boost::asio::io_service), pump_work(new boost::asio::io_service::work(*pump)), jobs(0)
 	{
 		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &factory);
 		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
@@ -53,13 +49,37 @@ namespace wave
 
 	image_cache::~image_cache()
 	{
-		pump_work.reset();
+		{
+			std::unique_lock<std::mutex> lk(mutex);
+			should_terminate = true;
+			pump_alert.notify_one();
+		}
 		pump_thread->join();
 	}
 
 	void image_cache::start()
 	{
-		pump_thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, pump)));
+		pump_thread.reset(new std::thread([this]
+		{
+			while (1) {
+				task_data t;
+				{
+					std::unique_lock<std::mutex> lk(mutex);
+					pump_alert.wait(lk, [this]{return !tasks.empty() || should_terminate;});
+					
+					if (should_terminate) return;
+					size_t max_index = 0u;
+					task_data const* best = &tasks.front();
+					for (auto& t : tasks) {
+						if (t.serial > best->serial)
+							best = &t;
+					}
+					t = *best;
+					tasks.clear();
+				}
+				update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
+			}
+		}));
 	}
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)
@@ -68,7 +88,7 @@ namespace wave
 		, bitmap_serial(0)
 		, last_serial_issued(0)
 	{
-		in_main_thread = boost::bind(&visual_frontend_callback::run_in_main_thread, &callback, _1);
+		in_main_thread = std::bind(&visual_frontend_callback::run_in_main_thread, &callback, std::placeholders::_1);
 		factory.Attach(create_d2d1_factory_func(opts)());
 		if (!factory)
 			throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
@@ -123,7 +143,7 @@ namespace wave
 			}
 
 			{
-				boost::mutex::scoped_lock sl(cache->mutex);
+				std::lock_guard<std::mutex> sl(cache->mutex);
 				if (cache->last_bitmap && bitmap_serial < cache->bitmap_serial)
 				{
 					wave_bitmap.Release();
@@ -184,8 +204,7 @@ namespace wave
 
 	void direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
 	{
-		boost::mutex::scoped_lock sl(cache->mutex);
-		++cache->jobs;
+		std::lock_guard<std::mutex> sl(cache->mutex);
 		switch (callback.get_downmix_display())
 		{
 		case config::downmix_mono:   if (wf->get_channel_count() > 1) wf = downmix_waveform(wf, 1); break;
@@ -194,11 +213,15 @@ namespace wave
 		pfc::list_t<channel_info> infos;
 		callback.get_channel_infos(list_array_sink<channel_info>(infos));
 		uint64_t serial = ++last_serial_issued;
-		cache->pump->post(boost::bind(&image_cache::update_texture_target, cache, wf, infos
-			, D2D1::SizeF((float)size.cx, (float)size.cy)
-			, callback.get_orientation() == config::orientation_vertical
-			, callback.get_flip_display()
-			, serial));
+		image_cache::task_data t;
+		t.waveform = wf;
+		t.infos = infos;
+		t.size = D2D1::SizeF((float)size.cx, (float)size.cy);
+		t.vertical = callback.get_orientation() == config::orientation_vertical;
+		t.flipped = callback.get_flip_display();
+		t.serial = serial;
+		cache->tasks.push_back(t);
+		cache->pump_alert.notify_one();
 	}
 
 	void direct2d1_frontend::on_state_changed(state s)
@@ -212,22 +235,21 @@ namespace wave
 		InvalidateRect(wnd, nullptr, FALSE);
 	}
 
+	static float round(float v)
+	{
+		return v < 0 ? static_cast<float>(ceil(v - 0.5f)) : static_cast<float>(floor(v + 0.5f));
+	}
+
 	D2D1_POINT_2F round_point(D2D1_POINT_2F p)
 	{
-		p.x = boost::math::round(p.x);
-		p.y = boost::math::round(p.y);
+		p.x = round(p.x);
+		p.y = round(p.y);
 		return p;
 	}
 
 	void image_cache::update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F target_size,
 		bool vertical, bool flip, uint64_t serial)
 	{
-		{
-			boost::mutex::scoped_lock sl(mutex);
-			if (--jobs)
-				return;
-		}
-		
 		if (vertical)
 		{
 			std::swap(target_size.width, target_size.height);
@@ -353,7 +375,7 @@ namespace wave
 			wave_geometries.enumerate([this, &brushes, rt, size, &x, index_count](pfc::com_ptr_t<ID2D1PathGeometry> const& geom)
 			{
 				float offset = (float)(2*x + 1)/(float)(2*index_count);
-				D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, boost::math::round(offset*size.height));
+				D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, round(offset*size.height));
 				++x;
 
 				rt->SetTransform(centered);
@@ -362,19 +384,19 @@ namespace wave
 			hr = rt->EndDraw();
 		}
 
-		boost::shared_ptr<image_cache> self = shared_from_this();
+		image_cache* self = this;
 		in_main_thread([self, bm, serial]()
 		{
-			boost::mutex::scoped_lock sl(self->mutex);
+			std::lock_guard<std::mutex> sl(self->mutex);
 			self->last_bitmap = bm;
 			self->bitmap_serial = serial;
 		});
 	}
 
 	template <typename T>
-	boost::shared_ptr<pfc::list_t<T>> copy_list(const pfc::list_base_const_t<T>& l)
+	std::shared_ptr<pfc::list_t<T>> copy_list(const pfc::list_base_const_t<T>& l)
 	{
-		shared_ptr<pfc::list_t<T>> ret;
+		std::shared_ptr<pfc::list_t<T>> ret;
 		ret->add_items(l);
 		return ret;
 	}
@@ -397,7 +419,7 @@ namespace wave
 			callback.get_color(config::color_selection)
 		};
 		colors = p;
-		boost::mutex::scoped_lock sl(cache->mutex);
+		std::lock_guard<std::mutex> sl(cache->mutex);
 		cache->colors = p;
 
 		if (rt)
