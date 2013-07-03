@@ -63,6 +63,6 @@ namespace util
 			if (search_handle != INVALID_HANDLE_VALUE) FindClose(search_handle);
 			throw;
 		}
-		FindClose(search_handle);
+		if (search_handle != INVALID_HANDLE_VALUE) FindClose(search_handle);
 	}
 }
