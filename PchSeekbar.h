@@ -36,8 +36,3 @@ using std::max;
 #undef SelectBitmap
 #undef SelectBrush
 #undef SelectPen
-
-#define BOOST_UTF8_BEGIN_NAMESPACE namespace utf8 {
-#define BOOST_UTF8_END_NAMESPACE }
-#define BOOST_UTF8_DECL
-#include <boost/detail/utf8_codecvt_facet.hpp>

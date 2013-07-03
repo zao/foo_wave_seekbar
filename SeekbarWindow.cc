@@ -11,9 +11,6 @@
 #include "waveform_sdk/WaveformImpl.h"
 #include "FrontendLoader.h"
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-
 #include <fstream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>

@@ -53,7 +53,6 @@ set(SEEKBAR_SOURCES
 	"SeekTooltip.h"
 	"Player.cc"
 	"Player.h"
-	"utf8_codecvt_facet.cpp"
 )
 set(RESOURCE_SOURCES
 	"foo_wave_seekbar.rc"
