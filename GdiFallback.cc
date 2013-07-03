@@ -434,8 +434,8 @@ namespace wave
 		auto flip = callback.get_flip_display();
 		auto shade_played = callback.get_shade_played();
 		auto cursors = make_cursor_info(callback);
-		boost::optional<CRect> play_rect;
-		boost::optional<CRect> seek_rect;
+		wave::optional<CRect> play_rect;
+		wave::optional<CRect> seek_rect;
 		if (cursors.has_position) {
 			CRect r(cursors.position_offset, 0, cursors.position_offset+1, size.cy);
 			play_rect = reorient_rect(r, canvas_size, vertical, flip);

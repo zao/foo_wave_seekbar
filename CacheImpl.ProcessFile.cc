@@ -8,6 +8,7 @@
 #include "BackingStore.h"
 #include "waveform_sdk/WaveformImpl.h"
 #include "waveform_sdk/Downmix.h"
+#include "waveform_sdk/Optional.h"
 #include "Helpers.h"
 #include <future>
 #include <regex>
@@ -119,7 +120,7 @@ namespace wave
 		bool exhausted;
 		int64_t sample_count;
 		int64_t generated_samples;
-		boost::optional<unsigned> track_channel_count;
+		wave::optional<unsigned> track_channel_count;
 
 		enum { SilenceChunkFrames = 16384 };
 

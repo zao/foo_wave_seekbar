@@ -31,8 +31,6 @@ using std::max;
 #include "../columns_ui-sdk/ui_extension.h"
 #include <dwmapi.h>
 
-#include <boost/optional.hpp>
-
 #include <delayimp.h>
 
 #include "sqlite3.h"

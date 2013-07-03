@@ -1,9 +1,10 @@
 set(WAVE_SDK_SOURCES
-	"Waveform.cc"
-	"WaveformImpl.cc"
 	"Downmix.h"
+	"Optional.h"
 	"RefPointer.h"
+	"Waveform.cc"
 	"Waveform.h"
+	"WaveformImpl.cc"
 	"WaveformImpl.h"
 )
 add_library(waveform_sdk STATIC

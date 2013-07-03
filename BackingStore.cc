@@ -8,6 +8,7 @@
 #include "waveform_sdk/WaveformImpl.h"
 #include "Helpers.h"
 #include "Pack.h"
+#include "waveform_sdk/Optional.h"
 
 namespace wave
 {
@@ -106,7 +107,7 @@ namespace wave
 	bool backing_store::get(ref_ptr<waveform>& out, playable_location const& file)
 	{
 		out.reset();
-		boost::optional<int> compression;
+		wave::optional<int> compression;
 		{
 			auto stmt = prepare_statement(
 				"SELECT w.min, w.max, w.rms, w.channels, w.compression "
@@ -120,7 +121,7 @@ namespace wave
 				return false;
 			}
 		
-			boost::optional<int> channels;
+			wave::optional<int> channels;
 
 			if (sqlite3_column_type(stmt.get(), 3) != SQLITE_NULL)
 				channels = sqlite3_column_int(stmt.get(), 3);
