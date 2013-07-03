@@ -2,15 +2,17 @@
 #include "FrontendLoader.h"
 #include "GdiFallback.h"
 #include <boost/filesystem.hpp>
-#include <thread>
-#include <mutex>
 #include <atomic>
+#include <condition_variable>
+#include <future>
+#include <mutex>
+#include <thread>
 
 namespace wave
 {
 static std::atomic<bool> modules_loaded;
 static std::mutex module_load_mutex;
-static boost::barrier module_load_barrier(2);
+static std::condition_variable load_cv;
 static std::vector<std::shared_ptr<frontend_module>> frontend_modules;
 
 void wait_for_frontend_module_load()
@@ -69,10 +71,11 @@ static boost::filesystem::path file_location_to_path(char const* fb2k_file)
 
 static void load_frontend_modules()
 {
-	std::thread t([] {
+	std::promise<void> sync_point;
+	std::thread t([&] {
 		modules_loaded = false;
 		std::lock_guard<std::mutex> lg(module_load_mutex);
-		module_load_barrier.wait();
+		sync_point.set_value();
 		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		try
 		{
@@ -109,7 +112,7 @@ static void load_frontend_modules()
 		modules_loaded = true;
 	});
 	t.detach();
-	module_load_barrier.wait();
+	sync_point.get_future().get();
 }
 
 struct frontend_module_init_stage : init_stage_callback

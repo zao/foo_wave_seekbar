@@ -66,7 +66,7 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		ref_ptr<waveform> wf;
 		
 		static_api_ptr_t<player> p;
-		service_ptr_t<cache> c;
+		static_api_ptr_t<cache> c;
 		if (! c->get_waveform_sync(loc, wf) && ! c->is_location_forbidden(loc)) {
 			// if not, schedule a scan
 			auto req = std::make_shared<get_request>();

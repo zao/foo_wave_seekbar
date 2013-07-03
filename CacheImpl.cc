@@ -7,7 +7,12 @@
 #include "CacheImpl.h"
 #include "BackingStore.h"
 #include "Helpers.h"
+#include <atomic>
+#include <condition_variable>
+#include <future>
+#include <mutex>
 #include <regex>
+#include <thread>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
@@ -27,7 +32,6 @@ namespace wave
 {
 	cache_impl::cache_impl()
 		: idle_work(new asio::io_service::work(io))
-		, init_barrier(2)
 	{
 		is_initialized = false;
 	}
@@ -38,7 +42,7 @@ namespace wave
 
 	struct with_idle_priority
 	{
-		typedef boost::function<void ()> function_type;
+		typedef std::function<void ()> function_type;
 		with_idle_priority(function_type func)
 		: func(func)
 		{}
@@ -54,7 +58,7 @@ namespace wave
 		function_type func;
 	};
 
-	void cache_impl::load_data(std::shared_ptr<boost::barrier> load_barrier)
+	void cache_impl::load_data()
 	{
 		open_store();
 
@@ -77,7 +81,6 @@ namespace wave
 		{
 			console::warning("Wave cache: could not open backing database.");
 		}
-		load_barrier->wait();
 	}
 
 	void cache_impl::flush()
@@ -109,17 +112,19 @@ namespace wave
 		store.reset(new backing_store(cache_filename));
 	}
 
-	void cache_impl::delayed_init()
+	void cache_impl::delayed_init(std::promise<void>& sync_point)
 	{
 		std::lock_guard<std::mutex> sl(init_mutex);
-		init_barrier.wait();
-		std::shared_ptr<boost::barrier> load_barrier(new boost::barrier(2));
-		io.post([this, load_barrier]()
+		sync_point.set_value();
+		std::mutex load_mutex;
+		std::promise<void> data_loaded;
+		io.post([this, &data_loaded]()
 		{
-			load_data(load_barrier);
+			load_data();
+			data_loaded.set_value();
 		});
 
-		size_t n_cores = boost::thread::hardware_concurrency();
+		size_t n_cores = std::thread::hardware_concurrency();
 		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
 		size_t n = std::min(n_cores, n_cap);
 
@@ -134,7 +139,7 @@ namespace wave
 			}));
 			if (!i)
 			{
-				load_barrier->wait();
+				data_loaded.get_future().get();
 			}
 		}
 		is_initialized = true;
@@ -297,8 +302,9 @@ namespace wave
 
 	void cache_impl::kick_dynamic_init()
 	{
-		boost::thread(std::bind(&cache_impl::delayed_init, this)).detach();
-		init_barrier.wait();
+		std::promise<void> sync_point;
+		std::thread(std::bind(&cache_impl::delayed_init, this, std::ref(sync_point))).detach();
+		sync_point.get_future().get();
 	}
 
 	struct cache_init_stage : init_stage_callback

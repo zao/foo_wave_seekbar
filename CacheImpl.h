@@ -9,8 +9,8 @@
 #include "Cache.h"
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
-#include <boost/thread.hpp>
 #include <atomic>
+#include <future>
 #include <list>
 #include <mutex>
 #include <stack>
@@ -59,13 +59,12 @@ namespace wave
 
 	private:
 		void open_store();
-		void load_data(std::shared_ptr<boost::barrier>);
+		void load_data();
 		void try_delayed_init();
-		void delayed_init();
+		void delayed_init(std::promise<void>& sync_point);
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
 
 		std::atomic<bool> is_initialized;
-		boost::barrier init_barrier;
 		std::mutex init_mutex;
 
 		std::mutex important_mutex;

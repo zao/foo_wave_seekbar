@@ -9,17 +9,12 @@
 #include <set>
 #include <sstream>
 #include <fstream>
-#include <boost/algorithm/string/find.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/detail/rapidxml.hpp>
 namespace rxml = boost::property_tree::detail::rapidxml;
 
 namespace pt = boost::property_tree;
 namespace rxml = pt::detail::rapidxml;
-
-#include <boost/phoenix/phoenix.hpp>
-namespace phx = boost::phoenix;
-namespace phxph = phx::placeholders;
 
 static GUID as_guid(std::string s)
 {
@@ -47,7 +42,7 @@ static std::string as_string(T const& t)
 namespace wave
 {
 	template <typename T>
-	typename boost::enable_if<boost::is_unsigned<T>>::type
+	typename std::enable_if<std::is_unsigned<T>::value>::type
 	scan_int(T& out, char const* from, size_t n)
 	{
 		std::istringstream iss(std::string(from, from + n));
@@ -57,7 +52,7 @@ namespace wave
 	}
 
 	template <typename T>
-	typename boost::disable_if<boost::is_unsigned<T>>::type
+	typename std::enable_if<!std::is_unsigned<T>::value>::type
 	scan_int(T& out, char const* from, size_t n)
 	{
 		std::istringstream iss(std::string(from, from + n));
@@ -426,11 +421,21 @@ namespace wave
 		return ret;
 	}
 
+	template <typename Iterator>
+	static std::pair<Iterator, Iterator> find_first_regex(Iterator begin, Iterator end, std::regex const& re)
+	{
+		std::match_results<Iterator> m;
+		if (std::regex_search(begin, end, m, re)) {
+			return { m[0].first, m[0].second };
+		}
+		return { end, end };
+	}
+
 	static std::string extract_xml_part(std::string const& contents)
 	{
-		auto first_tag = boost::algorithm::find_first(contents, "<?xml version=");
-		auto last_tag = boost::algorithm::find_first(boost::make_iterator_range(first_tag.end(), contents.end()), "</boost_serialization>");
-		return std::string(first_tag.begin(), last_tag.end());
+		auto first_tag = find_first_regex(std::cbegin(contents), std::cend(contents), std::regex(R"(<\?xml version=)"));
+		auto last_tag = find_first_regex(first_tag.second, std::cend(contents), std::regex("</boost_serialization>"));
+		return std::string(first_tag.first, last_tag.second);
 	}
 
 	void read_s11n_xml(std::string xml, persistent_settings& settings)

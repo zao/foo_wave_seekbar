@@ -20,8 +20,6 @@ using std::max;
 #include <tuple>
 #include <vector>
 
-#include <boost/thread.hpp>
-
 #include <comdef.h>
 #include <tchar.h>
 
