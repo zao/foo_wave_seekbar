@@ -7,8 +7,6 @@
 #include "CacheImpl.h"
 #include "BackingStore.h"
 #include "Helpers.h"
-#include <boost/format.hpp>
-#include "Helpers.h"
 #include <regex>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
@@ -128,7 +126,7 @@ namespace wave
 		for (size_t i = 0; i < n; ++i) {
 			work_threads.emplace_back(with_idle_priority([this, i, n]()
 			{
-				std::string name = (boost::format("wave-processing-%d/%d") % (i+1) % n).str();
+				std::string name = "wave-processing-" + std::to_string(i+1) + "/" + std::to_string(n);
 				::SetThreadName(-1, name.c_str());
 				CoInitialize(nullptr);
 				this->io.run();
