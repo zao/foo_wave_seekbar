@@ -163,6 +163,7 @@ namespace wave
 			auto len = callback.get_track_length();
 			auto position = cursors.position_fraction;
 			auto seek_position = cursors.seeking_fraction;
+			auto should_shade = callback.get_shade_played();
 
 			if (!has_cursor && !is_seeking) {
 				unity_blit(dc, CRect({0, 0}, canvas_size), *wave_dc);
@@ -185,7 +186,7 @@ namespace wave
 						std::swap(from.x, from.y);
 						std::swap(to.x, to.y);
 					}
-					unity_blit(dc, CRect(from, to), shaded ? *shaded_wave_dc : *wave_dc);
+					unity_blit(dc, CRect(from, to), (shaded && should_shade) ? *shaded_wave_dc : *wave_dc);
 				}
 			}
 
@@ -207,9 +208,6 @@ namespace wave
 
 	void gdi_fallback_frontend::on_state_changed(state s)
 	{
-		if (s & state_position) {
-			update_positions();
-		}
 		if (s & state_shade_played) {
 			// invalidate shaded side
 			cached_rects_valid = false;
@@ -222,6 +220,9 @@ namespace wave
 		if (s & (state_data | state_size | state_orientation | state_color | state_channel_order | state_downmix_display | state_flip_display)) {
 			cached_rects_valid = false;
 			update_data();
+		}
+		if (s & state_position) {
+			update_positions();
 		}
 	}
 
