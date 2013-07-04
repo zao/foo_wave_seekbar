@@ -421,10 +421,16 @@ namespace wave
 		wave::optional<CRect> play_rect;
 		wave::optional<CRect> seek_rect;
 		if (cursors.has_position) {
-			//CRect r(cursors.position_offset, 0, cursors.position_offset+1, size.cy);
-			//play_rect = reorient_rect(r, canvas_size, vertical, flip);
+			auto from = derive_point(cursors.position_fraction, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+			auto to = derive_point(cursors.position_fraction, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+			play_rect = CRect(from, to);
+			(*play_rect).InflateRect(0, 0, 1, 1);
 		}
 		if (cursors.has_seeking) {
+			auto from = derive_point(cursors.seeking_fraction, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+			auto to = derive_point(cursors.seeking_fraction, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+			seek_rect = CRect(from, to);
+			(*seek_rect).InflateRect(0, 0, 1, 1);
 			//CRect r(cursors.seeking_offset, 0, cursors.seeking_offset+1, size.cy);
 			//seek_rect = reorient_rect(r, canvas_size, vertical, flip);
 		}
@@ -454,7 +460,7 @@ namespace wave
 			last_seek_rect = seek_rect;
 			last_play_rect = play_rect;
 			wnd.Invalidate(FALSE);
-			//cached_rects_valid = true;
+			cached_rects_valid = true;
 		}
 	}
 
