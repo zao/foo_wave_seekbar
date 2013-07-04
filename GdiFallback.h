@@ -51,6 +51,7 @@ namespace wave
 		CPoint orientate(CPoint);
 
 		CWindow wnd;
+		bool cached_rects_valid;
 		wave::optional<CRect> last_play_rect;
 		wave::optional<CRect> last_seek_rect;
 
