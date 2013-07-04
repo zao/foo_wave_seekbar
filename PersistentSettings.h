@@ -7,7 +7,7 @@
 #include "Helpers.h"
 #include "frontend_sdk/VisualFrontend.h"
 
-#include <boost/array.hpp>
+#include <array>
 #include <boost/property_tree/ptree.hpp>
 
 namespace wave
@@ -18,8 +18,8 @@ namespace wave
 
 		config::frontend active_frontend_kind;
 		bool has_border;
-		boost::array<color, config::color_count> colors;
-		boost::array<bool, config::color_count> override_colors;
+		std::array<color, config::color_count> colors;
+		std::array<bool, config::color_count> override_colors;
 		bool shade_played;
 		config::display_mode display_mode;
 		bool flip_display;

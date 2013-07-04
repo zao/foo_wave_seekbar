@@ -144,23 +144,11 @@ namespace wave
       }
       else
       {
-        boost::for_each(output, [&](diagnostic_collector::entry const& e)
-        {
-          // TODO: effect error parser fails at parsing TEasdafXCOORD2
-          if (e.has_loc)
-          {
-            std::ostringstream oss;
-            oss << e.type << ":";
-            oss << " (" << e.code << "):";
-            oss << " " << e.message;
-            code_box.add_annotation(e.row - 1, oss.str());
-          }
-        });
         std::ostringstream errors;
-				std::for_each(begin(output), end(output), [&](diagnostic_collector::entry e)
-				{
-					errors << e.type << ": (" << e.code << "): " << e.message << std::endl;
-				});
+        std::for_each(begin(output), end(output), [&](diagnostic_collector::entry e)
+        {
+          errors << e.line << std::endl;
+        });
         error_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(errors.str().c_str()));
       }
       error_box.SetSelNone(FALSE);

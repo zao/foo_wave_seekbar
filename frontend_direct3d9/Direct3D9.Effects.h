@@ -29,7 +29,5 @@ namespace wave
 		private:
 			CComPtr<ID3DXEffect> fx;
 		};
-
-		//std::string simple_diagnostic_format(std::deque<effect_compiler::diagnostic_entry> const& entries);
 	}
 }

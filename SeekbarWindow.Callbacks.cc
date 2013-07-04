@@ -5,16 +5,17 @@
 
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
+#include <mutex>
 
 namespace wave
 {
 	void enqueue(playable_location const& location)
 	{
-		shared_ptr<get_request> request(new get_request);
+		auto request = std::make_shared<get_request>();
 
 		request->location.copy(location);
 		request->user_requested = false;
-		request->completion_handler = [](shared_ptr<get_response>) {};
+		request->completion_handler = [](std::shared_ptr<get_response>) {};
 
 		static_api_ptr_t<cache> c;
 		c->get_waveform(request);
@@ -23,7 +24,7 @@ namespace wave
 	void seekbar_window::on_waveform(ref_ptr<waveform> wf)
 	{
 		util::ScopedEvent se("Callbacks", "on_waveform");
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_waveform(wf);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_data);
@@ -37,7 +38,7 @@ namespace wave
 	void seekbar_window::on_duration(double t)
 	{
 		util::ScopedEvent se("Callbacks", "on_duration");
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
 		fe->callback->set_track_length(t);
@@ -48,7 +49,7 @@ namespace wave
 	void seekbar_window::on_location(playable_location const& loc)
 	{
 		util::ScopedEvent se("Callbacks", "on_location");
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		{
 			static_api_ptr_t<metadb> db;
 			service_ptr_t<metadb_handle> meta;
@@ -74,21 +75,26 @@ namespace wave
 	void seekbar_window::on_play()
 	{
 		util::ScopedEvent se("Callbacks", "on_play");
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
-		if (fe->frontend)
+		if (fe->frontend) {
+			repaint_timer_id = SetTimer(REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
+		}
 	}
 
 	void seekbar_window::on_stop()
 	{
 		util::ScopedEvent se("Callbacks", "on_stop");
-		scoped_lock sl(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(false);
 		fe->callback->set_playback_position(0.0);
-		if (fe->frontend)
+		if (fe->frontend) {
+			KillTimer(repaint_timer_id);
+			repaint_timer_id = 0;
 			fe->frontend->on_state_changed(visual_frontend::state(visual_frontend::state_position));
+		}
 	}
 
 	static const GUID order_default = { 0xbfc61179, 0x49ad, 0x4e95, { 0x8d, 0x60, 0xa2, 0x27, 0x06, 0x48, 0x55, 0x05 } };

@@ -8,8 +8,9 @@
 
 namespace wave
 {
-	struct seek_tooltip : seek_callback, noncopyable
+	struct seek_tooltip : seek_callback
 	{
+	public:
 		explicit seek_tooltip(HWND parent)
 			: parent(parent)
 		{
@@ -49,6 +50,10 @@ namespace wave
 			show = false;
 			tooltip.TrackActivate(&toolinfo, FALSE);
 		}
+
+	private:
+		seek_tooltip(seek_tooltip const&);
+		seek_tooltip& operator = (seek_tooltip const&);
 
 	private:
 		CToolTipCtrl tooltip;

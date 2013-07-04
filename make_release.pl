@@ -10,12 +10,12 @@ my $temp_dir = "build";
 
 sub pub {
 	if (@_) {
-		system("pscp -i D:/Work/uni.ppk @_ zao\@hirohito.acc.umu.se:public_html/");
+		system("pscp -i C:/uni.ppk @_ zao\@hirohito.acc.umu.se:public_html/");
 	}
 }
 
 sub archive {
-	my $pack = 'D:/utilities/7za.exe';
+	my $pack = 'C:/opt/utilities/7za.exe';
 	my $target = File::Spec->rel2abs($_[0]);
 	my $rwut = $_[1];
 	foreach my $v (@$rwut) {
@@ -49,8 +49,8 @@ my $arch_file = "foo_wave_seekbar-$release-archive.fb2k-component";
 
 if (!-e $rel_file) {
 	&archive($rel_file, [
-				"$comp_dir/msvcp110.dll",
-				"$comp_dir/msvcr110.dll",
+				"$comp_dir/msvcp120.dll",
+				"$comp_dir/msvcr120.dll",
 				"$comp_dir/SciLexer.dll",
 				"$comp_dir/frontend_*.dll",
 				"$comp_dir/foo_wave_seekbar.dll"]);
@@ -58,8 +58,8 @@ if (!-e $rel_file) {
 }
 if (!-e $arch_file) {
 	&archive($arch_file, [
-				"$comp_dir/msvcp110.dll",
-				"$comp_dir/msvcr110.dll",
+				"$comp_dir/msvcp120.dll",
+				"$comp_dir/msvcr120.dll",
 				"$comp_dir/SciLexer.*",
 				"$comp_dir/frontend_*.*",
 				"$comp_dir/foo_wave_seekbar.*"]);

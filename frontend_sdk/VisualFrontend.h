@@ -6,10 +6,8 @@
 #pragma once
 #include "../waveform_sdk/Waveform.h"
 #include "../waveform_sdk/RefPointer.h"
+#include <functional>
 #include <map>
-#include <boost/assign.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/function.hpp>
 
 namespace wave
 {
@@ -71,27 +69,26 @@ namespace wave
 			{
 				L"Keep as-is", L"Mix-down to mono", L"Mix-down to stereo"
 			};
-			__declspec(selectany) std::map<int, wchar_t const*> channel_names =
-			boost::assign::map_list_of
-				(audio_chunk::channel_front_left, L"Front left")
-				(audio_chunk::channel_front_right, L"Front right")
-				(audio_chunk::channel_front_center, L"Front center (mono)")
-				(audio_chunk::channel_lfe, L"LFE")
-				(audio_chunk::channel_back_left, L"Rear left")
-				(audio_chunk::channel_back_right, L"Rear right")
-				(audio_chunk::channel_front_center_left, L"Front center left")
-				(audio_chunk::channel_front_center_right, L"Front center right")
-				(audio_chunk::channel_back_center, L"Back center")
-				(audio_chunk::channel_side_left, L"Side left")
-				(audio_chunk::channel_side_right, L"Side right")
-				(audio_chunk::channel_top_center, L"Top center")
-				(audio_chunk::channel_top_front_left, L"Top front left")
-				(audio_chunk::channel_top_front_center, L"Top front center")
-				(audio_chunk::channel_top_front_right, L"Top front right")
-				(audio_chunk::channel_top_back_left, L"Top back left")
-				(audio_chunk::channel_top_back_center, L"Top back center")
-				(audio_chunk::channel_top_back_right, L"Top back right")
-			;
+			__declspec(selectany) std::map<int, wchar_t const*> channel_names = {
+				{ audio_chunk::channel_front_left, L"Front left" },
+				{ audio_chunk::channel_front_right, L"Front right" },
+				{ audio_chunk::channel_front_center, L"Front center (mono)" },
+				{ audio_chunk::channel_lfe, L"LFE" },
+				{ audio_chunk::channel_back_left, L"Rear left" },
+				{ audio_chunk::channel_back_right, L"Rear right" },
+				{ audio_chunk::channel_front_center_left, L"Front center left" },
+				{ audio_chunk::channel_front_center_right, L"Front center right" },
+				{ audio_chunk::channel_back_center, L"Back center" },
+				{ audio_chunk::channel_side_left, L"Side left" },
+				{ audio_chunk::channel_side_right, L"Side right" },
+				{ audio_chunk::channel_top_center, L"Top center" },
+				{ audio_chunk::channel_top_front_left, L"Top front left" },
+				{ audio_chunk::channel_top_front_center, L"Top front center" },
+				{ audio_chunk::channel_top_front_right, L"Top front right" },
+				{ audio_chunk::channel_top_back_left, L"Top back left" },
+				{ audio_chunk::channel_top_back_center, L"Top back center" },
+				{ audio_chunk::channel_top_back_right, L"Top back right" },
+			};
 		}
 	}
 
@@ -207,7 +204,7 @@ namespace wave
 		virtual bool get_flip_display() const = 0;
 		virtual void get_channel_infos(array_sink<channel_info> const&) const = 0;
 
-		virtual void run_in_main_thread(boost::function<void ()>) const = 0;
+		virtual void run_in_main_thread(std::function<void ()>) const = 0;
 	};
 
 	struct visual_frontend_callback_setter {

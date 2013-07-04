@@ -82,7 +82,7 @@ namespace wave
 		virtual void set_flip_display(bool b) { flip_display = b; }
 		virtual void set_channel_infos(channel_info const* in, size_t count) { channel_infos.remove_all(); channel_infos.add_items_fromptr(in, count); }
 
-		virtual void run_in_main_thread(boost::function<void ()> f) const
+		virtual void run_in_main_thread(std::function<void ()> f) const
 		{
 			in_main_thread(f);
 		}

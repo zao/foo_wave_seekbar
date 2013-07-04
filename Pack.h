@@ -155,7 +155,7 @@ namespace pack
 			ISzAlloc mem_fns;
 		};
 
-		struct encoder : boost::noncopyable, allocs
+		struct encoder : allocs
 		{
 			encoder()
 			{
@@ -177,9 +177,13 @@ namespace pack
 
 			CLzma2EncHandle p;
 			CLzma2EncProps props2;
+
+		private:
+			encoder(encoder const&);
+			encoder& operator = (encoder const&);
 		};
 
-		struct decoder : boost::noncopyable, allocs
+		struct decoder : allocs
 		{
 			decoder(Byte prop)
 			{
@@ -195,6 +199,10 @@ namespace pack
 			}
 
 			CLzma2Dec dec;
+
+		private:
+			decoder(decoder const&);
+			decoder& operator = (decoder const&);
 		};
 	}
 

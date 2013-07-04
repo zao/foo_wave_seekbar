@@ -6,18 +6,15 @@
 #include "PchSeekbar.h"
 #include "PersistentSettings.h"
 
+#include <set>
+#include <sstream>
 #include <fstream>
-#include <boost/algorithm/string/find.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/detail/rapidxml.hpp>
 namespace rxml = boost::property_tree::detail::rapidxml;
 
 namespace pt = boost::property_tree;
 namespace rxml = pt::detail::rapidxml;
-
-#include <boost/phoenix/phoenix.hpp>
-namespace phx = boost::phoenix;
-namespace phxph = phx::placeholders;
 
 static GUID as_guid(std::string s)
 {
@@ -39,32 +36,36 @@ static std::string as_string(GUID const& g)
 template <typename T>
 static std::string as_string(T const& t)
 {
-	return boost::lexical_cast<std::string>(t);
+	return std::to_string(t);
 }
 
 namespace wave
 {
 	template <typename T>
-	typename boost::enable_if<boost::is_unsigned<T>>::type
+	typename std::enable_if<std::is_unsigned<T>::value>::type
 	scan_int(T& out, char const* from, size_t n)
 	{
-		std::string s(from, from + n);
-		out = (T)boost::lexical_cast<uint64_t>(s);
+		std::istringstream iss(std::string(from, from + n));
+		uint64_t v = 0u;
+		iss >> v;
+		out = (T)v;
 	}
 
 	template <typename T>
-	typename boost::disable_if<boost::is_unsigned<T>>::type
+	typename std::enable_if<!std::is_unsigned<T>::value>::type
 	scan_int(T& out, char const* from, size_t n)
 	{
-		std::string s(from, from + n);
-		out = (T)boost::lexical_cast<int64_t>(s);
+		std::istringstream iss(std::string(from, from + n));
+		int64_t v = 0;
+		iss >> v;
+		out = (T)v;
 	}
 
 	template <typename T>
 	void extract_int(rxml::xml_node<>* node, T& out)
 	{
 		if (!node || strlen(node->value()) == 0)
-			boost::throw_exception(std::runtime_error("Usable integer element not found."));
+			throw std::runtime_error("Usable integer element not found.");
 		char* first = node->value();
 		char* last = first + node->value_size();
 		std::string s(first, last);
@@ -83,7 +84,7 @@ namespace wave
 	void extract_float(rxml::xml_node<>* node, T& out)
 	{
 		if (!node || strlen(node->value()) == 0)
-			boost::throw_exception(std::runtime_error("Usable float element not found."));
+			throw std::runtime_error("Usable float element not found.");
 		char* first = node->value();
 		char* last = first + node->value_size();
 		out = (T)strtod(first, &last);
@@ -93,10 +94,10 @@ namespace wave
 	void extract_array(rxml::xml_node<>* node, T& out, F f)
 	{
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable array element not found."));
+			throw std::runtime_error("Usable array element not found.");
 		node = node->first_node("elems");
 		if (!node)
-			boost::throw_exception(std::runtime_error("Tree of elems for array not found."));
+			throw std::runtime_error("Tree of elems for array not found.");
 		auto item_node = node->first_node("item");
 		size_t i = 0;
 		for (;
@@ -106,7 +107,7 @@ namespace wave
 			f(item_node, out[i]);
 		}
 		if (i != out.size())
-			boost::throw_exception(std::runtime_error("Item count mismatch for array."));
+			throw std::runtime_error("Item count mismatch for array.");
 	}
 
 	template <typename T, typename F>
@@ -114,7 +115,7 @@ namespace wave
 	{
 		size_t const num_elems = N;
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable C-array element not found."));
+			throw std::runtime_error("Usable C-array element not found.");
 		auto item_node = node->first_node("item");
 		size_t i = 0;
 		for (;
@@ -124,7 +125,7 @@ namespace wave
 			f(item_node, out[i]);
 		}
 		if (i != num_elems)
-			boost::throw_exception(std::runtime_error("Item count mismatch for array."));
+			throw std::runtime_error("Item count mismatch for array.");
 
 	}
 
@@ -132,7 +133,7 @@ namespace wave
 	void extract_vector(rxml::xml_node<>* node, std::vector<T>& out, F f)
 	{
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable vector element not found."));
+			throw std::runtime_error("Usable vector element not found.");
 		auto item_node = node->first_node("item");
 		for (;
 		     item_node;
@@ -147,20 +148,20 @@ namespace wave
 	template <typename T>
 	struct extract_fun
 	{
-		typedef typename boost::function<void (rxml::xml_node<>*, typename boost::remove_const<T>::type&)> type;
+		typedef typename std::function<void (rxml::xml_node<>*, typename std::remove_const<T>::type&)> type;
 	};
 
 	template <typename M>
 	void extract_map(rxml::xml_node<>* node, M& out, typename extract_fun<typename M::key_type>::type key_fun, typename extract_fun<typename M::mapped_type>::type value_fun)
 	{
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable map element not found."));
+			throw std::runtime_error("Usable map element not found.");
 		auto item_node = node->first_node("item");
 		for (;
 		     item_node;
 		     item_node = item_node->next_sibling("item"))
 		{
-			std::pair<typename boost::remove_const<typename M::key_type>::type, typename M::mapped_type> p;
+			std::pair<typename std::remove_const<typename M::key_type>::type, typename M::mapped_type> p;
 			extract_pair(item_node, p, key_fun, value_fun);
 			out[p.first] = p.second;
 		}
@@ -170,7 +171,7 @@ namespace wave
 	void extract_pair(rxml::xml_node<>* node, std::pair<T1, T2>& out, typename extract_fun<T1>::type f1, typename extract_fun<T2>::type f2)
 	{
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable pair element not found."));
+			throw std::runtime_error("Usable pair element not found.");
 		auto first_node = node->first_node("first");
 		auto second_node = node->first_node("second");
 		f1(first_node, out.first);
@@ -180,7 +181,7 @@ namespace wave
 	inline void extract_color(rxml::xml_node<>* node, wave::color& out)
 	{
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable color element not found."));
+			throw std::runtime_error("Usable color element not found.");
 		auto r_node = node->first_node("r");
 		auto g_node = r_node->next_sibling("g");
 		if (!g_node)
@@ -201,7 +202,7 @@ namespace wave
 	inline void extract_guid(rxml::xml_node<>* node, GUID& out)
 	{
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable GUID element not found."));
+			throw std::runtime_error("Usable GUID element not found.");
 		extract_int(node->first_node("Data1"), out.Data1);
 		extract_int(node->first_node("Data2"), out.Data2);
 		extract_int(node->first_node("Data3"), out.Data3);
@@ -211,7 +212,7 @@ namespace wave
 	inline void extract_string(rxml::xml_node<>* node, std::string& out)
 	{
 		if (!node)
-			boost::throw_exception(std::runtime_error("Usable string element not found."));
+			throw std::runtime_error("Usable string element not found.");
 		out.assign(node->value(), node->value() + node->value_size());
 	}
 }
@@ -225,38 +226,40 @@ namespace wave
 	{
 		std::fill(colors.begin(), colors.end(), color());
 		std::fill(override_colors.begin(), override_colors.end(), false);
-		channel_order = map_list_of
-			(audio_chunk::channel_back_left, true)
-			(audio_chunk::channel_front_left, true)
-			(audio_chunk::channel_front_center, true)
-			(audio_chunk::channel_front_right, true)
-			(audio_chunk::channel_back_right, true)
-			(audio_chunk::channel_lfe, true);
+		channel_order = {
+			{ audio_chunk::channel_back_left, true },
+			{ audio_chunk::channel_front_left, true },
+			{ audio_chunk::channel_front_center, true },
+			{ audio_chunk::channel_front_right, true },
+			{ audio_chunk::channel_back_right, true },
+			{ audio_chunk::channel_lfe, true }
+		};
 		insert_remaining_channels();
 	}
 
 	void persistent_settings::insert_remaining_channels()
 	{
-		std::set<int> all_channels = list_of
-			(audio_chunk::channel_back_left)
-			(audio_chunk::channel_front_left)
-			(audio_chunk::channel_front_center)
-			(audio_chunk::channel_front_right)
-			(audio_chunk::channel_back_right)
-			(audio_chunk::channel_lfe)
-			(audio_chunk::channel_front_center_left)
-			(audio_chunk::channel_front_center_right)
-			(audio_chunk::channel_back_center)
-			(audio_chunk::channel_side_left)
-			(audio_chunk::channel_side_right)
-			(audio_chunk::channel_top_center)
-			(audio_chunk::channel_top_front_left)
-			(audio_chunk::channel_top_front_center)
-			(audio_chunk::channel_top_front_right)
-			(audio_chunk::channel_top_back_left)
-			(audio_chunk::channel_top_back_center)
-			(audio_chunk::channel_top_back_right);
-		for each(int ch in all_channels)
+		std::set<int> all_channels = {
+			(audio_chunk::channel_back_left),
+			(audio_chunk::channel_front_left),
+			(audio_chunk::channel_front_center),
+			(audio_chunk::channel_front_right),
+			(audio_chunk::channel_back_right),
+			(audio_chunk::channel_lfe),
+			(audio_chunk::channel_front_center_left),
+			(audio_chunk::channel_front_center_right),
+			(audio_chunk::channel_back_center),
+			(audio_chunk::channel_side_left),
+			(audio_chunk::channel_side_right),
+			(audio_chunk::channel_top_center),
+			(audio_chunk::channel_top_front_left),
+			(audio_chunk::channel_top_front_center),
+			(audio_chunk::channel_top_front_right),
+			(audio_chunk::channel_top_back_left),
+			(audio_chunk::channel_top_back_center),
+			(audio_chunk::channel_top_back_right)
+		};
+		for (int ch : all_channels)
 		{
 			if (std::find_if(channel_order.begin(), channel_order.end(), [ch](decltype(channel_order[0]) const& a) { return a.first == ch; }) == channel_order.end())
 				channel_order.push_back(std::make_pair(ch, false));
@@ -267,7 +270,7 @@ namespace wave
 	{
 		auto node = doc->first_node("settings");
 		if (!node)
-			boost::throw_exception(std::runtime_error("Couldn't find <settings> element in saved settings."));
+			throw std::runtime_error("Couldn't find <settings> element in saved settings.");
 
 		auto version_attr = node->first_attribute("version");
 		std::string version_string(version_attr->value(), version_attr->value() + version_attr->value_size());
@@ -393,7 +396,7 @@ namespace wave
 		out.put("downmix_display", downmix_display);
 		 
 		ptree& channel_order_pt = out.add("channel_order", "");
-		BOOST_FOREACH(auto& p, channel_order)
+		for (auto& p : channel_order)
 		{
 			ptree& _ = channel_order_pt.add("mapping", "");
 			_.add("channel", p.first);
@@ -401,7 +404,7 @@ namespace wave
 		}
 			 
 		ptree& generic_strings_pt = out.add("generic_strings", "");
-		BOOST_FOREACH(auto& p, generic_strings)
+		for (auto& p : generic_strings)
 		{
 			generic_strings_pt.add(as_string(p.first), p.second);
 		}
@@ -418,11 +421,21 @@ namespace wave
 		return ret;
 	}
 
+	template <typename Iterator>
+	static std::pair<Iterator, Iterator> find_first_regex(Iterator begin, Iterator end, std::regex const& re)
+	{
+		std::match_results<Iterator> m;
+		if (std::regex_search(begin, end, m, re)) {
+			return { m[0].first, m[0].second };
+		}
+		return { end, end };
+	}
+
 	static std::string extract_xml_part(std::string const& contents)
 	{
-		auto first_tag = boost::algorithm::find_first(contents, "<?xml version=");
-		auto last_tag = boost::algorithm::find_first(boost::make_iterator_range(first_tag.end(), contents.end()), "</boost_serialization>");
-		return std::string(first_tag.begin(), last_tag.end());
+		auto first_tag = find_first_regex(std::cbegin(contents), std::cend(contents), std::regex(R"(<\?xml version=)"));
+		auto last_tag = find_first_regex(first_tag.second, std::cend(contents), std::regex("</boost_serialization>"));
+		return std::string(first_tag.first, last_tag.second);
 	}
 
 	void read_s11n_xml(std::string xml, persistent_settings& settings)

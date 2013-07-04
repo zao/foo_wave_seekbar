@@ -1,4 +1,6 @@
+set(ASIO_ROOT "" CACHE FILEPATH "Locates an extracted or installed Asio tree")
 include_directories(${WTL_INCLUDE_DIRS})
+include_directories("${ASIO_ROOT}/include")
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${TBB_INCLUDE_DIRS})
 include_directories(AFTER ${DXSDK_INCLUDE_DIRS})
@@ -34,17 +36,14 @@ set(SEEKBAR_SOURCES
 	"GdiFallback.cc"
 	"GdiFallback.h"
 	"Helpers.h"
-	"InstanceTracker.h"
 	"MainSeekbar.cc"
 	"PchSeekbar.h"
 	"PersistentSettings.cc"
 	"PersistentSettings.h"
-	"PfcSpirit.h"
 	"SeekbarCui.cc"
 	"SeekbarCui.h"
 	"SeekbarDui.cc"
 	"SeekbarDui.h"
-	"SeekbarState.h"
 	"SeekbarWindow.Callbacks.cc"
 	"SeekbarWindow.cc"
 	"SeekbarWindow.ConfigDialog.cc"
@@ -54,7 +53,6 @@ set(SEEKBAR_SOURCES
 	"SeekTooltip.h"
 	"Player.cc"
 	"Player.h"
-	"utf8_codecvt_facet.cpp"
 )
 set(RESOURCE_SOURCES
 	"foo_wave_seekbar.rc"
@@ -94,6 +92,7 @@ set(JSON_SOURCES
 )
 set(UTIL_SOURCES
 	"util/Asio.h"
+	"util/Filesystem.h"
 	"util/Profiling.cc"
 	"util/Profiling.h"
 )

@@ -5,18 +5,8 @@
 
 #include "PchDirect3D9.h"
 #include "Direct3D9.h"
-#include <boost/filesystem/path.hpp>
+#include <cstdint>
 #include <vector>
-
-#if defined(BOOST_ALL_NO_LIB)
-#  if defined(_DEBUG)
-#    pragma comment(lib, "libboost_filesystem-mt-gd.lib")
-#    pragma comment(lib, "libboost_system-mt-gd.lib")
-#  else
-#    pragma comment(lib, "libboost_filesystem-mt.lib")
-#    pragma comment(lib, "libboost_system-mt.lib")
-#  endif
-#endif
 
 static void f() {}
 
@@ -29,7 +19,20 @@ struct deref<U*>
   typedef U type;
 };
 
-shared_ptr<deref<HMODULE>::type> scintilla;
+std::shared_ptr<deref<HMODULE>::type> scintilla;
+
+static void replace_filename(std::vector<wchar_t>& v, std::wstring const& new_name)
+{
+	size_t last_component = 0u;
+	for (size_t i = 0; v[i] != '\0'; ++i) {
+		if (v[i] == '/' || v[i] == '\\') {
+			last_component = i+1;
+		}
+	}
+	if (v.size() > last_component + new_name.size() + 1) {
+		memcpy(&v[last_component], new_name.c_str(), (1+new_name.size()) * sizeof(wchar_t));
+	}
+}
 
 void init_scintilla()
 {
@@ -39,11 +42,9 @@ void init_scintilla()
 		HMODULE self;
 		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&f, &self);
 		GetModuleFileName(self, &path[0], path.size()-1);
-		boost::filesystem::path lexer_path = path;
-		lexer_path.remove_filename();
-		lexer_path /= "SciLexer.dll";
+		replace_filename(path, L"SciLexer.dll");
 
-		scintilla.reset(LoadLibrary(lexer_path.c_str()), &FreeLibrary);
+		scintilla.reset(LoadLibraryW(path.data()), &FreeLibrary);
 	}
 }
 

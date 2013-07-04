@@ -5,6 +5,7 @@
 
 #pragma once
 #include "frontend_sdk/VisualFrontend.h"
+#include "waveform_sdk/Optional.h"
 
 namespace wave
 {
@@ -50,12 +51,13 @@ namespace wave
 		CPoint orientate(CPoint);
 
 		CWindow wnd;
-		boost::optional<CRect> last_play_rect;
-		boost::optional<CRect> last_seek_rect;
+		bool cached_rects_valid;
+		wave::optional<CRect> last_play_rect;
+		wave::optional<CRect> last_seek_rect;
 
-		scoped_ptr<mem_dc> wave_dc, shaded_wave_dc;
-		scoped_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
-		scoped_ptr<CBrush> brush_background;
+		std::unique_ptr<mem_dc> wave_dc, shaded_wave_dc;
+		std::unique_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
+		std::unique_ptr<CBrush> brush_background;
 
 		visual_frontend_callback& callback;
 	};
