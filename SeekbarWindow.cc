@@ -218,6 +218,12 @@ namespace wave
 	void seekbar_window::set_playback_time(double t)
 	{
 		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		static std::map<seekbar_window*, double> last_time;
+		auto last = last_time[this];
+		if (last > t) {
+			console::formatter() << "time reversed from " << last << " to " << t << "\n";
+		}
+		last_time[this] = t;
 		fe->callback->set_playback_position(t);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
