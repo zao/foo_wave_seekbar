@@ -42,6 +42,7 @@ namespace wave
 	D2D1_FACTORY_OPTIONS const opts = { };
 
 	image_cache::image_cache()
+		: work(std::make_unique<asio::io_service::work>(pump_io))
 	{
 		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &factory);
 		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
@@ -49,25 +50,26 @@ namespace wave
 
 	image_cache::~image_cache()
 	{
-		{
-			std::unique_lock<std::mutex> lk(mutex);
-			should_terminate = true;
-			pump_alert.notify_one();
-		}
+		work.reset();
 		pump_thread->join();
 	}
 
 	void image_cache::start()
 	{
-		pump_thread.reset(new std::thread([this]
-		{
-			while (1) {
+		pump_thread.reset(new std::thread([this]{pump_io.run();}));
+	}
+
+	void image_cache::add_task(task_data const& t)
+	{
+		lock_type lk(mutex);
+		bool should_post_process = tasks.empty();
+		tasks.push_back(t);
+		if (should_post_process) {
+			pump_io.post([this]
+			{
 				task_data t;
 				{
-					std::unique_lock<std::mutex> lk(mutex);
-					pump_alert.wait(lk, [this]{return !tasks.empty() || should_terminate;});
-					
-					if (should_terminate) return;
+					lock_type lk(mutex);
 					size_t max_index = 0u;
 					task_data const* best = &tasks.front();
 					for (auto& t : tasks) {
@@ -78,8 +80,8 @@ namespace wave
 					tasks.clear();
 				}
 				update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
-			}
-		}));
+			});
+		}
 	}
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)
@@ -143,7 +145,7 @@ namespace wave
 			}
 
 			{
-				std::lock_guard<std::mutex> sl(cache->mutex);
+				image_cache::lock_type lk(cache->mutex);
 				if (cache->last_bitmap && bitmap_serial < cache->bitmap_serial)
 				{
 					wave_bitmap.Release();
@@ -204,24 +206,25 @@ namespace wave
 
 	void direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
 	{
-		std::lock_guard<std::mutex> sl(cache->mutex);
-		switch (callback.get_downmix_display())
-		{
-		case config::downmix_mono:   if (wf->get_channel_count() > 1) wf = downmix_waveform(wf, 1); break;
-		case config::downmix_stereo: if (wf->get_channel_count() > 2) wf = downmix_waveform(wf, 2); break;
-		}
-		pfc::list_t<channel_info> infos;
-		callback.get_channel_infos(list_array_sink<channel_info>(infos));
-		uint64_t serial = ++last_serial_issued;
 		image_cache::task_data t;
-		t.waveform = wf;
-		t.infos = infos;
-		t.size = D2D1::SizeF((float)size.cx, (float)size.cy);
-		t.vertical = callback.get_orientation() == config::orientation_vertical;
-		t.flipped = callback.get_flip_display();
-		t.serial = serial;
-		cache->tasks.push_back(t);
-		cache->pump_alert.notify_one();
+		{
+			image_cache::lock_type lk(cache->mutex);
+			switch (callback.get_downmix_display())
+			{
+			case config::downmix_mono:   if (wf->get_channel_count() > 1) wf = downmix_waveform(wf, 1); break;
+			case config::downmix_stereo: if (wf->get_channel_count() > 2) wf = downmix_waveform(wf, 2); break;
+			}
+			pfc::list_t<channel_info> infos;
+			callback.get_channel_infos(list_array_sink<channel_info>(infos));
+			uint64_t serial = ++last_serial_issued;
+			t.waveform = wf;
+			t.infos = infos;
+			t.size = D2D1::SizeF((float)size.cx, (float)size.cy);
+			t.vertical = callback.get_orientation() == config::orientation_vertical;
+			t.flipped = callback.get_flip_display();
+			t.serial = serial;
+		}
+		cache->add_task(t);
 	}
 
 	void direct2d1_frontend::on_state_changed(state s)
@@ -387,7 +390,7 @@ namespace wave
 		image_cache* self = this;
 		in_main_thread([self, bm, serial]()
 		{
-			std::lock_guard<std::mutex> sl(self->mutex);
+			image_cache::lock_type lk(self->mutex);
 			self->last_bitmap = bm;
 			self->bitmap_serial = serial;
 		});
@@ -419,7 +422,7 @@ namespace wave
 			callback.get_color(config::color_selection)
 		};
 		colors = p;
-		std::lock_guard<std::mutex> sl(cache->mutex);
+		image_cache::lock_type lk(cache->mutex);
 		cache->colors = p;
 
 		if (rt)

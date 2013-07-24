@@ -14,9 +14,7 @@
 
 #include <algorithm>
 using std::min; using std::max;
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <thread>
 
 #include "../frontend_sdk/VisualFrontend.h"
@@ -27,6 +25,7 @@ using std::min; using std::max;
 #include <atlcom.h>
 
 #include "../waveform_sdk/RefPointer.h"
+#include "../util/Asio.h"
 
 namespace wave
 {
@@ -61,12 +60,17 @@ namespace wave
 			bool flipped;
 		};
 
+	public:
+		void add_task(task_data const& t);
+
 		CComPtr<ID2D1Factory> factory;
-		std::mutex mutex;
+		typedef asio::detail::mutex mutex_type;
+		typedef asio::detail::scoped_lock<mutex_type> lock_type;
+		asio::detail::mutex mutex;
+		asio::io_service pump_io;
+		std::unique_ptr<asio::io_service::work> work;
 		std::unique_ptr<std::thread> pump_thread;
-		std::condition_variable pump_alert;
 		std::deque<task_data> tasks;
-		std::atomic<bool> should_terminate;
 
 		CComPtr<IWICImagingFactory> wic_factory;
 		CComPtr<IWICBitmap> last_bitmap;
