@@ -10,9 +10,7 @@
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
 #include <atomic>
-#include <future>
 #include <list>
-#include <mutex>
 #include <stack>
 #include <thread>
 
@@ -61,17 +59,17 @@ namespace wave
 		void open_store();
 		void load_data();
 		void try_delayed_init();
-		void delayed_init(std::promise<void>& sync_point);
+		void delayed_init(HANDLE sync_point);
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
 
 		std::atomic<bool> is_initialized;
-		std::mutex init_mutex;
+		asio::detail::mutex init_mutex;
 
-		std::mutex important_mutex;
+		asio::detail::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;
 
 		pfc::string cache_filename;
-		std::mutex cache_mutex;
+		asio::detail::mutex cache_mutex;
 		asio::io_service io;
 		std::unique_ptr<asio::io_service::work> idle_work;
 		std::list<std::thread> work_threads;

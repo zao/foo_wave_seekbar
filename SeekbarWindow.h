@@ -12,7 +12,6 @@
 #include "Helpers.h"
 #include "SeekCallback.h"
 #include "Player.h"
-#include <mutex>
 #include "Cache.h"
 
 namespace wave
@@ -25,7 +24,9 @@ namespace wave
 			callback.reset();
 			frontend.reset();
 		}
-		std::recursive_mutex mutex;
+		typedef asio::detail::mutex mutex_type;
+		typedef asio::detail::scoped_lock<mutex_type> lock_type;
+		mutex_type mutex;
 		std::unique_ptr<frontend_callback_impl> callback;
 		std::unique_ptr<frontend_config_impl> conf;
 		ref_ptr<visual_frontend> frontend;
@@ -93,17 +94,17 @@ namespace wave
 		virtual void on_stop() override;
 
 	protected:
-		void set_cursor_position(float f);
-		void set_cursor_visibility(bool b);
-		double compute_position(CPoint point);
-		void set_seek_position(CPoint point);
-		void set_playback_time(double t);
+		void set_cursor_position(frontend_data::lock_type& lk, float f);
+		void set_cursor_visibility(frontend_data::lock_type& lk, bool b);
+		double compute_position(frontend_data::lock_type& lk, CPoint point);
+		void set_seek_position(frontend_data::lock_type& lk, CPoint point);
+		void set_playback_time(frontend_data::lock_type& lk, double t);
 
 		persistent_settings settings;
 		static void load_settings(persistent_settings& s, std::vector<char> const& in);
 		static void save_settings(persistent_settings const& s, std::vector<char>& out);
 
-		void toggle_orientation(frontend_callback_impl& cb, persistent_settings& s);
+		void toggle_orientation(frontend_data::lock_type& lk, frontend_callback_impl& cb, persistent_settings& s);
 		virtual bool forward_rightclick() { return false; }
 
 		void load_frontend_modules();
@@ -119,8 +120,8 @@ namespace wave
 		bool possible_next_enqueued;
 		color global_colors[config::color_count];
 
-		void try_get_data();
-		void flush_frontend();
+		void try_get_data(frontend_data::lock_type& lk);
+		void flush_frontend(frontend_data::lock_type& lk);
 
 		CRect client_rect;
 		double present_scale;
@@ -131,7 +132,7 @@ namespace wave
 
 		std::shared_ptr<seek_callback> tooltip;
 		std::vector<std::weak_ptr<seek_callback>> seek_callbacks;
-		std::vector<std::function<void ()>> deferred_init;
+		std::vector<std::tuple<config::color, color, bool>> deferred_colors;
 
 	private:
 		void initialize_frontend();
@@ -142,17 +143,17 @@ namespace wave
 		void on_playback_order_changed(t_size p_new_index);
 
 	protected:
-		void set_border_visibility(bool);
-		void set_color(config::color which, color what, bool override);
-		void set_color_override(config::color which, bool override);
-		void set_frontend(config::frontend kind);
-		void set_orientation(config::orientation);
-		void set_shade_played(bool);
-		void set_display_mode(config::display_mode);
-		void set_downmix_display(config::downmix);
-		void set_flip_display(bool);
-		void set_channel_enabled(int channel, bool);
-		void swap_channel_order(int ch1, int ch2);
+		void set_border_visibility(frontend_data::lock_type& lk, bool);
+		void set_color(frontend_data::lock_type& lk, config::color which, color what, bool override);
+		void set_color_override(frontend_data::lock_type& lk, config::color which, bool override);
+		void set_frontend(frontend_data::lock_type& lk, config::frontend kind);
+		void set_orientation(frontend_data::lock_type& lk, config::orientation);
+		void set_shade_played(frontend_data::lock_type& lk, bool);
+		void set_display_mode(frontend_data::lock_type& lk, config::display_mode);
+		void set_downmix_display(frontend_data::lock_type& lk, config::downmix);
+		void set_flip_display(frontend_data::lock_type& lk, bool);
+		void set_channel_enabled(frontend_data::lock_type& lk, int channel, bool);
+		void swap_channel_order(frontend_data::lock_type& lk, int ch1, int ch2);
 
 		// Config dialog
 		struct configuration_dialog : ATL::CDialogImpl<configuration_dialog>

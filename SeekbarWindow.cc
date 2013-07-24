@@ -41,7 +41,7 @@ namespace wave
 		util::record_event(util::Phase::END_EVENT, "Windowing", "seekbar lifetime");
 	}
 
-	void seekbar_window::toggle_orientation(frontend_callback_impl& cb, persistent_settings& s)
+	void seekbar_window::toggle_orientation(frontend_data::lock_type& lk, frontend_callback_impl& cb, persistent_settings& s)
 	{
 		config::orientation o = config::orientation_horizontal;
 		if (cb.get_orientation() == o)
@@ -98,7 +98,7 @@ namespace wave
 	void seekbar_window::initialize_frontend()
 	{
 		util::ScopedEvent se("Windowing", "initialize_frontend");
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
 		present_interval = 100;
 		try
@@ -160,7 +160,7 @@ namespace wave
 				KillTimer(repaint_timer_id);
 				repaint_timer_id = 0;
 			}
-			try_get_data();
+			try_get_data(lk);
 			fe->frontend->on_state_changed((visual_frontend::state)~0);
 			static_api_ptr_t<playback_control> pc;
 			if (pc->is_playing()) {
@@ -169,26 +169,23 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::set_cursor_position(float f)
+	void seekbar_window::set_cursor_position(frontend_data::lock_type& lk, float f)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_playback_position(f);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
-	void seekbar_window::set_cursor_visibility(bool b)
+	void seekbar_window::set_cursor_visibility(frontend_data::lock_type& lk, bool b)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(b);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
 	// time from window coordinates
-	double seekbar_window::compute_position(CPoint point)
+	double seekbar_window::compute_position(frontend_data::lock_type& lk, CPoint point)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		double track_length = fe->callback->get_track_length();
 		bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
 		double position = horizontal
@@ -201,10 +198,9 @@ namespace wave
 		return std::max(0.0, std::min(track_length, position));
 	}
 
-	void seekbar_window::set_seek_position(CPoint point)
+	void seekbar_window::set_seek_position(frontend_data::lock_type& lk, CPoint point)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
-		auto position = compute_position(point);
+		auto position = compute_position(lk, point);
 
 		for each(auto cb in seek_callbacks)
 			if (auto p = cb.lock())
@@ -215,9 +211,8 @@ namespace wave
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
-	void seekbar_window::set_playback_time(double t)
+	void seekbar_window::set_playback_time(frontend_data::lock_type& lk, double t)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_playback_position(t);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
@@ -226,7 +221,7 @@ namespace wave
 	void waveform_completion_handler(std::shared_ptr<frontend_data> fe, std::shared_ptr<get_response> response, uint32_t serial)
 	{
 		{
-			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+			frontend_data::lock_type lk(fe->mutex);
 			if (serial != fe->auto_get_serial)
 				return;
 			if (fe->valid_buckets >= response->valid_bucket_count)
@@ -237,7 +232,7 @@ namespace wave
 		}
 		in_main_thread([fe]()
 		{
-			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+			frontend_data::lock_type lk(fe->mutex);
 			if (fe->pending_serial != fe->auto_get_serial)
 				return;
 			if (fe->callback)
@@ -247,13 +242,12 @@ namespace wave
 		});
 	}
 
-	void seekbar_window::try_get_data()
+	void seekbar_window::try_get_data(frontend_data::lock_type& lk)
 	{
 		try
 		{
 			if (core_api::are_services_available())
 			{
-				std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 				auto request = std::make_shared<get_request>();
 				request->user_requested = false;
 				fe->callback->get_playable_location(request->location);
@@ -306,9 +300,8 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::flush_frontend()
+	void seekbar_window::flush_frontend(frontend_data::lock_type& lk)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->frontend.reset();
 		initializing_graphics = false;
 		if (repaint_timer_id)
@@ -318,7 +311,7 @@ namespace wave
 			Invalidate(FALSE);
 	}
 
-	void seekbar_window::set_border_visibility(bool visible)
+	void seekbar_window::set_border_visibility(frontend_data::lock_type& lk, bool visible)
 	{
 		if (settings.has_border != visible)
 		{
@@ -330,10 +323,10 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::set_color(config::color which, color what, bool override)
+	void seekbar_window::set_color(frontend_data::lock_type& lk, config::color which, color what, bool override)
 	{
 		if (!m_hWnd) {
-			deferred_init.push_back(std::bind(&seekbar_window::set_color, this, which, what, override));
+			deferred_colors.push_back(std::make_tuple(which, what, override));
 			return;
 		}
 		if (override)
@@ -342,16 +335,14 @@ namespace wave
 			global_colors[which] = what;
 		if (settings.override_colors[which] == override)
 		{
-			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 			fe->callback->set_color(which, what);
 			if (fe->frontend)
 				fe->frontend->on_state_changed(visual_frontend::state_color);
 		}
 	}
 
-	void seekbar_window::set_color_override(config::color which, bool override)
+	void seekbar_window::set_color_override(frontend_data::lock_type& lk, config::color which, bool override)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		settings.override_colors[which] = override;
 		fe->callback->set_color(which, override
 			? settings.colors[which]
@@ -361,15 +352,14 @@ namespace wave
 			fe->frontend->on_state_changed(visual_frontend::state_color);
 	}
 
-	void seekbar_window::set_frontend(config::frontend kind)
+	void seekbar_window::set_frontend(frontend_data::lock_type& lk, config::frontend kind)
 	{
 		settings.active_frontend_kind = kind;
-		flush_frontend();
+		flush_frontend(lk);
 	}
 
-	void seekbar_window::set_orientation(config::orientation o)
+	void seekbar_window::set_orientation(frontend_data::lock_type& lk, config::orientation o)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		if (fe->callback->get_orientation() != o)
 		{
 			fe->callback->set_orientation(o);
@@ -378,9 +368,8 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::set_shade_played(bool shade)
+	void seekbar_window::set_shade_played(frontend_data::lock_type& lk, bool shade)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		settings.shade_played = shade;
 		if (fe->callback->get_shade_played() != shade)
 		{
@@ -390,9 +379,8 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::set_display_mode(config::display_mode mode)
+	void seekbar_window::set_display_mode(frontend_data::lock_type& lk, config::display_mode mode)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		settings.display_mode = mode;
 		if (fe->callback->get_display_mode() != mode)
 		{
@@ -402,9 +390,8 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::set_downmix_display(config::downmix downmix)
+	void seekbar_window::set_downmix_display(frontend_data::lock_type& lk, config::downmix downmix)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		settings.downmix_display = downmix;
 		if (fe->callback->get_downmix_display() != downmix)
 		{
@@ -414,9 +401,8 @@ namespace wave
 		}
 	}
 	
-	void seekbar_window::set_flip_display(bool flip)
+	void seekbar_window::set_flip_display(frontend_data::lock_type& lk, bool flip)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		settings.flip_display = flip;
 		if (fe->callback->get_flip_display() != flip)
 		{
@@ -426,9 +412,8 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::set_channel_enabled(int ch, bool state)
+	void seekbar_window::set_channel_enabled(frontend_data::lock_type& lk, int ch, bool state)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		auto& order = settings.channel_order;
 		typedef decltype(order[0]) value_type;
 		auto I = std::find_if(order.begin(), order.end(), [ch](value_type const& a)
@@ -444,11 +429,10 @@ namespace wave
 		}
 	}
 
-	void seekbar_window::swap_channel_order(int ch1, int ch2)
+	void seekbar_window::swap_channel_order(frontend_data::lock_type& lk, int ch1, int ch2)
 	{
 		if (ch1 == ch2)
 			return;
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		auto& order = settings.channel_order;
 		typedef decltype(order[0]) value_type;
 		auto I1 = std::find_if(order.begin(), order.end(), [ch1](value_type const& a)

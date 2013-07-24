@@ -5,7 +5,6 @@
 
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
-#include <mutex>
 
 namespace wave
 {
@@ -24,7 +23,7 @@ namespace wave
 	void seekbar_window::on_waveform(ref_ptr<waveform> wf)
 	{
 		util::ScopedEvent se("Callbacks", "on_waveform");
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		fe->callback->set_waveform(wf);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_data);
@@ -32,13 +31,14 @@ namespace wave
 
 	void seekbar_window::on_time(double t)
 	{
-		if (t == 0.0) set_playback_time(t);
+		frontend_data::lock_type lk(fe->mutex);
+		if (t == 0.0) set_playback_time(lk, t);
 	}
 
 	void seekbar_window::on_duration(double t)
 	{
 		util::ScopedEvent se("Callbacks", "on_duration");
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
 		fe->callback->set_track_length(t);
@@ -49,7 +49,7 @@ namespace wave
 	void seekbar_window::on_location(playable_location const& loc)
 	{
 		util::ScopedEvent se("Callbacks", "on_location");
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		{
 			static_api_ptr_t<metadb> db;
 			service_ptr_t<metadb_handle> meta;
@@ -65,7 +65,7 @@ namespace wave
 #undef SET_REPLAYGAIN
 		}
 
-		set_cursor_position(0.0f);
+		set_cursor_position(lk, 0.0f);
 		fe->callback->set_playable_location(loc);
 		fe->callback->set_cursor_visible(true);
 		if (fe->frontend)
@@ -75,7 +75,7 @@ namespace wave
 	void seekbar_window::on_play()
 	{
 		util::ScopedEvent se("Callbacks", "on_play");
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend) {
@@ -87,7 +87,7 @@ namespace wave
 	void seekbar_window::on_stop()
 	{
 		util::ScopedEvent se("Callbacks", "on_stop");
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		fe->callback->set_cursor_visible(false);
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend) {

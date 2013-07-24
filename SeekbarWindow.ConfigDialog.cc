@@ -119,13 +119,14 @@ namespace wave
 		if (initializing)
 			return;
 
+		frontend_data::lock_type lk(sw.fe->mutex);
 		// close frontend config window
 		if (sw.fe->frontend)
 			sw.fe->frontend->close_configuration();
 
 		if (fe != sw.settings.active_frontend_kind)
 		{
-			sw.set_frontend(fe);
+			sw.set_frontend(lk, fe);
 		}
 
 	}
@@ -134,14 +135,16 @@ namespace wave
 	{
 		if (initializing)
 			return;
-		sw.set_border_visibility(!IsDlgButtonChecked(id));
+		frontend_data::lock_type lk(sw.fe->mutex);
+		sw.set_border_visibility(lk, !IsDlgButtonChecked(id));
 	}
 
 	void seekbar_window::configuration_dialog::on_shade_played_click(UINT code, int id, CWindow control)
 	{
 		if (initializing)
 			return;
-		sw.set_shade_played(!!IsDlgButtonChecked(id));
+		frontend_data::lock_type lk(sw.fe->mutex);
+		sw.set_shade_played(lk, !!IsDlgButtonChecked(id));
 	}
 
 	HBRUSH seekbar_window::configuration_dialog::on_wm_ctl_color_static(WTL::CDCHandle dc, ATL::CWindow wnd)
@@ -194,9 +197,10 @@ namespace wave
 
 		if (ChooseColor(&cc))
 		{
+			frontend_data::lock_type lk(sw.fe->mutex);
 			ci.color = xbgr_to_color(cc.rgbResult);
 			ci.color_ref = cc.rgbResult;
-			sw.set_color(idx, ci.color, true);
+			sw.set_color(lk, idx, ci.color, true);
 			ci.box.InvalidateRect(0);
 		}
 	}
@@ -224,7 +228,8 @@ namespace wave
 			return;
 		}
 		bool override = !!IsDlgButtonChecked(id);
-		sw.set_color_override(idx, override);
+		frontend_data::lock_type lk(sw.fe->mutex);
+		sw.set_color_override(lk, idx, override);
 		colors[idx].box.EnableWindow(override);
 		colors[idx].box.Invalidate();
 	}
@@ -235,9 +240,10 @@ namespace wave
 			return;
 		CComboBox cb = control;
 		config::display_mode mode = (config::display_mode)cb.GetItemData(cb.GetCurSel());
+		frontend_data::lock_type lk(sw.fe->mutex);
 		if (mode != sw.settings.display_mode)
 		{
-			sw.set_display_mode(mode);
+			sw.set_display_mode(lk, mode);
 		}
 	}
 
@@ -247,9 +253,10 @@ namespace wave
 			return;
 		CComboBox cb = control;
 		config::downmix mode = (config::downmix)cb.GetItemData(cb.GetCurSel());
+		frontend_data::lock_type lk(sw.fe->mutex);
 		if (mode != sw.settings.downmix_display)
 		{
-			sw.set_downmix_display(mode);
+			sw.set_downmix_display(lk, mode);
 		}
 	}
 	
@@ -257,7 +264,8 @@ namespace wave
 	{
 		if (initializing)
 			return;
-		sw.set_flip_display(!!IsDlgButtonChecked(id));
+		frontend_data::lock_type lk(sw.fe->mutex);
+		sw.set_flip_display(lk, !!IsDlgButtonChecked(id));
 	}
 
 	LRESULT seekbar_window::configuration_dialog::on_channel_changed(NMHDR* hdr)
@@ -275,8 +283,8 @@ namespace wave
 			if (int state = (nm->uNewState >> 12 & 0xF)) // has checkbox state
 			{
 				int ch = channels.GetItemData(nm->iItem);
-				//bool checked = !!channels.GetCheckState(nm->iItem);
-				sw.set_channel_enabled(ch, !!(state >> 1));
+				frontend_data::lock_type lk(sw.fe->mutex);
+				sw.set_channel_enabled(lk, ch, !!(state >> 1));
 			}
 		}
 		return 0;
@@ -322,7 +330,10 @@ namespace wave
 			return;
 		int ch1 = channels.GetItemData(idx - 1);
 		int ch2 = channels.GetItemData(idx);
-		sw.swap_channel_order(ch1, ch2);
+		{
+			frontend_data::lock_type lk(sw.fe->mutex);
+			sw.swap_channel_order(lk, ch1, ch2);
+		}
 		swap_channels(idx - 1, idx);
 		channels.SelectItem(idx - 1);
 	}
@@ -337,7 +348,10 @@ namespace wave
 			return;
 		int ch1 = channels.GetItemData(idx);
 		int ch2 = channels.GetItemData(idx + 1);
-		sw.swap_channel_order(ch1, ch2);
+		{
+			frontend_data::lock_type lk(sw.fe->mutex);
+			sw.swap_channel_order(lk, ch1, ch2);
+		}
 		swap_channels(idx, idx + 1);
 		channels.SelectItem(idx + 1);
 	}

@@ -1,6 +1,5 @@
 #include "PchSeekbar.h"
 #include "Profiling.h"
-#include <mutex>
 #include <atomic>
 #include "json/json.h"
 #include <ctime>
@@ -12,7 +11,7 @@ namespace util
 {
 static std::string target_filename;
 static std::atomic<bool> initialized, logging;
-static std::mutex logging_mutex;
+static asio::detail::mutex logging_mutex;
 static asio::io_service io;
 static asio::ip::tcp::socket log_socket(io);
 static LARGE_INTEGER start_time_counter;
@@ -28,7 +27,7 @@ static double now()
 static wchar_t const* const LOG_SERVER_FILE_MAPPING = L"LOG_SERVER_TRACE_PORT_MAPPING";
 static size_t const LOG_SERVER_MAPPING_SIZE = 4u;
 
-static void lazy_recording_init(std::lock_guard<std::mutex> const&)
+static void lazy_recording_init(asio::detail::scoped_lock<asio::detail::mutex> const&)
 {
 	if (!initialized) {
 		auto shared_mapping = OpenFileMapping(FILE_MAP_READ, FALSE, LOG_SERVER_FILE_MAPPING);
@@ -57,8 +56,8 @@ static void lazy_recording_init(std::lock_guard<std::mutex> const&)
 bool is_recording_enabled()
 {
 	if (!initialized) {
-		std::lock_guard<std::mutex> lock(logging_mutex);
-		lazy_recording_init(lock);
+		asio::detail::scoped_lock<asio::detail::mutex> lk(logging_mutex);
+		lazy_recording_init(lk);
 	}
 	return logging;
 }
@@ -72,9 +71,9 @@ uint64_t generate_recording_id()
 void record_event(Phase phase, char const* category, char const* name, uint64_t const* id,
 	EventArgs const* args)
 {
-	std::lock_guard<std::mutex> lock(logging_mutex);
+	asio::detail::scoped_lock<asio::detail::mutex> lk(logging_mutex);
 	if (!initialized) {
-		lazy_recording_init(lock);
+		lazy_recording_init(lk);
 	}
 	if (logging) {
 		Json::Value event_node;

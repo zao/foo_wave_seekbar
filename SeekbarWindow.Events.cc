@@ -95,11 +95,11 @@ namespace wave
 	{
 		if (size.cx < 1 || size.cy < 1)
 			return;
-		set_orientation(size.cx >= size.cy
+		frontend_data::lock_type lk(fe->mutex);
+		set_orientation(lk, size.cx >= size.cy
 			? config::orientation_horizontal
 			: config::orientation_vertical);
 
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_size(wave::size(size.cx, size.cy));
 		if (fe->frontend)
 			fe->frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
@@ -109,9 +109,10 @@ namespace wave
 	{
 		if (wparam == REPAINT_TIMER_ID && core_api::are_services_available())
 		{
+			frontend_data::lock_type lk(fe->mutex);
 			static_api_ptr_t<playback_control> pc;
 			double t = pc->playback_get_position();
-			set_playback_time(t);
+			set_playback_time(lk, t);
 		}
 	}
 
@@ -123,11 +124,16 @@ namespace wave
 		fe->callback->set_waveform(placeholder_waveform);
 
 		wait_for_frontend_module_load();
-
-		decltype(deferred_init) v;
-		v.swap(deferred_init);
-		for (auto f : v) {
-			f();
+		
+		frontend_data::lock_type lk(fe->mutex);
+		decltype(deferred_colors) v;
+		v.swap(deferred_colors);
+		for (auto t : v) {
+			config::color which;
+			color what;
+			bool override;
+			std::tie(which, what, override) = t;
+			set_color(lk, which, what, override);
 		}
 
 		apply_settings();
@@ -145,7 +151,7 @@ namespace wave
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
 
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		fe->clear();
 	}
 
@@ -167,7 +173,7 @@ namespace wave
 			seek_callbacks.push_back(tooltip);
 		}
 
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		frontend_data::lock_type lk(fe->mutex);
 		if (drag_state == MouseDragSeeking)
 		{
 			fe->callback->set_seeking(true);
@@ -176,7 +182,7 @@ namespace wave
 				if (auto p = cb.lock())
 					p->on_seek_begin();
 
-			set_seek_position(point);
+			set_seek_position(lk, point);
 			if (fe->frontend)
 			{
 				fe->frontend->on_state_changed(visual_frontend::state_position);
@@ -184,7 +190,7 @@ namespace wave
 		}
 		else
 		{
-			drag_data.to = drag_data.from = compute_position(point);
+			drag_data.to = drag_data.from = compute_position(lk, point);
 		}
 
 		SetCapture();
@@ -192,38 +198,46 @@ namespace wave
 
 	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
-		ReleaseCapture();
-		if (drag_state == MouseDragSeeking)
+		bool should_seek = false;
+		double seek_target = 0.0;
 		{
-			bool completed = fe->callback->is_seeking();
-			if (completed)
+			frontend_data::lock_type lk(fe->mutex);
+			ReleaseCapture();
+			if (drag_state == MouseDragSeeking)
 			{
-				fe->callback->set_seeking(false);
-				set_seek_position(point);
-				if (fe->frontend)
-					fe->frontend->on_state_changed(visual_frontend::state_position);
-				static_api_ptr_t<playback_control> pc;
-				pc->playback_seek(fe->callback->get_seek_position());
+				bool completed = fe->callback->is_seeking();
+				if (completed)
+				{
+					fe->callback->set_seeking(false);
+					set_seek_position(lk, point);
+					if (fe->frontend)
+						fe->frontend->on_state_changed(visual_frontend::state_position);
+					should_seek = true;
+					seek_target = fe->callback->get_seek_position();
+				}
+				for each(auto cb in seek_callbacks)
+					if (auto p = cb.lock())
+						p->on_seek_end(!completed);
 			}
-			for each(auto cb in seek_callbacks)
-				if (auto p = cb.lock())
-					p->on_seek_end(!completed);
-		}
-		else if (drag_state == MouseDragSelection)
-		{
-			auto source = fe->displayed_song;
-			if (source.is_valid() && drag_data.to >= 0)
+			else if (drag_state == MouseDragSelection)
 			{
-				drag_data.to = compute_position(point);
+				auto source = fe->displayed_song;
+				if (source.is_valid() && drag_data.to >= 0)
+				{
+					drag_data.to = compute_position(lk, point);
 
-				auto from = std::min(drag_data.from, drag_data.to);
-				auto to = std::max(drag_data.from, drag_data.to);
+					auto from = std::min(drag_data.from, drag_data.to);
+					auto to = std::max(drag_data.from, drag_data.to);
 			
-				clipboard::render_audio(source, from, to);
+					clipboard::render_audio(source, from, to);
+				}
 			}
+			drag_state = MouseDragNone;
 		}
-		drag_state = MouseDragNone;
+		if (should_seek) {
+			static_api_ptr_t<playback_control> pc;
+			pc->playback_seek(seek_target);
+		}
 	}
 
 	void seekbar_window::on_wm_mousemove(UINT wparam, CPoint point)
@@ -235,7 +249,7 @@ namespace wave
 
 			last_seek_point = point;
 
-			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+			frontend_data::lock_type lk(fe->mutex);
 			CRect r;
 			GetWindowRect(r);
 			int const N = 40;
@@ -247,7 +261,7 @@ namespace wave
 			{
 				fe->callback->set_seeking(!outside);
 
-				set_seek_position(point);
+				set_seek_position(lk, point);
 				if (fe->frontend)
 				{
 					fe->frontend->on_state_changed(visual_frontend::state_position);
@@ -257,7 +271,7 @@ namespace wave
 			{
 				drag_data.to = outside
 					? -1.0f
-					: compute_position(point);
+					: compute_position(lk, point);
 			}
 		}
 	}

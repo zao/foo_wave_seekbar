@@ -46,11 +46,12 @@ namespace wave
 		using namespace cui::colours;
 		GUID nil = {};
 		helper h = helper(nil);
+		frontend_data::lock_type lk(sb.fe->mutex);
 		
-		sb.set_color(config::color_background, xbgr_to_color(h.get_colour(colour_background)), false);
-		sb.set_color(config::color_foreground, xbgr_to_color(h.get_colour(colour_text)), false);
-		sb.set_color(config::color_highlight, xbgr_to_color(h.get_colour(colour_selection_text)), false);
-		sb.set_color(config::color_selection, xbgr_to_color(h.get_colour(colour_selection_background)), false);
+		sb.set_color(lk, config::color_background, xbgr_to_color(h.get_colour(colour_background)), false);
+		sb.set_color(lk, config::color_foreground, xbgr_to_color(h.get_colour(colour_text)), false);
+		sb.set_color(lk, config::color_highlight, xbgr_to_color(h.get_colour(colour_selection_text)), false);
+		sb.set_color(lk, config::color_selection, xbgr_to_color(h.get_colour(colour_selection_background)), false);
 	}
 
 	void seekbar_uie_base::color_callback::on_bool_changed(t_size mask) const

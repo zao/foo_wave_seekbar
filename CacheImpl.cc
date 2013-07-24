@@ -8,9 +8,6 @@
 #include "BackingStore.h"
 #include "Helpers.h"
 #include <atomic>
-#include <condition_variable>
-#include <future>
-#include <mutex>
 #include <regex>
 #include <thread>
 
@@ -86,7 +83,7 @@ namespace wave
 	void cache_impl::flush()
 	{
 		{
-			std::unique_lock<std::mutex> lk(cache_mutex);
+			asio::detail::scoped_lock<asio::detail::mutex> lk(cache_mutex);
 			flush_callback.abort();
 		}
 		idle_work.reset();
@@ -112,16 +109,15 @@ namespace wave
 		store.reset(new backing_store(cache_filename));
 	}
 
-	void cache_impl::delayed_init(std::promise<void>& sync_point)
+	void cache_impl::delayed_init(HANDLE sync_point)
 	{
-		std::lock_guard<std::mutex> sl(init_mutex);
-		sync_point.set_value();
-		std::mutex load_mutex;
-		std::promise<void> data_loaded;
+		asio::detail::scoped_lock<asio::detail::mutex> sl(init_mutex);
+		SetEvent(sync_point);
+		HANDLE data_loaded = CreateEventW(nullptr, FALSE, FALSE, nullptr);
 		io.post([this, &data_loaded]()
 		{
 			load_data();
-			data_loaded.set_value();
+			SetEvent(data_loaded);
 		});
 
 		size_t n_cores = std::thread::hardware_concurrency();
@@ -139,7 +135,8 @@ namespace wave
 			}));
 			if (!i)
 			{
-				data_loaded.get_future().get();
+				WaitForSingleObject(data_loaded, INFINITE);
+				CloseHandle(data_loaded);
 			}
 		}
 		is_initialized = true;
@@ -148,7 +145,7 @@ namespace wave
 	void cache_impl::try_delayed_init()
 	{
 		if (!is_initialized)
-			std::lock_guard<std::mutex> sl(init_mutex);
+			asio::detail::scoped_lock<asio::detail::mutex> sl(init_mutex);
 	}
 
 	void dispatch_partial_response(std::function<void (std::shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
@@ -184,13 +181,19 @@ namespace wave
 		if (!should_rescan)
 		{
 			store->get(response->waveform, request->location);
-			request->completion_handler(response);
+			io.post([request, response]
+			{
+				request->completion_handler(response);
+			});
 		}
 		else
 		{
 			response->waveform = make_placeholder_waveform();
 			response->valid_bucket_count = 0;
-			request->completion_handler(response);
+			io.post([request, response]
+			{
+				request->completion_handler(response);
+			});
 			
 			response.reset(new get_response);
 			if (!request->user_requested)
@@ -302,9 +305,10 @@ namespace wave
 
 	void cache_impl::kick_dynamic_init()
 	{
-		std::promise<void> sync_point;
+		HANDLE sync_point = CreateEventW(nullptr, FALSE, FALSE, nullptr);
 		std::thread(std::bind(&cache_impl::delayed_init, this, std::ref(sync_point))).detach();
-		sync_point.get_future().get();
+		WaitForSingleObject(sync_point, INFINITE);
+		CloseHandle(sync_point);
 	}
 
 	struct cache_init_stage : init_stage_callback

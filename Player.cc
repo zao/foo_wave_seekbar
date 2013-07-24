@@ -3,7 +3,6 @@
 #include "Cache.h"
 #include "Helpers.h"
 
-#include <mutex>
 #include <set>
 
 namespace wave
@@ -14,24 +13,24 @@ struct player_impl : player
 
 	virtual void register_waveform_listener(waveform_listener* p) override
 	{
-		std::lock_guard<std::mutex> l(_m);
+		asio::detail::scoped_lock<asio::detail::mutex> lk(_m);
 		_listeners.insert(p);
 	}
 
 	virtual void deregister_waveform_listener(waveform_listener* p) override
 	{
-		std::lock_guard<std::mutex> l(_m);
+		asio::detail::scoped_lock<asio::detail::mutex> lk(_m);
 		_listeners.erase(p);
 	}
 
 	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const override
 	{
-		std::lock_guard<std::mutex> l(_m);
+		asio::detail::scoped_lock<asio::detail::mutex> lk(_m);
 		for (auto listener : _listeners)
 			f(listener);
 	}
 
-	mutable std::mutex _m;
+	mutable asio::detail::mutex  _m;
 	std::set<waveform_listener*> _listeners;
 };
 

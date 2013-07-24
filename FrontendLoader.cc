@@ -3,28 +3,24 @@
 #include "GdiFallback.h"
 #include "util/Filesystem.h"
 #include <atomic>
-#include <condition_variable>
-#include <future>
-#include <mutex>
 #include <thread>
 
 namespace wave
 {
 static std::atomic<bool> modules_loaded;
-static std::mutex module_load_mutex;
-static std::condition_variable load_cv;
+static asio::detail::mutex module_load_mutex;
 static std::vector<std::shared_ptr<frontend_module>> frontend_modules;
 
 void wait_for_frontend_module_load()
 {
 	if (!modules_loaded)
-		std::lock_guard<std::mutex> lg(module_load_mutex);
+		asio::detail::scoped_lock<asio::detail::mutex> lk(module_load_mutex);
 }
 
 std::vector<std::shared_ptr<frontend_module>> list_frontend_modules()
 {
 	if (!modules_loaded)
-		std::lock_guard<std::mutex> lg(module_load_mutex);
+		asio::detail::scoped_lock<asio::detail::mutex> lk(module_load_mutex);
 	return frontend_modules;
 }
 
@@ -42,11 +38,11 @@ frontend_module::~frontend_module()
 
 static void load_frontend_modules()
 {
-	std::promise<void> sync_point;
+	HANDLE sync_point = CreateEventW(nullptr, FALSE, FALSE, nullptr);
 	std::thread t([&] {
 		modules_loaded = false;
-		std::lock_guard<std::mutex> lg(module_load_mutex);
-		sync_point.set_value();
+		asio::detail::scoped_lock<asio::detail::mutex> lk(module_load_mutex);
+		SetEvent(sync_point);
 		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		try {
 			auto path = util::file_location_to_wide_path(core_api::get_my_full_path());
@@ -74,7 +70,8 @@ static void load_frontend_modules()
 		modules_loaded = true;
 	});
 	t.detach();
-	sync_point.get_future().get();
+	WaitForSingleObject(sync_point, INFINITE);
+	CloseHandle(sync_point);
 }
 
 struct frontend_module_init_stage : init_stage_callback

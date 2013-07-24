@@ -4,13 +4,13 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "PchSeekbar.h"
+#include "util/Asio.h"
 #include "CacheImpl.h"
 #include "BackingStore.h"
 #include "waveform_sdk/WaveformImpl.h"
 #include "waveform_sdk/Downmix.h"
 #include "waveform_sdk/Optional.h"
 #include "Helpers.h"
-#include <future>
 #include <regex>
 
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
@@ -388,7 +388,7 @@ namespace wave
 			while (true)
 			{
 				{
-					std::lock_guard<std::mutex> sl(important_mutex);
+					asio::detail::scoped_lock<asio::detail::mutex> sl(important_mutex);
 					if (important_queue.empty())
 						break;
 					prio_loc = important_queue.top();
@@ -405,7 +405,7 @@ namespace wave
 		}
 
 		{
-			std::lock_guard<std::mutex> sl(cache_mutex);
+			asio::detail::scoped_lock<asio::detail::mutex> sl(cache_mutex);
 			if (!store || flush_callback.is_aborting())
 			{
 				job_flush_queue.push_back(make_job(loc, user_requested));
@@ -422,15 +422,22 @@ namespace wave
 		// Test whether tracks are in the Media Library or not
 		if (!g_analyse_tracks_outside_library.get())
 		{
-			struct result
+			struct result : boost::noncopyable
 			{
-				std::shared_ptr<std::promise<bool>> p;
-				std::shared_future<bool> res;
+				HANDLE ev;
+				bool value;
 
 				result()
-					: p(new std::promise<bool>), res(p->get_future())
+					: ev(CreateEventW(nullptr, FALSE, FALSE, nullptr))
+					, value(false)
 				{}
-			} res;
+
+				~result()
+				{
+					CloseHandle(ev);
+				}
+			};
+			auto res = std::make_shared<result>();
 
 			in_main_thread([loc, res]()	
 			{
@@ -438,15 +445,15 @@ namespace wave
 				static_api_ptr_t<metadb> mdb;
 				metadb_handle_ptr m;
 				mdb->handle_create(m, loc);
-				res.p->set_value(lib->is_item_in_library(m));
+				res->value = lib->is_item_in_library(m);
+				SetEvent(res->ev);
 			});
 			
-			std::shared_future<bool> f = res.res;
 			while (!flush_callback.is_aborting())
 			{
-				if (f.wait_for(std::chrono::milliseconds(200)) != std::future_status::timeout)
-				{
-					if (!f.get())
+				auto state = WaitForSingleObject(res->ev, 200);
+				if (state == WAIT_OBJECT_0) {
+					if (!res->value)
 						return out;
 					break;
 				}
@@ -503,7 +510,7 @@ namespace wave
 				auto out = builder.finalize_waveform();
 
 				console::formatter() << "Wave cache: finished analysis of " << loc;
-				std::lock_guard<std::mutex> sl(cache_mutex);
+				asio::detail::scoped_lock<asio::detail::mutex> sl(cache_mutex);
 				open_store();
 				if (store)
 					store->put(out, loc);
@@ -514,7 +521,7 @@ namespace wave
 		}
 		catch (foobar2000_io::exception_aborted&)
 		{
-			std::lock_guard<std::mutex> sl(cache_mutex);
+			asio::detail::scoped_lock<asio::detail::mutex> sl(cache_mutex);
 			job_flush_queue.push_back(make_job(loc, user_requested));
 		}
 		catch (foobar2000_io::exception_io_not_found& e)

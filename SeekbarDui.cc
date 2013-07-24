@@ -26,10 +26,11 @@ namespace wave
 
 	void seekbar_dui::get_colors()
 	{
-		set_color(config::color_background, xbgr_to_color(callback->query_std_color(ui_color_background)), false);
-		set_color(config::color_foreground, xbgr_to_color(callback->query_std_color(ui_color_text)), false);
-		set_color(config::color_highlight, xbgr_to_color(callback->query_std_color(ui_color_highlight)), false);
-		set_color(config::color_selection, xbgr_to_color(callback->query_std_color(ui_color_selection)), false);
+		frontend_data::lock_type lk(fe->mutex);
+		set_color(lk, config::color_background, xbgr_to_color(callback->query_std_color(ui_color_background)), false);
+		set_color(lk, config::color_foreground, xbgr_to_color(callback->query_std_color(ui_color_text)), false);
+		set_color(lk, config::color_highlight, xbgr_to_color(callback->query_std_color(ui_color_highlight)), false);
+		set_color(lk, config::color_selection, xbgr_to_color(callback->query_std_color(ui_color_selection)), false);
 	}
 
 	void seekbar_dui::notify(GUID const & what, t_size param1, void const * param2, t_size param2Size)
@@ -49,8 +50,9 @@ namespace wave
 		uint8_t const* p = (uint8_t const*)data->get_data();
 		try
 		{
+			frontend_data::lock_type lk(fe->mutex);
 			load_settings(settings, std::vector<char>(p, p + data->get_data_size()));
-			flush_frontend();
+			flush_frontend(lk);
 		}
 		catch (std::exception& ex)
 		{
