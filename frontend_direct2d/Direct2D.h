@@ -15,7 +15,6 @@
 #include <algorithm>
 using std::min; using std::max;
 #include <memory>
-#include <thread>
 
 #include "../frontend_sdk/VisualFrontend.h"
 #include <D2D1.h>
@@ -69,7 +68,7 @@ namespace wave
 		asio::detail::mutex mutex;
 		asio::io_service pump_io;
 		std::unique_ptr<asio::io_service::work> work;
-		std::unique_ptr<std::thread> pump_thread;
+		std::unique_ptr<asio::thread> pump_thread;
 		std::deque<task_data> tasks;
 
 		CComPtr<IWICImagingFactory> wic_factory;

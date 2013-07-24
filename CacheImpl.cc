@@ -9,7 +9,6 @@
 #include "Helpers.h"
 #include <atomic>
 #include <regex>
-#include <thread>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
@@ -120,7 +119,9 @@ namespace wave
 			SetEvent(data_loaded);
 		});
 
-		size_t n_cores = std::thread::hardware_concurrency();
+		SYSTEM_INFO si = {};
+		GetSystemInfo(&si);
+		size_t n_cores = si.dwNumberOfProcessors;
 		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
 		size_t n = std::min(n_cores, n_cap);
 
@@ -295,7 +296,9 @@ namespace wave
 			try
 			{
 				static_api_ptr_t<cache> c;
-				c->flush();
+				auto* p = dynamic_cast<cache_impl*>(c.get_ptr());
+				p->join_dynamic_init();
+				p->flush();
 			}
 			catch (std::exception&)
 			{
@@ -306,9 +309,16 @@ namespace wave
 	void cache_impl::kick_dynamic_init()
 	{
 		HANDLE sync_point = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-		std::thread(std::bind(&cache_impl::delayed_init, this, std::ref(sync_point))).detach();
+		dynamic_init_thread = std::make_unique<asio::thread>(std::bind(&cache_impl::delayed_init, this, std::ref(sync_point)));
 		WaitForSingleObject(sync_point, INFINITE);
 		CloseHandle(sync_point);
+	}
+
+	void cache_impl::join_dynamic_init()
+	{
+		if (dynamic_init_thread)
+			dynamic_init_thread->join();
+		dynamic_init_thread.reset();
 	}
 
 	struct cache_init_stage : init_stage_callback

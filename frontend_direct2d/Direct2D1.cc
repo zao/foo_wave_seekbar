@@ -56,7 +56,7 @@ namespace wave
 
 	void image_cache::start()
 	{
-		pump_thread.reset(new std::thread([this]{pump_io.run();}));
+		pump_thread = std::make_unique<asio::thread>([this]{pump_io.run();});
 	}
 
 	void image_cache::add_task(task_data const& t)

@@ -3,7 +3,6 @@
 #include "GdiFallback.h"
 #include "util/Filesystem.h"
 #include <atomic>
-#include <thread>
 
 namespace wave
 {
@@ -36,10 +35,11 @@ frontend_module::~frontend_module()
 	}
 }
 
+static std::unique_ptr<asio::thread> loader_thread;
 static void load_frontend_modules()
 {
 	HANDLE sync_point = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-	std::thread t([&] {
+	loader_thread = std::make_unique<asio::thread>([&] {
 		modules_loaded = false;
 		asio::detail::scoped_lock<asio::detail::mutex> lk(module_load_mutex);
 		SetEvent(sync_point);
@@ -69,7 +69,6 @@ static void load_frontend_modules()
 		}
 		modules_loaded = true;
 	});
-	t.detach();
 	WaitForSingleObject(sync_point, INFINITE);
 	CloseHandle(sync_point);
 }
@@ -84,6 +83,19 @@ struct frontend_module_init_stage : init_stage_callback
 		}
 	}
 };
+
+struct frontend_module_initquit : initquit
+{
+	void on_init() override {}
+
+	void on_quit() override
+	{
+		if (loader_thread)
+			loader_thread->join();
+		loader_thread.reset();
+	}
+};
 }
 
 static service_factory_single_t<wave::frontend_module_init_stage> g_frontend_module_init_stage;
+static initquit_factory_t<wave::frontend_module_initquit> g_frontend_module_initquit;

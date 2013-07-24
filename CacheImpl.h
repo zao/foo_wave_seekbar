@@ -12,7 +12,6 @@
 #include <atomic>
 #include <list>
 #include <stack>
-#include <thread>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
@@ -53,7 +52,9 @@ namespace wave
 
 		typedef std::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
 
+		std::unique_ptr<asio::thread> dynamic_init_thread;
 		void kick_dynamic_init();
+		void join_dynamic_init();
 
 	private:
 		void open_store();
@@ -72,7 +73,7 @@ namespace wave
 		asio::detail::mutex cache_mutex;
 		asio::io_service io;
 		std::unique_ptr<asio::io_service::work> idle_work;
-		std::list<std::thread> work_threads;
+		std::list<asio::thread> work_threads;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
 		std::deque<job> job_flush_queue;
