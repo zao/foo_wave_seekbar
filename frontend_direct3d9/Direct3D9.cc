@@ -128,10 +128,12 @@ namespace wave
 				return false;
 
 			dev->SetRenderTarget(0, render_target);
+			D3DVIEWPORT9 window_viewport;
+			dev->GetViewport(&window_viewport);
 
-			//D3DXHANDLE wfd = fx->GetParameterBySemantic(0, "WAVEFORMDATA");
 			auto draw_quad = [&,this](int idx, int ch, int n)
 			{
+				auto channel_viewport = window_viewport;
 				D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
 				D3DXVECTOR4 viewport = D3DXVECTOR4((float)target_width, (float)target_height, 0.0f, 0.0f);
 				sides /= (float)n;
@@ -140,24 +142,28 @@ namespace wave
 
 				if (callback.get_orientation() == config::orientation_horizontal)
 				{
-					viewport.y /= (float)n;
+					channel_viewport.Y = (int)(sides[0]*target_height);
+					float h = (sides[1]-sides[0])*target_height;
+					channel_viewport.Height = (int)h;
+					viewport.y = floor(h);
 					float arr[] = {
 						// position2f, texcoord2f
-						-1.0f, lerp(-1.0f, 1.0f, sides.x), -1.0f, -1.0f,
-						-1.0f, lerp(-1.0f, 1.0f, sides.y), -1.0f,  1.0f,
-						 1.0f, lerp(-1.0f, 1.0f, sides.x),  1.0f, -1.0f,
-						 1.0f, lerp(-1.0f, 1.0f, sides.y),  1.0f,  1.0f
+						-1.0f, -1.0f, -1.0f, -1.0f,
+						-1.0f,  3.0f, -1.0f,  3.0f,
+						 3.0f, -1.0f,  3.0f, -1.0f,
 					};
 					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
 				}
 				else
 				{
-					viewport.x /= (float)n;
+					channel_viewport.X = (int)(sides[0]*target_width);
+					float w = (sides[1]-sides[0])*target_width;
+					channel_viewport.Width = (int)w;
+					viewport.x = floor(w);
 					float arr[] = {
-						lerp(1.0f, -1.0f, sides.x), -1.0f, -1.0f, -1.0f,
-						lerp(1.0f, -1.0f, sides.y), -1.0f,  1.0f, -1.0f,
-						lerp(1.0f, -1.0f, sides.x),  1.0f, -1.0f,  1.0f,
-						lerp(1.0f, -1.0f, sides.y),  1.0f,  1.0f,  1.0f
+						-1.0f, -1.0f,  1.0f, -1.0f,
+						-1.0f,  3.0f,  1.0f,  3.0f,
+						 3.0f, -1.0f, -3.0f, -1.0f,
 					};
 					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
 				}
@@ -178,6 +184,7 @@ namespace wave
 
 				hr = dev->SetTexture(0, channel_textures[ch]);
 				hr = dev->SetVertexDeclaration(decl);
+				hr = dev->SetViewport(&channel_viewport);
 
 				UINT passes = 0;
 				fx->Begin(&passes, 0);
@@ -185,7 +192,7 @@ namespace wave
 				{
 					fx->BeginPass(pass);
 					fx->CommitChanges();
-					hr = dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, &buf[0], sizeof(float) * 4);
+					hr = dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 1, &buf[0], sizeof(float) * 4);
 					fx->EndPass();
 				}
 				fx->End();
@@ -198,6 +205,7 @@ namespace wave
 			{
 				draw_quad(idx, I->channel, num);
 			}
+			dev->SetViewport(&window_viewport);
 			return true;
 		}
 
