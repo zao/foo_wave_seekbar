@@ -21,10 +21,13 @@ add_library(frontend_direct3d9 SHARED
 	${D3D9_SOURCES}
 )
 
+set_target_properties(frontend_direct3d9 PROPERTIES LINK_FLAGS "/DELAYLOAD:d3dx9_42.dll")
+
 target_link_libraries(frontend_direct3d9
 	pfc
 	waveform_sdk
 	"d3d9.lib"
 	"d3dx9.lib"
+	"delayimp.lib"
 )
 deploy_component(frontend_direct3d9 foo_wave_seekbar)

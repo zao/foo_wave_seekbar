@@ -94,10 +94,10 @@ namespace wave
 				return SUCCEEDED(hr);
 			};
 		
-			if (!query_texture_format(texture_format = D3DFMT_A16B16G16R16F))
+			//if (!query_texture_format(texture_format = D3DFMT_A16B16G16R16F))
 			{
 				floating_point_texture = false;
-				if (!query_texture_format(texture_format = D3DFMT_A2R10G10B10))
+				//if (!query_texture_format(texture_format = D3DFMT_A2R10G10B10))
 				{
 					if (!query_texture_format(texture_format = D3DFMT_A8R8G8B8))
 						throw std::exception("Direct3D9: could not find a suitable texture format.");
