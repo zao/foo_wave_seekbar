@@ -262,6 +262,15 @@ namespace wave
 		}
 	}
 
+	LRESULT seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
+	{
+		static_api_ptr_t<playback_control> pc;
+		auto pos = pc->playback_get_position();
+		pos += 60.0f * z_delta / 120.0f;
+		pc->playback_seek(pos);
+		return 0;
+	}
+
 	void seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
 	{
 		if (forward_rightclick())
