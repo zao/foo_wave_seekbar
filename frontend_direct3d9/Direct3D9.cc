@@ -46,7 +46,7 @@ namespace wave
 
 			if (!d3d)
 			{
-				throw std::runtime_error("DirectX redistributable not found. Run the DirectX August 2009 web setup or later.");
+				throw std::runtime_error("DirectX redistributable not found. Run the DirectX February 2010 web setup or later.");
 			}
 
 			ZeroMemory(&pp, sizeof(pp));

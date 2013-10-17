@@ -40,6 +40,11 @@ frontend_module::~frontend_module()
 	}
 }
 
+struct Candidate {
+	std::wstring filename;
+	std::vector<std::wstring> requirements;
+};
+
 static void load_frontend_modules()
 {
 	std::promise<void> sync_point;
@@ -48,6 +53,9 @@ static void load_frontend_modules()
 		std::lock_guard<std::mutex> lg(module_load_mutex);
 		sync_point.set_value();
 		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
+		Candidate candidates[] = {
+			{ L"frontend_direct3d9.dll", { L"d3d9.dll", L"d3dx9_42.dll", L"D3DCompiler_42.dll" } },
+			{ L"frontend_direct2d.dll", { L"d2d1.dll" } } };
 		try {
 			auto path = util::file_location_to_wide_path(core_api::get_my_full_path());
 			auto directory = util::extract_directory_name(path);
@@ -55,6 +63,16 @@ static void load_frontend_modules()
 			util::enumerate_file_glob(glob, [&](WIN32_FIND_DATAW find_data)
 			{
 				auto entry = directory + find_data.cFileName;
+				for (auto candidate : candidates) {
+					if (find_data.cFileName == candidate.filename) {
+						for (auto req : candidate.requirements) {
+							HMODULE lib = LoadLibraryW(req.c_str());
+							if (!lib)
+								return;
+							FreeLibrary(lib);
+						}
+					}
+				}
 				HMODULE lib = LoadLibraryW(entry.c_str());
 				if (lib) {
 					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
