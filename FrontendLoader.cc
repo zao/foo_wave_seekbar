@@ -59,7 +59,7 @@ static void load_frontend_modules()
 		try {
 			auto path = util::file_location_to_wide_path(core_api::get_my_full_path());
 			auto directory = util::extract_directory_name(path);
-			auto glob = directory + L"*.dll";
+			auto glob = directory + L"frontend_*.dll";
 			util::enumerate_file_glob(glob, [&](WIN32_FIND_DATAW find_data)
 			{
 				auto entry = directory + find_data.cFileName;
