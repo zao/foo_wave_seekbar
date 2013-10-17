@@ -1,7 +1,7 @@
 #include "PchSeekbar.h"
 #include "Profiling.h"
 #include <mutex>
-#include <tbb/atomic.h>
+#include <boost/atomic.hpp>
 #include "json/json.h"
 #include <ctime>
 #include <fstream>
@@ -11,7 +11,7 @@
 namespace util
 {
 static std::string target_filename;
-static tbb::atomic<bool> initialized, logging;
+static boost::atomic<bool> initialized, logging;
 static std::mutex logging_mutex;
 static boost::asio::io_service io;
 static boost::asio::ip::tcp::socket log_socket(io);
@@ -63,7 +63,7 @@ bool is_recording_enabled()
 	return logging;
 }
 
-static tbb::atomic<uint32_t> id_source;
+static boost::atomic<uint32_t> id_source;
 uint64_t generate_recording_id()
 {
 	return id_source++;

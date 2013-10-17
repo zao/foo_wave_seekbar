@@ -141,6 +141,10 @@ namespace wave
 
 			unsigned channel_count = channels ? count_bits_set(*channels) : 1;
 
+			if (compression && *compression < 0 || channels && *channels < 0 || channel_count > 18) {
+				remove(file); // corrupt entry
+			}
+
 			ref_ptr<waveform_impl> w(new waveform_impl);
 			auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string name, size_t col) -> bool
 			{
@@ -153,10 +157,11 @@ namespace wave
 				{
 					typedef std::back_insert_iterator<std::vector<char>> Iterator;
 					bool (*unpack_func)(void const*, size_t, Iterator) = 0;
-					if (*compression == 0)
-						unpack_func = &pack::z_unpack<Iterator>;
-					if (*compression == 1)
-						unpack_func = &pack::lzma_unpack<Iterator>;
+					switch (*compression) {
+					case 0: unpack_func = &pack::z_unpack<Iterator>; break;
+					case 1: unpack_func = &pack::lzma_unpack<Iterator>; break;
+					default: return false; // unknown compression scheme
+					}
 
 					std::vector<char> dst;
 					dst.reserve(2048 * channel_count * sizeof(float));

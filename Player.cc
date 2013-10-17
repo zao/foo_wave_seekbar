@@ -70,7 +70,7 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		if (! c->get_waveform_sync(loc, wf) && ! c->is_location_forbidden(loc)) {
 			// if not, schedule a scan
 			auto req = boost::make_shared<get_request>();
-			req->completion_handler = std::bind(&callbacks::on_waveform_result, this, playable_location_impl(loc), std::placeholders::_1);
+			req->completion_handler = boost::bind(&callbacks::on_waveform_result, this, playable_location_impl(loc), _1);
 			req->location = loc;
 			req->user_requested = false;
 			c->get_waveform(req);

@@ -6,6 +6,7 @@
 #pragma once
 #pragma warning(disable: 4005)
 #define D3D_DEBUG_INFO
+#include <tuple>
 
 #include "util/Asio.h"
 #include "util/Profiling.h"
