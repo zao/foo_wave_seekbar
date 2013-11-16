@@ -1,4 +1,3 @@
-set(ASIO_ROOT "" CACHE FILEPATH "Locates an extracted or installed Asio tree")
 include_directories(${WTL_INCLUDE_DIRS})
 include_directories("${ASIO_ROOT}/include")
 include_directories(${Boost_INCLUDE_DIRS})
