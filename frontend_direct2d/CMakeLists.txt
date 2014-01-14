@@ -15,5 +15,9 @@ target_link_libraries(frontend_direct2d
 	waveform_sdk
 	"d2d1.lib"
 # 	"delayimp.lib"
+	"libuv.lib"
+	"ws2_32.lib"
+	"psapi.lib"
+	"iphlpapi.lib"
 )
 deploy_component(frontend_direct2d foo_wave_seekbar)

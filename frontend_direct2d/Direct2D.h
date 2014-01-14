@@ -14,10 +14,8 @@
 
 #include <algorithm>
 using std::min; using std::max;
-#include <condition_variable>
 #include <memory>
-#include <mutex>
-#include <thread>
+#include <uv.h>
 
 #include "../frontend_sdk/VisualFrontend.h"
 #include <D2D1.h>
@@ -62,9 +60,9 @@ namespace wave
 		};
 
 		CComPtr<ID2D1Factory> factory;
-		std::mutex mutex;
-		std::unique_ptr<std::thread> pump_thread;
-		std::condition_variable pump_alert;
+		uv_mutex_t mutex;
+		uv_thread_t pump_thread;
+		uv_cond_t pump_alert;
 		std::deque<task_data> tasks;
 		std::atomic<bool> should_terminate;
 

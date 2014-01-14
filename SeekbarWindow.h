@@ -12,7 +12,6 @@
 #include "Helpers.h"
 #include "SeekCallback.h"
 #include "Player.h"
-#include <mutex>
 #include "Cache.h"
 
 namespace wave
@@ -25,7 +24,7 @@ namespace wave
 			callback.reset();
 			frontend.reset();
 		}
-		std::recursive_mutex mutex;
+		recursive_mutex mutex;
 		std::unique_ptr<frontend_callback_impl> callback;
 		std::unique_ptr<frontend_config_impl> conf;
 		ref_ptr<visual_frontend> frontend;

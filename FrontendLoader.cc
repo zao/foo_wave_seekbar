@@ -3,28 +3,32 @@
 #include "GdiFallback.h"
 #include "util/Filesystem.h"
 #include <atomic>
-#include <condition_variable>
-#include <future>
-#include <mutex>
-#include <thread>
+#include <uv.h>
 
 namespace wave
 {
 static std::atomic<bool> modules_loaded;
-static std::mutex module_load_mutex;
-static std::condition_variable load_cv;
+static uv_mutex_t module_load_mutex;
 static std::vector<std::shared_ptr<frontend_module>> frontend_modules;
+static uv_thread_t* load_thread;
+static uv_barrier_t load_barrier;
 
 void wait_for_frontend_module_load()
 {
-	if (!modules_loaded)
-		std::lock_guard<std::mutex> lg(module_load_mutex);
+	if (!modules_loaded) {
+		uv_mutex_lock(&module_load_mutex);
+		if (load_thread) {
+			uv_thread_join(load_thread);
+			delete load_thread;
+			load_thread = nullptr;
+		}
+		uv_mutex_unlock(&module_load_mutex);
+	}
 }
 
 std::vector<std::shared_ptr<frontend_module>> list_frontend_modules()
 {
-	if (!modules_loaded)
-		std::lock_guard<std::mutex> lg(module_load_mutex);
+	wait_for_frontend_module_load();
 	return frontend_modules;
 }
 
@@ -47,11 +51,14 @@ struct Candidate {
 
 static void load_frontend_modules()
 {
-	std::promise<void> sync_point;
-	std::thread t([&] {
+	uv_barrier_init(&load_barrier, 2);
+	load_thread = new uv_thread_t();
+	uv_thread_create(load_thread, [](void* data)
+	{
+		auto* barrier = (uv_barrier_t*)data;
 		modules_loaded = false;
-		std::lock_guard<std::mutex> lg(module_load_mutex);
-		sync_point.set_value();
+		uv_mutex_lock(&module_load_mutex);
+		uv_barrier_wait(barrier);
 		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		Candidate candidates[] = {
 			{ L"frontend_direct3d9.dll", { L"d3d9.dll", L"d3dx9_42.dll", L"D3DCompiler_42.dll" } },
@@ -90,9 +97,9 @@ static void load_frontend_modules()
 			console::complain("Seekbar: couldn't load optional frontends", e);
 		}
 		modules_loaded = true;
-	});
-	t.detach();
-	sync_point.get_future().get();
+		uv_mutex_unlock(&module_load_mutex);
+	}, &load_barrier);
+	uv_barrier_wait(&load_barrier);
 }
 
 struct frontend_module_init_stage : init_stage_callback
@@ -100,6 +107,7 @@ struct frontend_module_init_stage : init_stage_callback
 	void on_init_stage(t_uint32 stage) override
 	{
 		if (!core_api::is_quiet_mode_enabled()) {
+			uv_mutex_init(&module_load_mutex);
 			if (stage == init_stages::before_config_read)
 				load_frontend_modules();
 		}

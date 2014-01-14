@@ -10,6 +10,7 @@
 #include "util/Profiling.h"
 
 #include <algorithm>
+#include <atomic>
 using std::min;
 using std::max;
 #include <cstdint>
@@ -36,3 +37,5 @@ using std::max;
 #undef SelectBitmap
 #undef SelectBrush
 #undef SelectPen
+
+#include "util/UvHelpers.h"
