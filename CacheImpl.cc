@@ -8,11 +8,7 @@
 #include "BackingStore.h"
 #include "Helpers.h"
 #include <atomic>
-#include <condition_variable>
-#include <future>
-#include <mutex>
 #include <regex>
-#include <thread>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
@@ -31,13 +27,21 @@ static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if r
 namespace wave
 {
 	cache_impl::cache_impl()
-		: idle_work(new asio::io_service::work(io))
+		: work_dispatch_loop(uv_loop_new())
+		, work_post_queue(work_dispatch_loop)
 	{
+		uv_mutex_init(&important_mutex);
+		uv_mutex_init(&cache_mutex);
+		uv_mutex_init(&init_mutex);
 		is_initialized = false;
 	}
 
 	cache_impl::~cache_impl()
 	{
+		uv_mutex_destroy(&init_mutex);
+		uv_mutex_destroy(&cache_mutex);
+		uv_mutex_destroy(&important_mutex);
+		uv_loop_delete(work_dispatch_loop);
 	}
 
 	struct with_idle_priority
@@ -71,7 +75,7 @@ namespace wave
 				std::shared_ptr<get_request> request(new get_request);
 				request->location.copy(j.loc);
 				request->user_requested = j.user;
-				io.post([this, request]()
+				work_post_queue.post([this, request]
 				{
 					get_waveform(request);
 				});
@@ -86,13 +90,16 @@ namespace wave
 	void cache_impl::flush()
 	{
 		{
-			std::unique_lock<std::mutex> lk(cache_mutex);
+			lock_guard<uv_mutex_t> lk(cache_mutex);
 			flush_callback.abort();
 		}
-		idle_work.reset();
+		io_work.reset();
 		for (auto& t : work_threads) {
-			t.join();
+			uv_thread_join(&t);
 		}
+		work_post_queue.stop();
+		uv_async_send(&work_dispatch_work);
+		uv_thread_join(&work_dispatch_thread);
 
 		open_store();
 		if (store)
@@ -112,24 +119,35 @@ namespace wave
 		store.reset(new backing_store(cache_filename));
 	}
 
-	void cache_impl::delayed_init(std::promise<void>& sync_point)
+	void cache_impl::delayed_init()
 	{
-		std::lock_guard<std::mutex> sl(init_mutex);
-		sync_point.set_value();
-		std::mutex load_mutex;
-		std::promise<void> data_loaded;
-		io.post([this, &data_loaded]()
+		lock_guard<uv_mutex_t> lk(init_mutex);
+		init_sync_point.set(true);
+
+		uv_async_init(work_dispatch_loop, &work_dispatch_work, [](uv_async_t* handle, int status)
 		{
-			load_data();
-			data_loaded.set_value();
+			uv_close((uv_handle_t*)handle, nullptr);
 		});
 
-		size_t n_cores = std::thread::hardware_concurrency();
+		work_post_queue.post([this]
+		{
+			load_data();
+		});
+
+		auto hardware_concurrency = []{
+				SYSTEM_INFO info = {};
+				GetSystemInfo(&info);
+				return info.dwNumberOfProcessors;
+		};
+
+		size_t n_cores = hardware_concurrency();
 		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
 		size_t n = std::min(n_cores, n_cap);
 
+		io_work.reset(new asio::io_service::work(io));
 		for (size_t i = 0; i < n; ++i) {
-			work_threads.emplace_back(with_idle_priority([this, i, n]()
+			work_threads.emplace_back();
+			work_functions.emplace_back(with_idle_priority([this, i, n]
 			{
 				std::string name = "wave-processing-" + std::to_string(i+1) + "/" + std::to_string(n);
 				::SetThreadName(-1, name.c_str());
@@ -137,10 +155,7 @@ namespace wave
 				this->io.run();
 				CoUninitialize();
 			}));
-			if (!i)
-			{
-				data_loaded.get_future().get();
-			}
+			uv_thread_create(&work_threads.back(), [](void* f){ (*(std::function<void()>*)f)(); }, &work_functions.back());
 		}
 		is_initialized = true;
 	}
@@ -148,7 +163,7 @@ namespace wave
 	void cache_impl::try_delayed_init()
 	{
 		if (!is_initialized)
-			std::lock_guard<std::mutex> sl(init_mutex);
+			lock_guard<uv_mutex_t> lk(init_mutex);
 	}
 
 	void dispatch_partial_response(std::function<void (std::shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
@@ -197,11 +212,14 @@ namespace wave
 			{
 				important_queue.push(request->location);
 			}
-			io.post([this, request, response]()
+			work_post_queue.post([this, request, response]
 			{
-				response->waveform = process_file(request->location, request->user_requested,
-					std::make_shared<incremental_result_sink>(std::bind(&dispatch_partial_response, request->completion_handler, std::placeholders::_1, std::placeholders::_2)));
-				request->completion_handler(response);
+				io.post([this, request, response]{
+					auto fun = std::bind(&dispatch_partial_response, request->completion_handler, std::placeholders::_1, std::placeholders::_2);
+					response->waveform = process_file(request->location, request->user_requested,
+						std::make_shared<incremental_result_sink>(fun));
+					request->completion_handler(response);
+				});
 			});
 		}
 	}
@@ -211,7 +229,7 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			io.post([this]()
+			work_post_queue.post([this]()
 			{
 				store->remove_dead();
 			});
@@ -223,7 +241,7 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			io.post([this]()
+			work_post_queue.post([this]()
 			{
 				store->compact();
 			});
@@ -235,7 +253,7 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			io.post([this]()
+			work_post_queue.post([this]()
 			{
 				std::function<void (std::shared_ptr<get_request>)> get_func = std::bind(&cache_impl::get_waveform, this, std::placeholders::_1);
 				pfc::list_t<playable_location_impl> locations;
@@ -255,7 +273,7 @@ namespace wave
 	void cache_impl::defer_action(std::function<void ()> fun)
 	{
 		try_delayed_init();
-		io.post(fun);
+		work_post_queue.post(fun);
 	}
 
 	bool cache_impl::is_location_forbidden(playable_location const& loc)
@@ -302,9 +320,13 @@ namespace wave
 
 	void cache_impl::kick_dynamic_init()
 	{
-		std::promise<void> sync_point;
-		std::thread(std::bind(&cache_impl::delayed_init, this, std::ref(sync_point))).detach();
-		sync_point.get_future().get();
+		uv_thread_create(&work_dispatch_thread, [](void* data)
+		{
+			auto* self = (cache_impl*)data;
+			uv_run(self->work_dispatch_loop, UV_RUN_DEFAULT);
+		}, this);
+		post_work::queue(work_dispatch_loop, post_work::make(std::bind(&cache_impl::delayed_init, this)));
+		init_sync_point.get();
 	}
 
 	struct cache_init_stage : init_stage_callback

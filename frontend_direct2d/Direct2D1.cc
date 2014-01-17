@@ -50,36 +50,45 @@ namespace wave
 	image_cache::~image_cache()
 	{
 		{
-			std::unique_lock<std::mutex> lk(mutex);
+			uv_mutex_lock(&mutex);
 			should_terminate = true;
-			pump_alert.notify_one();
+			uv_cond_signal(&pump_alert);
+			uv_mutex_unlock(&mutex);
 		}
-		pump_thread->join();
+		uv_thread_join(&pump_thread);
+		uv_cond_destroy(&pump_alert);
+		uv_mutex_destroy(&mutex);
 	}
 
 	void image_cache::start()
 	{
-		pump_thread.reset(new std::thread([this]
+		uv_cond_init(&pump_alert);
+		uv_mutex_init(&mutex);
+		uv_thread_create(&pump_thread, [](void* data)
 		{
+			auto self = (image_cache*)data;
 			while (1) {
 				task_data t;
 				{
-					std::unique_lock<std::mutex> lk(mutex);
-					pump_alert.wait(lk, [this]{return !tasks.empty() || should_terminate;});
+					uv_mutex_lock(&self->mutex);
+					do {
+						uv_cond_wait(&self->pump_alert, &self->mutex);
+					} while (self->tasks.empty() && !self->should_terminate);
 					
-					if (should_terminate) return;
+					if (self->should_terminate) return;
 					size_t max_index = 0u;
-					task_data const* best = &tasks.front();
-					for (auto& t : tasks) {
+					task_data const* best = &self->tasks.front();
+					for (auto& t : self->tasks) {
 						if (t.serial > best->serial)
 							best = &t;
 					}
 					t = *best;
-					tasks.clear();
+					self->tasks.clear();
+					uv_mutex_unlock(&self->mutex);
 				}
-				update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
+				self->update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
 			}
-		}));
+		}, this);
 	}
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)
@@ -143,7 +152,7 @@ namespace wave
 			}
 
 			{
-				std::lock_guard<std::mutex> sl(cache->mutex);
+				uv_mutex_lock(&cache->mutex);
 				if (cache->last_bitmap && bitmap_serial < cache->bitmap_serial)
 				{
 					wave_bitmap.Release();
@@ -153,6 +162,7 @@ namespace wave
 				{
 					rt->DrawBitmap(wave_bitmap);
 				}
+				uv_mutex_unlock(&cache->mutex);
 			}
 
 			if (callback.is_seeking())
@@ -204,7 +214,7 @@ namespace wave
 
 	void direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
 	{
-		std::lock_guard<std::mutex> sl(cache->mutex);
+		uv_mutex_lock(&cache->mutex);
 		switch (callback.get_downmix_display())
 		{
 		case config::downmix_mono:   if (wf->get_channel_count() > 1) wf = downmix_waveform(wf, 1); break;
@@ -221,7 +231,8 @@ namespace wave
 		t.flipped = callback.get_flip_display();
 		t.serial = serial;
 		cache->tasks.push_back(t);
-		cache->pump_alert.notify_one();
+		uv_cond_signal(&cache->pump_alert);
+		uv_mutex_unlock(&cache->mutex);
 	}
 
 	void direct2d1_frontend::on_state_changed(state s)
@@ -387,9 +398,10 @@ namespace wave
 		image_cache* self = this;
 		in_main_thread([self, bm, serial]()
 		{
-			std::lock_guard<std::mutex> sl(self->mutex);
+			uv_mutex_lock(&self->mutex);
 			self->last_bitmap = bm;
 			self->bitmap_serial = serial;
+			uv_mutex_unlock(&self->mutex);
 		});
 	}
 
@@ -419,13 +431,14 @@ namespace wave
 			callback.get_color(config::color_selection)
 		};
 		colors = p;
-		std::lock_guard<std::mutex> sl(cache->mutex);
+		uv_mutex_lock(&cache->mutex);
 		cache->colors = p;
 
 		if (rt)
 		{
 			brushes = create_brush_set(rt, colors);
 		}
+		uv_mutex_unlock(&cache->mutex);
 	}
 
 	brush_set create_brush_set(ID2D1RenderTarget* target, palette pal)

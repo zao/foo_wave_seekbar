@@ -10,11 +10,9 @@
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
 #include <atomic>
-#include <future>
 #include <list>
-#include <mutex>
 #include <stack>
-#include <thread>
+#include <uv.h>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
@@ -61,20 +59,27 @@ namespace wave
 		void open_store();
 		void load_data();
 		void try_delayed_init();
-		void delayed_init(std::promise<void>& sync_point);
+		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
 
 		std::atomic<bool> is_initialized;
-		std::mutex init_mutex;
+		uv_mutex_t init_mutex;
+		future_value<bool> init_sync_point;
+		uv_async_t work_dispatch_work;
+		uv_thread_t work_dispatch_thread;
+		uv_loop_t* work_dispatch_loop;
+		async_post_queue work_post_queue;
 
-		std::mutex important_mutex;
+		asio::io_service io;
+		std::unique_ptr<asio::io_service::work> io_work;
+
+		uv_mutex_t important_mutex;
 		std::stack<playable_location_impl> important_queue;
 
 		pfc::string cache_filename;
-		std::mutex cache_mutex;
-		asio::io_service io;
-		std::unique_ptr<asio::io_service::work> idle_work;
-		std::list<std::thread> work_threads;
+		uv_mutex_t cache_mutex;
+		std::list<uv_thread_t> work_threads;
+		std::list<std::function<void()>> work_functions;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
 		std::deque<job> job_flush_queue;

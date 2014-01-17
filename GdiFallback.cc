@@ -293,8 +293,13 @@ namespace wave
 		bool flip = callback.get_flip_display();
 
 		ref_ptr<waveform> w;
-		if (callback.get_waveform(w))
-		{
+		if (!callback.get_waveform(w)) {
+			color bg = callback.get_color(config::color_background);
+			CRect all{0, 0, bitmap_size.cx, bitmap_size.cy};
+			wave_dc->FillSolidRect(all, color_to_xbgr(bg));
+			shaded_wave_dc->FillSolidRect(all, color_to_xbgr(bg));
+		}
+		else {
 			if (callback.get_downmix_display() != config::downmix_none) {
 				util::ScopedEvent se("Mixing", "Downmix waveform");
 				switch (callback.get_downmix_display())

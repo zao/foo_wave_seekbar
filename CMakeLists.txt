@@ -1,12 +1,13 @@
-set(ASIO_ROOT "" CACHE FILEPATH "Locates an extracted or installed Asio tree")
-include_directories(${WTL_INCLUDE_DIRS})
+include_directories("${WTL_INCLUDE_DIRS}")
 include_directories("${ASIO_ROOT}/include")
-include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${TBB_INCLUDE_DIRS})
-include_directories(AFTER ${DXSDK_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
-link_directories(${TBB_LIBRARY_DIRS})
-link_directories(${DXSDK_LIBRARY_DIRS})
+include_directories("${Boost_INCLUDE_DIRS}")
+include_directories("${TBB_INCLUDE_DIRS}")
+include_directories("${LIBUV_INCLUDE_DIRS}")
+include_directories(AFTER "${DXSDK_INCLUDE_DIRS}")
+link_directories("${Boost_LIBRARY_DIRS}")
+link_directories("${TBB_LIBRARY_DIRS}")
+link_directories("${LIBUV_LIBRARY_DIRS}")
+link_directories("${DXSDK_LIBRARY_DIRS}")
 
 add_subdirectory(waveform_sdk)
 add_subdirectory(frontend_sdk)
@@ -95,6 +96,7 @@ set(UTIL_SOURCES
 	"util/Filesystem.h"
 	"util/Profiling.cc"
 	"util/Profiling.h"
+	"util/UvHelpers.h"
 )
 set(TESTS_SOURCES
 	"tests/TestProcessFile.cc"
@@ -136,6 +138,10 @@ target_link_libraries(foo_wave_seekbar
 	"comdlg32.lib"
 	"rpcrt4.lib"
 	"winmm.lib"
+	"libuv.lib"
+	"ws2_32.lib"
+	"psapi.lib"
+	"iphlpapi.lib"
 )
 deploy_component(foo_wave_seekbar foo_wave_seekbar)
 

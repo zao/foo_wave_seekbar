@@ -15,7 +15,7 @@ sub pub {
 }
 
 sub archive {
-	my $pack = 'C:/opt/utilities/7za.exe';
+	my $pack = '7za.exe';
 	my $target = File::Spec->rel2abs($_[0]);
 	my $rwut = $_[1];
 	foreach my $v (@$rwut) {

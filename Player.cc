@@ -3,35 +3,39 @@
 #include "Cache.h"
 #include "Helpers.h"
 
-#include <mutex>
 #include <set>
+#include <uv.h>
 
 namespace wave
 {
 struct player_impl : player
 {
 	player_impl();
+	~player_impl();
 
 	virtual void register_waveform_listener(waveform_listener* p) override
 	{
-		std::lock_guard<std::mutex> l(_m);
+		uv_mutex_lock(&_m);
 		_listeners.insert(p);
+		uv_mutex_unlock(&_m);
 	}
 
 	virtual void deregister_waveform_listener(waveform_listener* p) override
 	{
-		std::lock_guard<std::mutex> l(_m);
+		uv_mutex_lock(&_m);
 		_listeners.erase(p);
+		uv_mutex_unlock(&_m);
 	}
 
 	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const override
 	{
-		std::lock_guard<std::mutex> l(_m);
+		uv_mutex_lock(&_m);
 		for (auto listener : _listeners)
 			f(listener);
+		uv_mutex_unlock(&_m);
 	}
 
-	mutable std::mutex _m;
+	mutable uv_mutex_t _m;
 	std::set<waveform_listener*> _listeners;
 };
 
@@ -125,6 +129,12 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 
 player_impl::player_impl()
 {
+	uv_mutex_init(&_m);
+}
+
+player_impl::~player_impl()
+{
+	uv_mutex_destroy(&_m);
 }
 
 static callbacks* g_callbacks = nullptr;

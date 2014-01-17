@@ -12,7 +12,6 @@
 #include "Helpers.h"
 #include "SeekCallback.h"
 #include "Player.h"
-#include <mutex>
 #include "Cache.h"
 
 namespace wave
@@ -25,7 +24,7 @@ namespace wave
 			callback.reset();
 			frontend.reset();
 		}
-		std::recursive_mutex mutex;
+		recursive_mutex mutex;
 		std::unique_ptr<frontend_callback_impl> callback;
 		std::unique_ptr<frontend_config_impl> conf;
 		ref_ptr<visual_frontend> frontend;
@@ -64,6 +63,7 @@ namespace wave
 			MSG_WM_LBUTTONUP(on_wm_lbuttonup)
 			MSG_WM_RBUTTONUP(on_wm_rbuttonup)
 			MSG_WM_MOUSEMOVE(on_wm_mousemove)
+			MSG_WM_MOUSEWHEEL(on_wm_mousewheel)
 			MSG_WM_PAINT(on_wm_paint)
 			MSG_WM_SIZE(on_wm_size)
 			MSG_WM_TIMER(on_wm_timer)
@@ -81,6 +81,7 @@ namespace wave
 		void on_wm_lbuttonup(UINT wparam, CPoint point);
 		void on_wm_rbuttonup(UINT wparam, CPoint point);
 		void on_wm_mousemove(UINT wparam, CPoint point);
+		LRESULT on_wm_mousewheel(UINT wparam, short z_delta, CPoint point);
 		void on_wm_paint(HDC dc);
 		void on_wm_size(UINT wparam, CSize size);
 		void on_wm_timer(UINT_PTR wparam);

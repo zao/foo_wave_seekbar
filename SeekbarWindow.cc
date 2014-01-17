@@ -98,7 +98,7 @@ namespace wave
 	void seekbar_window::initialize_frontend()
 	{
 		util::ScopedEvent se("Windowing", "initialize_frontend");
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
 		present_interval = 100;
 		try
@@ -171,7 +171,7 @@ namespace wave
 
 	void seekbar_window::set_cursor_position(float f)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		fe->callback->set_playback_position(f);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
@@ -179,7 +179,7 @@ namespace wave
 
 	void seekbar_window::set_cursor_visibility(bool b)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(b);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
@@ -188,7 +188,7 @@ namespace wave
 	// time from window coordinates
 	double seekbar_window::compute_position(CPoint point)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		double track_length = fe->callback->get_track_length();
 		bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
 		double position = horizontal
@@ -203,7 +203,7 @@ namespace wave
 
 	void seekbar_window::set_seek_position(CPoint point)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		auto position = compute_position(point);
 
 		for each(auto cb in seek_callbacks)
@@ -217,7 +217,7 @@ namespace wave
 
 	void seekbar_window::set_playback_time(double t)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		fe->callback->set_playback_position(t);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_position);
@@ -226,7 +226,7 @@ namespace wave
 	void waveform_completion_handler(std::shared_ptr<frontend_data> fe, std::shared_ptr<get_response> response, uint32_t serial)
 	{
 		{
-			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+			lock_guard<recursive_mutex> lk(fe->mutex);
 			if (serial != fe->auto_get_serial)
 				return;
 			if (fe->valid_buckets >= response->valid_bucket_count)
@@ -237,7 +237,7 @@ namespace wave
 		}
 		in_main_thread([fe]()
 		{
-			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+			lock_guard<recursive_mutex> lk(fe->mutex);
 			if (fe->pending_serial != fe->auto_get_serial)
 				return;
 			if (fe->callback)
@@ -253,7 +253,7 @@ namespace wave
 		{
 			if (core_api::are_services_available())
 			{
-				std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+				lock_guard<recursive_mutex> lk(fe->mutex);
 				auto request = std::make_shared<get_request>();
 				request->user_requested = false;
 				fe->callback->get_playable_location(request->location);
@@ -308,7 +308,7 @@ namespace wave
 
 	void seekbar_window::flush_frontend()
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		fe->frontend.reset();
 		initializing_graphics = false;
 		if (repaint_timer_id)
@@ -342,7 +342,7 @@ namespace wave
 			global_colors[which] = what;
 		if (settings.override_colors[which] == override)
 		{
-			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+			lock_guard<recursive_mutex> lk(fe->mutex);
 			fe->callback->set_color(which, what);
 			if (fe->frontend)
 				fe->frontend->on_state_changed(visual_frontend::state_color);
@@ -351,7 +351,7 @@ namespace wave
 
 	void seekbar_window::set_color_override(config::color which, bool override)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		settings.override_colors[which] = override;
 		fe->callback->set_color(which, override
 			? settings.colors[which]
@@ -369,7 +369,7 @@ namespace wave
 
 	void seekbar_window::set_orientation(config::orientation o)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		if (fe->callback->get_orientation() != o)
 		{
 			fe->callback->set_orientation(o);
@@ -380,7 +380,7 @@ namespace wave
 
 	void seekbar_window::set_shade_played(bool shade)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		settings.shade_played = shade;
 		if (fe->callback->get_shade_played() != shade)
 		{
@@ -392,7 +392,7 @@ namespace wave
 
 	void seekbar_window::set_display_mode(config::display_mode mode)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		settings.display_mode = mode;
 		if (fe->callback->get_display_mode() != mode)
 		{
@@ -404,7 +404,7 @@ namespace wave
 
 	void seekbar_window::set_downmix_display(config::downmix downmix)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		settings.downmix_display = downmix;
 		if (fe->callback->get_downmix_display() != downmix)
 		{
@@ -416,7 +416,7 @@ namespace wave
 	
 	void seekbar_window::set_flip_display(bool flip)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		settings.flip_display = flip;
 		if (fe->callback->get_flip_display() != flip)
 		{
@@ -428,7 +428,7 @@ namespace wave
 
 	void seekbar_window::set_channel_enabled(int ch, bool state)
 	{
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		auto& order = settings.channel_order;
 		typedef decltype(order[0]) value_type;
 		auto I = std::find_if(order.begin(), order.end(), [ch](value_type const& a)
@@ -448,7 +448,7 @@ namespace wave
 	{
 		if (ch1 == ch2)
 			return;
-		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
+		lock_guard<recursive_mutex> lk(fe->mutex);
 		auto& order = settings.channel_order;
 		typedef decltype(order[0]) value_type;
 		auto I1 = std::find_if(order.begin(), order.end(), [ch1](value_type const& a)
