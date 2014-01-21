@@ -264,9 +264,27 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
 	{
+		std::pair<int64_t, double> const skip_table[] = {
+			{ 22, 1 },
+			{ 109, 5 },
+			{ 146, 10 },
+			{ 873, 1*60 },
+			{ 4363, 5*60 },
+			{ 8725, 10*60 },
+			{ 26175, 30*60 },
+			{ 52350, 60*60 },
+		};
 		static_api_ptr_t<playback_control> pc;
 		auto pos = pc->playback_get_position();
-		pos += 60.0f * z_delta / 120.0f;
+		auto length = pc->playback_get_length();
+		double skip_size = 5*60*60;
+		for (auto p : skip_table) {
+			if ((int64_t)length < p.first) {
+				skip_size = p.second;
+				break;
+			}
+		}
+		pos += skip_size * z_delta / 120.0f;
 		pc->playback_seek(pos);
 		return 0;
 	}
