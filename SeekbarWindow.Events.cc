@@ -30,11 +30,16 @@ static const GUID guid_seekbar_screenshot_height =
 static const GUID guid_seekbar_screenshot_filename_format =
 { 0x936311d, 0xc065, 0x4c72, { 0x80, 0x6c, 0x1f, 0x68, 0x40, 0x3b, 0x38, 0x5d } };
 
+// {BE7CFD4F-C880-4DD1-801C-81740D0A2CEF}
+static const GUID guid_scroll_to_seek =
+{ 0xbe7cfd4f, 0xc880, 0x4dd1, { 0x80, 0x1c, 0x81, 0x74, 0xd, 0xa, 0x2c, 0xef } };
+
 static advconfig_branch_factory g_seekbar_screenshot_branch("Screenshots", guid_seekbar_screenshot_branch, guid_seekbar_branch, 0.0);
 
 static advconfig_integer_factory g_seekbar_screenshot_width ("Horizontal size (pixels)", guid_seekbar_screenshot_width,  guid_seekbar_screenshot_branch, 0.1, 1024, 16, 8192);
 static advconfig_integer_factory g_seekbar_screenshot_height("Vertical size (pixels)",   guid_seekbar_screenshot_height, guid_seekbar_screenshot_branch, 0.2, 1024, 16, 8192);
 static advconfig_string_factory g_seekbar_screenshot_filename_format("File format template (either absolute path+filename or just filename)", guid_seekbar_screenshot_filename_format, guid_seekbar_screenshot_branch, 0.3, "%artist% - %tracknumber%. %title%.png");
+static advconfig_checkbox_factory g_seekbar_scroll_to_seek("Scroll mouse wheel to seek", guid_scroll_to_seek, guid_seekbar_branch, 0.0, true);
 
 static bool is_outside(CPoint point, CRect r, int N, bool horizontal)
 {
@@ -276,6 +281,8 @@ namespace wave
 			{ 30000, 10*60 },
 			{ 90000, 30*60 }
 		};
+		if (!g_seekbar_scroll_to_seek)
+			return 0;
 		static_api_ptr_t<playback_control> pc;
 		auto pos = pc->playback_get_position();
 		auto length = pc->playback_get_length();
