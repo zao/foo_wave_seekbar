@@ -54,6 +54,7 @@ namespace wave
 			static_api_ptr_t<metadb> db;
 			service_ptr_t<metadb_handle> meta;
 			db->handle_create(meta, loc);
+			fe->displayed_song = meta;
 			file_info_const_impl info;
 			meta->get_info(info);
 			replaygain_info rg = info.get_replaygain();
