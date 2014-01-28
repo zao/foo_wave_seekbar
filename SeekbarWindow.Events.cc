@@ -225,7 +225,14 @@ namespace wave
 				auto from = std::min(drag_data.from, drag_data.to);
 				auto to = std::max(drag_data.from, drag_data.to);
 			
-				clipboard::render_audio(source, from, to);
+				if (clipboard::render_audio(source, from, to)) {
+					console::formatter() << "seekbar: rendered waveform from " <<
+						from << " through " << to << " to the clipboard of track " <<
+						source->get_location();
+				}
+				else {
+					console::formatter() << "seekbar: failed to render waveform to clipboard";
+				}
 			}
 		}
 		drag_state = MouseDragNone;
