@@ -6,6 +6,7 @@
 #pragma once
 #include "../frontend_sdk/VisualFrontend.h"
 #include <array>
+#include <deque>
 #include <map>
 #include <memory>
 #include <stack>
@@ -118,7 +119,7 @@ namespace wave
 
       std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
       std::vector<unsigned> channel_numbers;
-      std::vector<channel_info> channel_order;
+      std::deque<channel_info> channel_order;
 
       std::stack<ref_ptr<effect_handle>> effect_stack;
       ref_ptr<effect_handle> effect_override;
