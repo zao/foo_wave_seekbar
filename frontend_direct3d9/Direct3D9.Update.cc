@@ -103,7 +103,7 @@ namespace wave
 						if (!channel_textures.count(info.channel))
 							channel_textures[info.channel] = create_waveform_texture();
 						
-						channel_order.push_back(info);
+						channel_order.push_front(info);
 
 						int idx = std::distance(first, I);
 
