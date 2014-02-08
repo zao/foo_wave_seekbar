@@ -1,8 +1,8 @@
 use strict;
+use Cwd;
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 use File::Spec qw(rel2abs);
-use File::chdir;
 use File::Copy;
 use File::Glob qw(:glob);
 
@@ -27,8 +27,10 @@ sub archive {
 		}
 	}
 	{
-		local $CWD = $temp_dir;
+		my $old_wd = getcwd;
+		chdir $temp_dir;
 		system("$pack a -tzip -mx9 -mmt \"$target\" *");
+		chdir $old_wd;
 	}
 	remove_tree($temp_dir);
 }
