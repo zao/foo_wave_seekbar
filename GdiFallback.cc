@@ -87,9 +87,9 @@ namespace wave
 
 	cursor_info make_cursor_info(visual_frontend_callback const& callback)
 	{
-		auto seek_pos = callback.get_seek_position();
-		auto playback_pos = callback.get_playback_position();
 		auto track_length = callback.get_track_length();
+		auto seek_pos = std::min(track_length, callback.get_seek_position());
+		auto playback_pos = std::min(track_length, callback.get_playback_position());
 		cursor_info info = {
 			(float)(seek_pos / track_length),
 			(float)(playback_pos / track_length),
