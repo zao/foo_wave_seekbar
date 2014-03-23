@@ -15,7 +15,7 @@ target_link_libraries(frontend_direct2d
 	waveform_sdk
 	"d2d1.lib"
 # 	"delayimp.lib"
-	"libuv.lib"
+	${LIBUV_LIBRARIES}
 	"ws2_32.lib"
 	"psapi.lib"
 	"iphlpapi.lib"

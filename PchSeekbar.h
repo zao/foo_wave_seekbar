@@ -7,10 +7,8 @@
 #pragma warning(disable: 4005)
 #define D3D_DEBUG_INFO
 #include "util/Asio.h"
-#include "util/Profiling.h"
 
 #include <algorithm>
-#include <atomic>
 using std::min;
 using std::max;
 #include <cstdint>
@@ -38,4 +36,6 @@ using std::max;
 #undef SelectBrush
 #undef SelectPen
 
+#include "frontend_sdk/FrontendHelpers.h"
 #include "util/UvHelpers.h"
+#include <boost/atomic.hpp>

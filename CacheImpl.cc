@@ -7,7 +7,8 @@
 #include "CacheImpl.h"
 #include "BackingStore.h"
 #include "Helpers.h"
-#include <atomic>
+#include <boost/atomic.hpp>
+#include <boost/bind.hpp>
 #include <regex>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
@@ -94,9 +95,11 @@ namespace wave
 			flush_callback.abort();
 		}
 		io_work.reset();
-		for (auto& t : work_threads) {
-			uv_thread_join(&t);
+		while (!work_threads.empty()) {
+			uv_thread_join(&work_threads.front());
+			work_threads.pop_front();
 		}
+
 		work_post_queue.stop();
 		uv_async_send(&work_dispatch_work);
 		uv_thread_join(&work_dispatch_thread);
@@ -119,43 +122,45 @@ namespace wave
 		store.reset(new backing_store(cache_filename));
 	}
 
+	void work_dispatch_thread_func(uv_async_t* handle, int status)
+	{
+		uv_close((uv_handle_t*)handle, NULL);
+	}
+
+	size_t get_hardware_concurrency() {
+		SYSTEM_INFO info = {};
+		GetSystemInfo(&info);
+		return info.dwNumberOfProcessors;
+	}
+
 	void cache_impl::delayed_init()
 	{
 		lock_guard<uv_mutex_t> lk(init_mutex);
 		init_sync_point.set(true);
 
-		uv_async_init(work_dispatch_loop, &work_dispatch_work, [](uv_async_t* handle, int status)
-		{
-			uv_close((uv_handle_t*)handle, nullptr);
-		});
+		uv_async_init(work_dispatch_loop, &work_dispatch_work, &work_dispatch_thread_func);
 
 		work_post_queue.post([this]
 		{
 			load_data();
 		});
 
-		auto hardware_concurrency = []{
-				SYSTEM_INFO info = {};
-				GetSystemInfo(&info);
-				return info.dwNumberOfProcessors;
-		};
-
-		size_t n_cores = hardware_concurrency();
+		size_t n_cores = get_hardware_concurrency();
 		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
 		size_t n = std::min(n_cores, n_cap);
 
 		io_work.reset(new asio::io_service::work(io));
 		for (size_t i = 0; i < n; ++i) {
-			work_threads.emplace_back();
-			work_functions.emplace_back(with_idle_priority([this, i, n]
-			{
-				std::string name = "wave-processing-" + std::to_string(i+1) + "/" + std::to_string(n);
-				::SetThreadName(-1, name.c_str());
+			work_threads.push_back(0);
+			worker w = { this, i, n };
+			uv_thread_create(&work_threads.back(), &dispatch_nullary_boost_function_pointer, new boost::function<void()>(with_idle_priority([this, w]{
+				char name_buf[128] = {};
+				sprintf_s(name_buf, "wave-processing-%d/%d", w.i+1, w.n);
+				::SetThreadName(-1, name_buf);
 				CoInitialize(nullptr);
-				this->io.run();
+				io.run();
 				CoUninitialize();
-			}));
-			uv_thread_create(&work_threads.back(), [](void* f){ (*(std::function<void()>*)f)(); }, &work_functions.back());
+			})));
 		}
 		is_initialized = true;
 	}
@@ -212,14 +217,11 @@ namespace wave
 			{
 				important_queue.push(request->location);
 			}
-			work_post_queue.post([this, request, response]
-			{
-				io.post([this, request, response]{
-					auto fun = std::bind(&dispatch_partial_response, request->completion_handler, std::placeholders::_1, std::placeholders::_2);
-					response->waveform = process_file(request->location, request->user_requested,
-						std::make_shared<incremental_result_sink>(fun));
-					request->completion_handler(response);
-				});
+			io.post([this, request, response]{
+				auto fun = boost::bind(&dispatch_partial_response, request->completion_handler, _1, _2);
+				response->waveform = process_file(request->location, request->user_requested,
+					std::make_shared<incremental_result_sink>(fun));
+				request->completion_handler(response);
 			});
 		}
 	}
@@ -320,12 +322,11 @@ namespace wave
 
 	void cache_impl::kick_dynamic_init()
 	{
-		uv_thread_create(&work_dispatch_thread, [](void* data)
+		uv_thread_create(&work_dispatch_thread, &dispatch_nullary_boost_function_pointer, new boost::function<void()>([this]
 		{
-			auto* self = (cache_impl*)data;
-			uv_run(self->work_dispatch_loop, UV_RUN_DEFAULT);
-		}, this);
-		post_work::queue(work_dispatch_loop, post_work::make(std::bind(&cache_impl::delayed_init, this)));
+			uv_run(this->work_dispatch_loop, UV_RUN_DEFAULT);
+		}));
+		post_work::queue(work_dispatch_loop, post_work::make(boost::bind(&cache_impl::delayed_init, this)));
 		init_sync_point.get();
 	}
 

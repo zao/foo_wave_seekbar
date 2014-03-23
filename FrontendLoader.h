@@ -1,5 +1,6 @@
 #pragma once
 #include "frontend_sdk/VisualFrontend.h"
+#include <boost/shared_ptr.hpp>
 
 namespace wave
 {
@@ -19,5 +20,5 @@ namespace wave
 	};
 
 	void wait_for_frontend_module_load();
-	std::vector<std::shared_ptr<frontend_module>> list_frontend_modules();
+	std::vector<boost::shared_ptr<frontend_module>> list_frontend_modules();
 }

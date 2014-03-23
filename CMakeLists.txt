@@ -97,12 +97,7 @@ set(JSON_SOURCES
 set(UTIL_SOURCES
 	"util/Asio.h"
 	"util/Filesystem.h"
-	"util/Profiling.cc"
-	"util/Profiling.h"
 	"util/UvHelpers.h"
-)
-set(TESTS_SOURCES
-	"tests/TestProcessFile.cc"
 )
 
 source_group(seekbar FILES ${SEEKBAR_SOURCES})
@@ -113,7 +108,6 @@ source_group(contrib\\lzma FILES ${LZMA_SOURCES})
 source_group(contrib\\zlib FILES ${ZLIB_SOURCES})
 source_group(contrib\\json FILES ${JSON_SOURCES})
 source_group(util FILES ${UTIL_SOURCES})
-source_group(tests FILES ${TESTS_SOURCES})
 
 include_directories(.)
 add_definitions(-Zm300)
@@ -127,7 +121,6 @@ add_library(foo_wave_seekbar SHARED
 	${ZLIB_SOURCES}
 	${JSON_SOURCES}
 	${UTIL_SOURCES}
-	${TESTS_SOURCES}
 )
 
 target_link_libraries(foo_wave_seekbar
@@ -142,7 +135,6 @@ target_link_libraries(foo_wave_seekbar
 	"comdlg32.lib"
 	"rpcrt4.lib"
 	"winmm.lib"
-	"libuv.lib"
 	"ws2_32.lib"
 	"psapi.lib"
 	"iphlpapi.lib"

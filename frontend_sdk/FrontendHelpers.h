@@ -37,3 +37,21 @@ void get_resource_contents(Cont& out, WORD id)
 
 	std::copy(p, p + size, std::back_inserter(out));
 }
+
+template <typename T, size_t N>
+size_t array_count(T(&arr)[N])
+{
+	return N;
+}
+
+template <typename T, size_t N>
+T* array_begin(T(&arr)[N])
+{
+	return &arr[0];
+}
+
+template <typename T, size_t N>
+T* array_end(T(&arr)[N])
+{
+	return &arr[0] + N;
+}

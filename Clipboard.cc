@@ -5,6 +5,8 @@
 
 #include "PchSeekbar.h"
 #include "Clipboard.h"
+#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <mmreg.h>
 #include <deque>
@@ -30,7 +32,7 @@ namespace clipboard
 
 	struct riff_chunk
 	{
-		riff_chunk() { auto str = "WAVE"; std::copy_n(str, 4, format); }
+		riff_chunk() { memcpy(format, "WAVE", 4); }
 		char format[4];
 		fmt_chunk fmt;
 		data_chunk data;
@@ -39,7 +41,7 @@ namespace clipboard
 	template <>
 	struct chunk_traits<fmt_chunk>
 	{
-		static std::array<char, 4> tag() {return { 'f', 'm', 't', ' ' };}
+		static std::string tag() {return "fmt ";}
 		static uint32_t size(fmt_chunk const& t)
 		{
 			return self_size(t);
@@ -54,7 +56,7 @@ namespace clipboard
 	template <>
 	struct chunk_traits<data_chunk>
 	{
-		static std::array<char,4> tag() {return { 'd', 'a', 't', 'a' };}
+		static std::string tag() {return "data";}
 		static uint32_t size(data_chunk const& t)
 		{
 			return self_size(t) + t.cb;
@@ -69,7 +71,7 @@ namespace clipboard
 	template <>
 	struct chunk_traits<riff_chunk>
 	{
-		static std::array<char,4> tag() {return { 'R', 'I', 'F', 'F' };}
+		static std::string tag() {return "RIFF";}
 		static uint32_t size(riff_chunk const& t)
 		{
 			return self_size(t) +
@@ -105,7 +107,7 @@ namespace clipboard
 		{
 			if (is_full())
 				return false;
-			auto nch = framing.fmt.wfex.Format.nChannels;
+			WORD nch = framing.fmt.wfex.Format.nChannels;
 
 			char* dst = static_cast<char*>(GlobalLock(mem)) + data_offset + frames_written * nch * sizeof(float);
 			float const* src = chunk.get_data();
@@ -134,18 +136,18 @@ namespace clipboard
 	{
 		typedef chunk_traits<Chunk> traits;
 		char* buf = (char*)dst;
-		auto chunk_id = traits::tag;
+		std::string chunk_id = traits::tag();
 		uint32_t chunk_size = traits::size(chunk);
 		uint32_t self_size = traits::self_size(chunk);
-		std::memcpy(buf, chunk_id, 4); buf += 4;
+		std::memcpy(buf, chunk_id.data(), 4); buf += 4;
 		std::memcpy(buf, &chunk_size, 4); buf += 4;
-		std::memcpy(buf, &chunk, self_size); buf += 4;
+		std::memcpy(buf, &chunk, self_size); buf += self_size;
 		return buf;
 	}
 
-	std::shared_ptr<storage> make_storage(unsigned channel_count, unsigned channel_config, unsigned sample_rate, double sample_length)
+	boost::shared_ptr<storage> make_storage(unsigned channel_count, unsigned channel_config, unsigned sample_rate, double sample_length)
 	{
-		auto ret = std::make_shared<storage>();
+		boost::shared_ptr<storage> ret = boost::make_shared<storage>();
 		ret->frame_count = (t_int64)(sample_rate * sample_length);
 		ret->data_offset = 8 + chunk_traits<riff_chunk>::size(ret->framing);
 		
@@ -156,7 +158,7 @@ namespace clipboard
 		wf.dwChannelMask = channel_config;
 		wf.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
 
-		auto block_align = channel_count * 4;
+		unsigned block_align = channel_count * 4;
 
 		WAVEFORMATEX& f = wf.Format;
 		f.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
@@ -201,7 +203,7 @@ namespace clipboard
 			std::deque<audio_chunk_impl> chunks;
 			t_int64 samples_decoded = 0;
 
-			std::shared_ptr<storage> clip_storage;
+			boost::shared_ptr<storage> clip_storage;
 
 			while (true)
 			{
@@ -213,9 +215,9 @@ namespace clipboard
 
 				if (!clip_storage)
 				{
-					auto channel_count = chunk.get_channels();
-					auto channel_config = chunk.get_channel_config();
-					auto sample_rate = chunk.get_sample_rate();
+					unsigned channel_count = chunk.get_channels();
+					unsigned channel_config = chunk.get_channel_config();
+					unsigned sample_rate = chunk.get_sample_rate();
 					clip_storage = make_storage(channel_count, channel_config, sample_rate, end - beginning);
 				}
 				if (!clip_storage->append(chunk))

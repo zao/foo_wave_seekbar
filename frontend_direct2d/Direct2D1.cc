@@ -60,35 +60,38 @@ namespace wave
 		uv_mutex_destroy(&mutex);
 	}
 
+	void pump_thread_func(void* data)
+	{
+		auto self = (image_cache*)data;
+		while (1) {
+			image_cache::task_data t;
+			{
+				uv_mutex_lock(&self->mutex);
+				do {
+					uv_cond_wait(&self->pump_alert, &self->mutex);
+				} while (self->tasks.empty() && !self->should_terminate);
+					
+				if (self->should_terminate) return;
+				size_t max_index = 0u;
+				image_cache::task_data const* best = &self->tasks.front();
+				for (size_t i = 1; i < self->tasks.size(); ++i) {
+					if (self->tasks[i].serial > best->serial) {
+						best = &self->tasks[i];
+					}
+				}
+				t = *best;
+				self->tasks.clear();
+				uv_mutex_unlock(&self->mutex);
+			}
+			self->update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
+		}
+	}
+
 	void image_cache::start()
 	{
 		uv_cond_init(&pump_alert);
 		uv_mutex_init(&mutex);
-		uv_thread_create(&pump_thread, [](void* data)
-		{
-			auto self = (image_cache*)data;
-			while (1) {
-				task_data t;
-				{
-					uv_mutex_lock(&self->mutex);
-					do {
-						uv_cond_wait(&self->pump_alert, &self->mutex);
-					} while (self->tasks.empty() && !self->should_terminate);
-					
-					if (self->should_terminate) return;
-					size_t max_index = 0u;
-					task_data const* best = &self->tasks.front();
-					for (auto& t : self->tasks) {
-						if (t.serial > best->serial)
-							best = &t;
-					}
-					t = *best;
-					self->tasks.clear();
-					uv_mutex_unlock(&self->mutex);
-				}
-				self->update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
-			}
-		}, this);
+		uv_thread_create(&pump_thread, &pump_thread_func, this);
 	}
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)

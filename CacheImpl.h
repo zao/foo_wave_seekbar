@@ -9,7 +9,7 @@
 #include "Cache.h"
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
-#include <atomic>
+#include <boost/atomic.hpp>
 #include <list>
 #include <stack>
 #include <uv.h>
@@ -62,7 +62,7 @@ namespace wave
 		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
 
-		std::atomic<bool> is_initialized;
+		boost::atomic<bool> is_initialized;
 		uv_mutex_t init_mutex;
 		future_value<bool> init_sync_point;
 		uv_async_t work_dispatch_work;
@@ -79,7 +79,13 @@ namespace wave
 		pfc::string cache_filename;
 		uv_mutex_t cache_mutex;
 		std::list<uv_thread_t> work_threads;
-		std::list<std::function<void()>> work_functions;
+
+		struct worker {
+			cache_impl* cache;
+			size_t i, n;
+		};
+		static void work_thread_func(void*);
+		std::list<worker> work_functions;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
 		std::deque<job> job_flush_queue;
