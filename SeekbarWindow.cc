@@ -16,8 +16,6 @@
 #include <boost/property_tree/info_parser.hpp>
 namespace pt = boost::property_tree;
 
-#include "util/Profiling.h"
-
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
 
@@ -33,12 +31,10 @@ namespace wave
 		: placeholder_waveform(make_placeholder_waveform()), fe(new frontend_data), initializing_graphics(false)
 		, drag_state(MouseDragNone), possible_next_enqueued(false), repaint_timer_id(0)
 	{
-		util::record_event(util::Phase::BEGIN_EVENT, "Windowing", "seekbar lifetime");
 	}
 
 	seekbar_window::~seekbar_window()
 	{
-		util::record_event(util::Phase::END_EVENT, "Windowing", "seekbar lifetime");
 	}
 
 	void seekbar_window::toggle_orientation(frontend_callback_impl& cb, persistent_settings& s)
@@ -86,9 +82,10 @@ namespace wave
 	{
 		ref_ptr<visual_frontend> ret;
 		auto sz = client_rect.Size();
-		for (auto module : list_frontend_modules())
+		auto modules = list_frontend_modules();
+		for (auto I = modules.begin(); I != modules.end(); ++I)
 		{
-			ret = module->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf);
+			ret = (*I)->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf);
 			if (ret)
 				return ret;
 		}
@@ -97,7 +94,6 @@ namespace wave
 
 	void seekbar_window::initialize_frontend()
 	{
-		util::ScopedEvent se("Windowing", "initialize_frontend");
 		lock_guard<recursive_mutex> lk(fe->mutex);
 		present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
 		present_interval = 100;

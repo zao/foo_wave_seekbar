@@ -276,8 +276,9 @@ namespace wave
 			"INSERT INTO job (location, subsong, user_submitted) "
 			"VALUES (?, ?, ?)");
 
-		for (auto& j : jobs)
-		{
+		std::deque<job>::const_iterator from = jobs.begin(), to = jobs.end();
+		for (; from != to; ++from) {
+			job const& j = *from;
 			sqlite3_bind_text(stmt.get(), 1, j.loc.get_path(), -1, SQLITE_STATIC);
 			sqlite3_bind_int(stmt.get(), 2, j.loc.get_subsong());
 			sqlite3_bind_int(stmt.get(), 3, j.user);

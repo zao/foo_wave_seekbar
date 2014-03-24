@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <stack>
+#include <string>
 #include "resource.h"
 #include "Scintilla.h"
 
@@ -57,6 +58,8 @@ namespace wave
     {
       struct attribute
       {
+		  struct vector { float v[4]; };
+		  struct matrix { float m[16]; };
         enum Kind {
           FLOAT, BOOL, VECTOR4, MATRIX, TEXTURE
         } kind;
@@ -64,8 +67,8 @@ namespace wave
         {
           float f;
           bool b;
-          std::array<float, 4> v;
-          std::array<float, 16> m;
+		  vector v;
+		  matrix m;
           IDirect3DTexture9* t;
         };
       };
@@ -73,8 +76,8 @@ namespace wave
 
       void assign(attribute& dst, float f)               {dst.kind = attribute::FLOAT;    dst.f = f;}
       void assign(attribute& dst, bool b)                {dst.kind = attribute::BOOL;     dst.b = b;}
-      void assign(attribute& dst, D3DXVECTOR4 v)         {dst.kind = attribute::VECTOR4;  memcpy(dst.v.data(), v, sizeof(float)*4);}
-      void assign(attribute& dst, D3DXMATRIX m)          {dst.kind = attribute::MATRIX;   memcpy(dst.m.data(), m, sizeof(float)*16);}
+      void assign(attribute& dst, D3DXVECTOR4 v)         {dst.kind = attribute::VECTOR4;  memcpy(dst.v.v, v, sizeof(float)*4);}
+      void assign(attribute& dst, D3DXMATRIX m)          {dst.kind = attribute::MATRIX;   memcpy(dst.m.m, m, sizeof(float)*16);}
       void assign(attribute& dst, IDirect3DTexture9* t)  {dst.kind = attribute::TEXTURE;  dst.t = t;}
 
       template <typename T>

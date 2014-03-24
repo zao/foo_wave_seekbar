@@ -1,12 +1,15 @@
+find_path(ASIO_INCLUDE_DIRS "asio.hpp")
+find_path(LIBUV_INCLUDE_DIRS uv.h)
+find_library(LIBUV_LIBRARIES uv)
+
 include_directories("${WTL_INCLUDE_DIRS}")
-include_directories("${ASIO_ROOT}/include")
+include_directories("${ASIO_INCLUDE_DIRS}")
 include_directories("${Boost_INCLUDE_DIRS}")
 include_directories("${TBB_INCLUDE_DIRS}")
 include_directories("${LIBUV_INCLUDE_DIRS}")
 include_directories(AFTER "${DXSDK_INCLUDE_DIRS}")
 link_directories("${Boost_LIBRARY_DIRS}")
 link_directories("${TBB_LIBRARY_DIRS}")
-link_directories("${LIBUV_LIBRARY_DIRS}")
 link_directories("${DXSDK_LIBRARY_DIRS}")
 
 add_subdirectory(waveform_sdk)
@@ -94,12 +97,7 @@ set(JSON_SOURCES
 set(UTIL_SOURCES
 	"util/Asio.h"
 	"util/Filesystem.h"
-	"util/Profiling.cc"
-	"util/Profiling.h"
 	"util/UvHelpers.h"
-)
-set(TESTS_SOURCES
-	"tests/TestProcessFile.cc"
 )
 
 source_group(seekbar FILES ${SEEKBAR_SOURCES})
@@ -110,7 +108,6 @@ source_group(contrib\\lzma FILES ${LZMA_SOURCES})
 source_group(contrib\\zlib FILES ${ZLIB_SOURCES})
 source_group(contrib\\json FILES ${JSON_SOURCES})
 source_group(util FILES ${UTIL_SOURCES})
-source_group(tests FILES ${TESTS_SOURCES})
 
 include_directories(.)
 add_definitions(-Zm300)
@@ -124,7 +121,6 @@ add_library(foo_wave_seekbar SHARED
 	${ZLIB_SOURCES}
 	${JSON_SOURCES}
 	${UTIL_SOURCES}
-	${TESTS_SOURCES}
 )
 
 target_link_libraries(foo_wave_seekbar
@@ -135,10 +131,10 @@ target_link_libraries(foo_wave_seekbar
 	SDK
 	shared
 	waveform_sdk
+	${LIBUV_LIBRARIES}
 	"comdlg32.lib"
 	"rpcrt4.lib"
 	"winmm.lib"
-	"libuv.lib"
 	"ws2_32.lib"
 	"psapi.lib"
 	"iphlpapi.lib"

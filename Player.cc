@@ -30,8 +30,9 @@ struct player_impl : player
 	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const override
 	{
 		uv_mutex_lock(&_m);
-		for (auto listener : _listeners)
-			f(listener);
+		for (auto I = _listeners.begin(); I != _listeners.end(); ++I) {
+			f(*I);
+		}
 		uv_mutex_unlock(&_m);
 	}
 
@@ -48,17 +49,15 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 
 	void on_waveform_result(playable_location_impl loc, std::shared_ptr<get_response> resp)
 	{
+		boost::function<void(waveform_listener*)> on_waveform = [resp](waveform_listener* l) {
+			l->on_waveform(resp->waveform);
+		};
 		in_main_thread([=]{
-			util::EventArgs ea;
-			ea["valid_bucket_count"] = std::to_string(resp->valid_bucket_count);
-			util::ScopedEvent se("Player", "on_waveform_result", &ea);
 			static_api_ptr_t<player> p;
 			static_api_ptr_t<playback_control_v2> pc;
 			service_ptr_t<metadb_handle> meta;
 			if (pc->get_now_playing(meta) && meta->get_location() == loc) {
-				p->enumerate_listeners([&](waveform_listener* l) {
-					l->on_waveform(resp->waveform);
-				});
+				p->enumerate_listeners(on_waveform);
 			}
 		});
 	}

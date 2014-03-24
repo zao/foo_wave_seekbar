@@ -5,10 +5,12 @@
 
 #include "PchSeekbar.h"
 #include "PersistentSettings.h"
+#include "frontend_sdk/FrontendHelpers.h"
 
 #include <set>
 #include <sstream>
 #include <fstream>
+#include <boost/regex.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/detail/rapidxml.hpp>
 namespace rxml = boost::property_tree::detail::rapidxml;
@@ -226,41 +228,40 @@ namespace wave
 	{
 		std::fill(colors.begin(), colors.end(), color());
 		std::fill(override_colors.begin(), override_colors.end(), false);
-		channel_order = {
-			{ audio_chunk::channel_back_left, true },
-			{ audio_chunk::channel_front_left, true },
-			{ audio_chunk::channel_front_center, true },
-			{ audio_chunk::channel_front_right, true },
-			{ audio_chunk::channel_back_right, true },
-			{ audio_chunk::channel_lfe, true }
-		};
+		channel_order.push_back(std::make_pair(audio_chunk::channel_back_left,    true));
+		channel_order.push_back(std::make_pair(audio_chunk::channel_front_left,   true));
+		channel_order.push_back(std::make_pair(audio_chunk::channel_front_center, true));
+		channel_order.push_back(std::make_pair(audio_chunk::channel_front_right,  true));
+		channel_order.push_back(std::make_pair(audio_chunk::channel_back_right,   true));
+		channel_order.push_back(std::make_pair(audio_chunk::channel_lfe,          true));
 		insert_remaining_channels();
 	}
 
 	void persistent_settings::insert_remaining_channels()
 	{
-		std::set<int> all_channels = {
-			(audio_chunk::channel_back_left),
-			(audio_chunk::channel_front_left),
-			(audio_chunk::channel_front_center),
-			(audio_chunk::channel_front_right),
-			(audio_chunk::channel_back_right),
-			(audio_chunk::channel_lfe),
-			(audio_chunk::channel_front_center_left),
-			(audio_chunk::channel_front_center_right),
-			(audio_chunk::channel_back_center),
-			(audio_chunk::channel_side_left),
-			(audio_chunk::channel_side_right),
-			(audio_chunk::channel_top_center),
-			(audio_chunk::channel_top_front_left),
-			(audio_chunk::channel_top_front_center),
-			(audio_chunk::channel_top_front_right),
-			(audio_chunk::channel_top_back_left),
-			(audio_chunk::channel_top_back_center),
-			(audio_chunk::channel_top_back_right)
+		int chs[] = {
+			audio_chunk::channel_back_left,
+			audio_chunk::channel_front_left,
+			audio_chunk::channel_front_center,
+			audio_chunk::channel_front_right,
+			audio_chunk::channel_back_right,
+			audio_chunk::channel_lfe,
+			audio_chunk::channel_front_center_left,
+			audio_chunk::channel_front_center_right,
+			audio_chunk::channel_back_center,
+			audio_chunk::channel_side_left,
+			audio_chunk::channel_side_right,
+			audio_chunk::channel_top_center,
+			audio_chunk::channel_top_front_left,
+			audio_chunk::channel_top_front_center,
+			audio_chunk::channel_top_front_right,
+			audio_chunk::channel_top_back_left,
+			audio_chunk::channel_top_back_center,
+			audio_chunk::channel_top_back_right
 		};
-		for (int ch : all_channels)
-		{
+		std::sort(array_begin(chs), array_end(chs));
+		for (size_t i = 0; i < array_count(chs); ++i) {
+			int ch = chs[i];
 			if (std::find_if(channel_order.begin(), channel_order.end(), [ch](decltype(channel_order[0]) const& a) { return a.first == ch; }) == channel_order.end())
 				channel_order.push_back(std::make_pair(ch, false));
 		}
@@ -396,16 +397,16 @@ namespace wave
 		out.put("downmix_display", downmix_display);
 		 
 		ptree& channel_order_pt = out.add("channel_order", "");
-		for (auto& p : channel_order)
-		{
+		for (size_t i = 0; i < channel_order.size(); ++i) {
+			auto& p = channel_order[i];
 			ptree& _ = channel_order_pt.add("mapping", "");
 			_.add("channel", p.first);
 			_.add("enabled", p.second);
 		}
 			 
 		ptree& generic_strings_pt = out.add("generic_strings", "");
-		for (auto& p : generic_strings)
-		{
+		for (auto I = generic_strings.begin(); I != generic_strings.end(); ++I) {
+			auto& p = *I;
 			generic_strings_pt.add(as_string(p.first), p.second);
 		}
 	}
@@ -422,19 +423,19 @@ namespace wave
 	}
 
 	template <typename Iterator>
-	static std::pair<Iterator, Iterator> find_first_regex(Iterator begin, Iterator end, std::regex const& re)
+	static std::pair<Iterator, Iterator> find_first_regex(Iterator begin, Iterator end, boost::regex const& re)
 	{
-		std::match_results<Iterator> m;
-		if (std::regex_search(begin, end, m, re)) {
-			return { m[0].first, m[0].second };
+		boost::match_results<Iterator> m;
+		if (boost::regex_search(begin, end, m, re)) {
+			return std::make_pair(m[0].first, m[0].second);
 		}
-		return { end, end };
+		return std::make_pair(end, end);
 	}
 
 	static std::string extract_xml_part(std::string const& contents)
 	{
-		auto first_tag = find_first_regex(std::cbegin(contents), std::cend(contents), std::regex(R"(<\?xml version=)"));
-		auto last_tag = find_first_regex(first_tag.second, std::cend(contents), std::regex("</boost_serialization>"));
+		auto first_tag = find_first_regex(contents.begin(), contents.end(), boost::regex("(<\\?xml version=)"));
+		auto last_tag = find_first_regex(first_tag.second, contents.end(), boost::regex("</boost_serialization>"));
 		return std::string(first_tag.first, last_tag.second);
 	}
 

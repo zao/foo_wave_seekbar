@@ -1,6 +1,8 @@
 #pragma once
 
 #include <uv.h>
+#include <boost/atomic.hpp>
+#include <boost/function.hpp>
 
 template <typename Lockable>
 struct lock_guard
@@ -14,8 +16,8 @@ struct lock_guard
 	}
 
 private:
-	lock_guard(lock_guard const&) = delete;
-	lock_guard& operator = (lock_guard const&) = delete;
+	lock_guard(lock_guard const&);
+	lock_guard& operator = (lock_guard const&);
 
 	Lockable& _m;
 };
@@ -32,8 +34,8 @@ struct lock_guard<uv_mutex_t>
 	}
 
 private:
-	lock_guard(lock_guard const&) = delete;
-	lock_guard& operator = (lock_guard const&) = delete;
+	lock_guard(lock_guard const&);
+	lock_guard& operator = (lock_guard const&);
 
 	uv_mutex_t& _m;
 };
@@ -65,7 +67,7 @@ struct future_value
 	{
 		lock_guard<uv_mutex_t> lk(mutex);
 		while (1) {
-			auto rc = uv_cond_timedwait(&cond, &mutex, 200*1000*1000ull);
+			int rc = uv_cond_timedwait(&cond, &mutex, 200*1000*1000ull);
 			if (rc == -1) return TIMEOUT;
 			if (!is_set) continue;
 			out = value;
@@ -94,8 +96,8 @@ private:
 	bool is_set;
 	T value;
 
-	future_value(future_value const&) = delete;
-	future_value& operator = (future_value const&) = delete;
+	future_value(future_value const&);
+	future_value& operator = (future_value const&);
 };
 
 struct post_work
@@ -119,7 +121,8 @@ struct async_post_queue
 {
 	uv_async_t async;
 	uv_mutex_t mutex;
-	std::list<std::function<void()>> funcs;
+	typedef boost::function<void()> Fun;
+	std::list<Fun> funcs;
 
 	explicit async_post_queue(uv_loop_t* loop) {
 		uv_async_init(loop, &async, do_it);
@@ -143,10 +146,10 @@ struct async_post_queue
 	}
 
 	static void do_it(uv_async_t* req, int status) {
-		auto* queue = (async_post_queue*)req;
+		async_post_queue* queue = (async_post_queue*)req;
 		lock_guard<uv_mutex_t> lk(queue->mutex);
 		while (!queue->funcs.empty()) {
-			auto fun = queue->funcs.front();
+			Fun fun = queue->funcs.front();
 			queue->funcs.pop_front();
 			uv_mutex_unlock(&queue->mutex);
 			fun();
@@ -157,8 +160,8 @@ struct async_post_queue
 
 struct recursive_mutex
 {
-	std::atomic<long> owning_id;
-	std::atomic<long> lock_count;
+	boost::atomic<long> owning_id;
+	boost::atomic<long> lock_count;
 	uv_mutex_t underlying_mutex;
 
 	recursive_mutex() {
@@ -189,3 +192,11 @@ struct recursive_mutex
 		}
 	}
 };
+
+inline void dispatch_nullary_boost_function_pointer(void* data)
+{
+	typedef boost::function<void()> Fun;
+	Fun* fun = (Fun*)data;
+	(*fun)();
+	delete fun;
+}

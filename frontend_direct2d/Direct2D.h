@@ -12,6 +12,7 @@
 #include <ShellAPI.h>
 #include <ObjBase.h>
 
+#include <boost/atomic.hpp>
 #include <algorithm>
 using std::min; using std::max;
 #include <memory>
@@ -64,7 +65,7 @@ namespace wave
 		uv_thread_t pump_thread;
 		uv_cond_t pump_alert;
 		std::deque<task_data> tasks;
-		std::atomic<bool> should_terminate;
+		boost::atomic<bool> should_terminate;
 
 		CComPtr<IWICImagingFactory> wic_factory;
 		CComPtr<IWICBitmap> last_bitmap;

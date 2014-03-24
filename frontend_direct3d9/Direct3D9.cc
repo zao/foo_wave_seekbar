@@ -152,7 +152,7 @@ namespace wave
 						-1.0f,  3.0f, -1.0f,  3.0f,
 						 3.0f, -1.0f,  3.0f, -1.0f,
 					};
-					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
+					buf.insert(buf.end(), array_begin(arr), array_end(arr));
 				}
 				else
 				{
@@ -165,7 +165,7 @@ namespace wave
 						-1.0f,  3.0f,  1.0f,  3.0f,
 						 3.0f, -1.0f, -3.0f, -1.0f,
 					};
-					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
+					buf.insert(buf.end(), array_begin(arr), array_end(arr));
 				}
 
 				effect_params.set(parameters::viewport_size, viewport);
@@ -375,15 +375,15 @@ namespace wave
 				if (auto h = get()) fx->SetBool(h, b);
 			}
 
-			void apply(std::array<float, 4> const& a) const
+			void apply(attribute::vector const& a) const
 			{
-				auto v = D3DXVECTOR4(a.data());
+				auto v = D3DXVECTOR4(a.v);
 				if (auto h = get()) fx->SetVector(h, &v);
 			}
 
-			void apply(std::array<float, 16> const& a) const
+			void apply(attribute::matrix const& a) const
 			{
-				auto m = D3DXMATRIX(a.data());
+				auto m = D3DXMATRIX(a.m);
 				if (auto h = get()) fx->SetMatrix(h, &m);
 			}
 

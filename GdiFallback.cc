@@ -98,26 +98,41 @@ namespace wave
 		return info;
 	}
 
-	std::vector<std::tuple<unsigned, unsigned, bool>> compute_waveform_regions(size_t major_extent, float const* position, float const* seek)
+	struct WaveformRegion
 	{
-		if (major_extent < 1) return {};
-		enum class PointKind { ENDPOINT, SEEK, POSITION };
-		std::map<unsigned, PointKind> assembly{{major_extent, PointKind::ENDPOINT}};
-		if (seek)
-			assembly[map_normalized_float_to_unsigned_range(0, major_extent, *seek)] = PointKind::SEEK;
-		if (position)
-			assembly[map_normalized_float_to_unsigned_range(0, major_extent, *position)] = PointKind::POSITION;
-		std::vector<std::pair<unsigned, PointKind>> points{std::begin(assembly), std::end(assembly)};
-		std::vector<std::tuple<unsigned, unsigned, bool>> regions;
+		unsigned low, high;
+		bool shaded;
+	};
+
+	std::vector<WaveformRegion> compute_waveform_regions(size_t major_extent, float const* position, float const* seek)
+	{
+		std::vector<WaveformRegion> regions;
+		if (major_extent < 1) {
+			return regions;
+		}
+		enum PointKind { END_POINT, SEEK_POINT, POSITION_POINT };
+		std::map<unsigned, PointKind> assembly;
+		assembly[major_extent] = END_POINT;
+		if (seek) {
+			assembly[map_normalized_float_to_unsigned_range(0, major_extent, *seek)] = SEEK_POINT;
+		}
+		if (position) {
+			assembly[map_normalized_float_to_unsigned_range(0, major_extent, *position)] = POSITION_POINT;
+		}
+		std::vector<std::pair<unsigned, PointKind>> points(assembly.begin(), assembly.end());
 		unsigned low_bound = 0u;
 		bool shaded = true;
-		for (auto& p : points) {
+		for (size_t i = 0; i < points.size(); ++i) {
+			auto& p = points[i];
 			unsigned pos = p.first;
 			PointKind kind = p.second;
-			if (pos > low_bound+1)
-				regions.emplace_back(low_bound, pos-1, shaded);
-			if (kind == PointKind::POSITION)
+			if (pos > low_bound+1) {
+				WaveformRegion r = { low_bound, pos-1, shaded };
+				regions.push_back(r);
+			}
+			if (kind == POSITION_POINT) {
 				shaded = false;
+			}
 			low_bound = pos+1;
 		}
 		return regions;
@@ -166,16 +181,16 @@ namespace wave
 			auto should_shade = callback.get_shade_played();
 
 			if (!has_cursor && !is_seeking) {
-				unity_blit(dc, CRect({0, 0}, canvas_size), *wave_dc);
+				unity_blit(dc, CRect(CPoint(0, 0), canvas_size), *wave_dc);
 			}
 			else {
 				auto major_extent = vertical ? size.cy : size.cx;
 				auto minor_extent = vertical ? size.cx : size.cy;
 				auto regions = compute_waveform_regions(major_extent, has_cursor ? &position : nullptr, is_seeking ? &seek_position : nullptr);
-				for (auto region : regions) {
-					unsigned inc_low, inc_high;
-					bool shaded;
-					std::tie(inc_low, inc_high, shaded) = region;
+				for (size_t i = 0; i < regions.size(); ++i) {
+					auto region = regions[i];
+					unsigned inc_low = region.low, inc_high = region.high;
+					bool shaded = region.shaded;
 					if (flip) {
 						std::swap(inc_low, inc_high);
 						inc_low = major_extent - inc_low - 1;
@@ -295,13 +310,12 @@ namespace wave
 		ref_ptr<waveform> w;
 		if (!callback.get_waveform(w)) {
 			color bg = callback.get_color(config::color_background);
-			CRect all{0, 0, bitmap_size.cx, bitmap_size.cy};
+			CRect all(0, 0, bitmap_size.cx, bitmap_size.cy);
 			wave_dc->FillSolidRect(all, color_to_xbgr(bg));
 			shaded_wave_dc->FillSolidRect(all, color_to_xbgr(bg));
 		}
 		else {
 			if (callback.get_downmix_display() != config::downmix_none) {
-				util::ScopedEvent se("Mixing", "Downmix waveform");
 				switch (callback.get_downmix_display())
 				{
 				case config::downmix_mono:   if (w->get_channel_count() > 1) w = downmix_waveform(w, 1); break;

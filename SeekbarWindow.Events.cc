@@ -8,7 +8,6 @@
 #include "SeekTooltip.h"
 #include "Clipboard.h"
 #include "FrontendLoader.h"
-#include "util/Profiling.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =
@@ -122,17 +121,18 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_create(LPCREATESTRUCT)
 	{
-		util::ScopedEvent se("Windowing", "seekbar creation");
 		fe->callback.reset(new frontend_callback_impl);
 		fe->conf.reset(new frontend_config_impl(settings));
 		fe->callback->set_waveform(placeholder_waveform);
 
 		wait_for_frontend_module_load();
 
-		decltype(deferred_init) v;
-		v.swap(deferred_init);
-		for (auto f : v) {
-			f();
+		{
+			decltype(deferred_init) v;
+			v.swap(deferred_init);
+			for (auto I = v.begin(); I != v.end(); ++I) {
+				(*I)();
+			}
 		}
 
 		apply_settings();
@@ -276,7 +276,8 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
 	{
-		std::pair<int64_t, double> const skip_table[] = {
+		struct SkipEntry { int64_t upper_bound; double skip_size; };
+		SkipEntry const skip_table[] = {
 			{    50,     1 },
 			{   100,     2 },
 			{   250,     5 },
@@ -294,9 +295,9 @@ namespace wave
 		auto pos = pc->playback_get_position();
 		auto length = pc->playback_get_length();
 		double skip_size = 1*60*60;
-		for (auto p : skip_table) {
-			if ((int64_t)length < p.first) {
-				skip_size = p.second;
+		for (auto I = array_begin(skip_table); I != array_end(skip_table); ++I) {
+			if ((int64_t)length < I->upper_bound) {
+				skip_size = I->skip_size;
 				break;
 			}
 		}
