@@ -113,6 +113,10 @@ namespace wave
 	{
 	};
 
+	class empty_file_exception : public std::exception
+	{
+	};
+
 	class audio_source
 	{
 		abort_callback& abort_cb;
@@ -139,6 +143,11 @@ namespace wave
 			if (exhausted || !decoder->run(chunk, abort_cb))
 			{
 				int64_t n = std::max(0LL, std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames));
+				if (!generated_samples)
+				{
+					// EOF on first decode, happens in foo_midi w/ bad soundfound config.
+					throw empty_file_exception();
+				}
 				chunk.set_channels(*track_channel_count);
 				chunk.set_silence((t_size)n);
 				exhausted = true;
@@ -522,6 +531,10 @@ namespace wave
 		catch (channel_mismatch_exception&)
 		{
 			console::formatter() << "Wave cache: track with mismatching channels, bailing out on " << loc;
+		}
+		catch (empty_file_exception&)
+		{
+			console::formatter() << "Wave cache: end-of-file on first chunk, empty/corrupt file or misconfigured input for " << loc;
 		}
 		catch (std::exception& ex)
 		{

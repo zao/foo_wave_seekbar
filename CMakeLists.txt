@@ -2,6 +2,8 @@ find_path(ASIO_INCLUDE_DIRS "asio.hpp")
 find_path(LIBUV_INCLUDE_DIRS uv.h)
 find_library(LIBUV_LIBRARIES uv)
 
+add_definitions("-UBOOST_ALL_NO_LIB")
+
 include_directories("${WTL_INCLUDE_DIRS}")
 include_directories("${ASIO_INCLUDE_DIRS}")
 include_directories("${Boost_INCLUDE_DIRS}")
@@ -29,6 +31,8 @@ set(CACHE_SOURCES
 	"Pack.h"
 	"ProcessingContext.cc"
 	"ProcessingContext.h"
+	"ProcessingWorker.cc"
+	"ProcessingWorker.h"
 )
 set(SEEKBAR_SOURCES
 	"Clipboard.cc"
