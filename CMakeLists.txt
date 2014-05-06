@@ -31,8 +31,8 @@ set(CACHE_SOURCES
 	"Pack.h"
 	"ProcessingContext.cc"
 	"ProcessingContext.h"
-	"ProcessingWorker.cc"
-	"ProcessingWorker.h"
+#	"ProcessingWorker.cc"
+#	"ProcessingWorker.h"
 )
 set(SEEKBAR_SOURCES
 	"Clipboard.cc"
