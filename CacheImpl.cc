@@ -9,6 +9,7 @@
 #include "Helpers.h"
 #include <boost/atomic.hpp>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <regex>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
@@ -28,22 +29,34 @@ static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if r
 namespace wave
 {
 	cache_impl::cache_impl()
-		: work_dispatch_loop(uv_loop_new())
-		, work_post_queue(work_dispatch_loop)
 	{
-		uv_mutex_init(&important_mutex);
-		uv_mutex_init(&cache_mutex);
-		uv_mutex_init(&init_mutex);
 		is_initialized = false;
 	}
 
 	cache_impl::~cache_impl()
 	{
-		uv_mutex_destroy(&init_mutex);
-		uv_mutex_destroy(&cache_mutex);
-		uv_mutex_destroy(&important_mutex);
-		uv_loop_delete(work_dispatch_loop);
 	}
+
+	struct idle_priority_scope : boost::noncopyable
+	{
+		idle_priority_scope()
+		{
+			HANDLE this_thread = GetCurrentThread();
+			old_priority = GetThreadPriority(this_thread);
+			SetThreadPriority(this_thread, THREAD_PRIORITY_IDLE);
+			CloseHandle(this_thread);
+		}
+
+		~idle_priority_scope()
+		{
+			HANDLE this_thread = GetCurrentThread();
+			SetThreadPriority(this_thread, old_priority);
+			CloseHandle(this_thread);
+		}
+
+	private:
+		int old_priority;
+	};
 
 	struct with_idle_priority
 	{
@@ -54,13 +67,24 @@ namespace wave
 
 		void operator ()()
 		{
-			HANDLE this_thread = GetCurrentThread();
-			SetThreadPriority(this_thread, THREAD_PRIORITY_IDLE);
-			CloseHandle(this_thread);
+			idle_priority_scope ips;
 			func();
 		}
 
 		function_type func;
+	};
+
+	struct coinitialize_scope : boost::noncopyable
+	{
+		coinitialize_scope()
+		{
+			CoInitialize(nullptr);
+		}
+
+		~coinitialize_scope()
+		{
+			CoUninitialize();
+		}
 	};
 
 	void cache_impl::load_data()
@@ -76,7 +100,7 @@ namespace wave
 				std::shared_ptr<get_request> request(new get_request);
 				request->location.copy(j.loc);
 				request->user_requested = j.user;
-				work_post_queue.post([this, request]
+				worker_pool->post([this, request]
 				{
 					get_waveform(request);
 				});
@@ -91,18 +115,10 @@ namespace wave
 	void cache_impl::flush()
 	{
 		{
-			lock_guard<uv_mutex_t> lk(cache_mutex);
+			boost::unique_lock<boost::mutex> lk(cache_mutex);
 			flush_callback.abort();
 		}
-		io_work.reset();
-		while (!work_threads.empty()) {
-			uv_thread_join(&work_threads.front());
-			work_threads.pop_front();
-		}
-
-		work_post_queue.stop();
-		uv_async_send(&work_dispatch_work);
-		uv_thread_join(&work_dispatch_thread);
+		worker_pool.reset();
 
 		open_store();
 		if (store)
@@ -122,53 +138,53 @@ namespace wave
 		store.reset(new backing_store(cache_filename));
 	}
 
-	void work_dispatch_thread_func(uv_async_t* handle, int status)
+	asio_worker_pool::asio_worker_pool(size_t num_cores, std::string thread_basename)
 	{
-		uv_close((uv_handle_t*)handle, NULL);
+		work = new asio::io_service::work(io);
+		for (size_t i = 0; i < num_cores; ++i) {
+			auto fun = [=]
+			{
+				idle_priority_scope ips;
+				coinitialize_scope cis;
+				char name_buf[128] = {};
+				sprintf_s(name_buf, "%s-%d/%d", thread_basename.c_str(), i + 1, num_cores);
+				::SetThreadName(-1, name_buf);
+				io.run();
+			};
+			auto thread_ptr = boost::make_shared<boost::thread>(fun);
+			threads.push_back(thread_ptr);
+		}
 	}
 
-	size_t get_hardware_concurrency() {
-		SYSTEM_INFO info = {};
-		GetSystemInfo(&info);
-		return info.dwNumberOfProcessors;
+	asio_worker_pool::~asio_worker_pool()
+	{
+		delete work;
+		for (auto I = threads.begin(); I != threads.end(); ++I)
+		{
+			(*I)->join();
+		}
 	}
 
 	void cache_impl::delayed_init()
 	{
-		lock_guard<uv_mutex_t> lk(init_mutex);
-		init_sync_point.set(true);
+		boost::unique_lock<boost::mutex> lk(init_mutex);
+		init_sync_point.set_value();
 
-		uv_async_init(work_dispatch_loop, &work_dispatch_work, &work_dispatch_thread_func);
-
-		work_post_queue.post([this]
-		{
-			load_data();
-		});
-
-		size_t n_cores = get_hardware_concurrency();
+		size_t n_cores = boost::thread::hardware_concurrency();
 		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
 		size_t n = std::min(n_cores, n_cap);
 
-		io_work.reset(new asio::io_service::work(io));
-		for (size_t i = 0; i < n; ++i) {
-			work_threads.push_back(0);
-			worker w = { this, i, n };
-			uv_thread_create(&work_threads.back(), &dispatch_nullary_boost_function_pointer, new boost::function<void()>(with_idle_priority([this, w]{
-				char name_buf[128] = {};
-				sprintf_s(name_buf, "wave-processing-%d/%d", w.i+1, w.n);
-				::SetThreadName(-1, name_buf);
-				CoInitialize(nullptr);
-				io.run();
-				CoUninitialize();
-			})));
-		}
+		worker_pool = boost::make_shared<asio_worker_pool>(n, "wave-processing");
+		worker_pool->post([this]{ load_data(); });
 		is_initialized = true;
 	}
 
 	void cache_impl::try_delayed_init()
 	{
 		if (!is_initialized)
-			lock_guard<uv_mutex_t> lk(init_mutex);
+		{
+			boost::unique_lock<boost::mutex> lk(init_mutex);
+		}
 	}
 
 	void dispatch_partial_response(std::function<void (std::shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
@@ -217,7 +233,7 @@ namespace wave
 			{
 				important_queue.push(request->location);
 			}
-			io.post([this, request, response]{
+			worker_pool->post([this, request, response]{
 				auto fun = boost::bind(&dispatch_partial_response, request->completion_handler, _1, _2);
 				response->waveform = process_file(request->location, request->user_requested,
 					std::make_shared<incremental_result_sink>(fun));
@@ -231,7 +247,7 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			work_post_queue.post([this]()
+			worker_pool->post([this]()
 			{
 				store->remove_dead();
 			});
@@ -243,7 +259,7 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			work_post_queue.post([this]()
+			worker_pool->post([this]()
 			{
 				store->compact();
 			});
@@ -255,7 +271,7 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			work_post_queue.post([this]()
+			worker_pool->post([this]()
 			{
 				std::function<void (std::shared_ptr<get_request>)> get_func = std::bind(&cache_impl::get_waveform, this, std::placeholders::_1);
 				pfc::list_t<playable_location_impl> locations;
@@ -275,7 +291,7 @@ namespace wave
 	void cache_impl::defer_action(std::function<void ()> fun)
 	{
 		try_delayed_init();
-		work_post_queue.post(fun);
+		worker_pool->post(fun);
 	}
 
 	bool cache_impl::is_location_forbidden(playable_location const& loc)
@@ -322,12 +338,11 @@ namespace wave
 
 	void cache_impl::kick_dynamic_init()
 	{
-		uv_thread_create(&work_dispatch_thread, &dispatch_nullary_boost_function_pointer, new boost::function<void()>([this]
+		boost::thread([this]
 		{
-			uv_run(this->work_dispatch_loop, UV_RUN_DEFAULT);
-		}));
-		post_work::queue(work_dispatch_loop, post_work::make(boost::bind(&cache_impl::delayed_init, this)));
-		init_sync_point.get();
+			delayed_init();
+		}).detach();
+		init_sync_point.get_future().get();
 	}
 
 	struct cache_init_stage : init_stage_callback

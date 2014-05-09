@@ -23,7 +23,7 @@ namespace wave
 
 	void seekbar_window::on_waveform(ref_ptr<waveform> wf)
 	{
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_waveform(wf);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_data);
@@ -36,7 +36,7 @@ namespace wave
 
 	void seekbar_window::on_duration(double t)
 	{
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
 		fe->callback->set_track_length(t);
@@ -46,7 +46,7 @@ namespace wave
 
 	void seekbar_window::on_location(playable_location const& loc)
 	{
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		{
 			static_api_ptr_t<metadb> db;
 			service_ptr_t<metadb_handle> meta;
@@ -72,7 +72,7 @@ namespace wave
 	
 	void seekbar_window::on_play()
 	{
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend) {
@@ -83,7 +83,7 @@ namespace wave
 
 	void seekbar_window::on_stop()
 	{
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(false);
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend) {

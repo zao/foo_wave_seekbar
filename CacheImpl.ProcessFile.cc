@@ -397,7 +397,7 @@ namespace wave
 			while (true)
 			{
 				{
-					lock_guard<uv_mutex_t> lk(important_mutex);
+					boost::unique_lock<boost::mutex> lk(important_mutex);
 					if (important_queue.empty()) {
 						break;
 					}
@@ -415,7 +415,7 @@ namespace wave
 		}
 
 		{
-			lock_guard<uv_mutex_t> lk(cache_mutex);
+			boost::unique_lock<boost::mutex> lk(cache_mutex);
 			if (!store || flush_callback.is_aborting())
 			{
 				job_flush_queue.push_back(make_job(loc, user_requested));
@@ -433,7 +433,7 @@ namespace wave
 		// Test whether tracks are in the Media Library or not
 		if (!g_analyse_tracks_outside_library.get())
 		{
-			future_value<bool> res;
+			boost::promise<bool> res;
 
 			in_main_thread([loc, &res]()
 			{
@@ -441,15 +441,16 @@ namespace wave
 				static_api_ptr_t<metadb> mdb;
 				metadb_handle_ptr m;
 				mdb->handle_create(m, loc);
-				res.set(lib->is_item_in_library(m));
+				res.set_value(lib->is_item_in_library(m));
 			});
-			
+
+			auto f = res.get_future();
 			while (!flush_callback.is_aborting())
 			{
-				bool in_library;
-				auto rc = res.try_get(200*1000*1000ull, in_library);
-				if (rc == future_value<bool>::READY)
+				auto rc = f.wait_for(boost::chrono::milliseconds(200));
+				if (rc == boost::future_status::ready)
 				{
+					bool in_library = f.get();
 					if (!in_library)
 						return out;
 					break;
@@ -506,7 +507,7 @@ namespace wave
 				auto out = builder.finalize_waveform();
 
 				console::formatter() << "Wave cache: finished analysis of " << loc;
-				lock_guard<uv_mutex_t> lk(cache_mutex);
+				boost::unique_lock<boost::mutex> lk(cache_mutex);
 				open_store();
 				if (store)
 					store->put(out, loc);
@@ -517,7 +518,7 @@ namespace wave
 		}
 		catch (foobar2000_io::exception_aborted&)
 		{
-			lock_guard<uv_mutex_t> lk(cache_mutex);
+			boost::unique_lock<boost::mutex> lk(cache_mutex);
 			job_flush_queue.push_back(make_job(loc, user_requested));
 		}
 		catch (foobar2000_io::exception_io_not_found& e)

@@ -6,25 +6,24 @@
 #include <boost/atomic.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 
 namespace wave
 {
 static boost::atomic<bool> modules_loaded;
-static uv_mutex_t module_load_mutex;
+static boost::mutex module_load_mutex;
 static std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
-static uv_thread_t* load_thread;
-static uv_barrier_t load_barrier;
+static std::unique_ptr<boost::thread> load_thread;
+static boost::barrier load_barrier(2);
 
 void wait_for_frontend_module_load()
 {
 	if (!modules_loaded) {
-		uv_mutex_lock(&module_load_mutex);
+		boost::unique_lock<boost::mutex> lk(module_load_mutex);
 		if (load_thread) {
-			uv_thread_join(load_thread);
-			delete load_thread;
-			load_thread = nullptr;
+			load_thread->join();
+			load_thread.reset();
 		}
-		uv_mutex_unlock(&module_load_mutex);
 	}
 }
 
@@ -81,14 +80,12 @@ struct CandidateSet {
 
 static void load_frontend_modules()
 {
-	uv_barrier_init(&load_barrier, 2);
-	load_thread = new uv_thread_t();
-	uv_thread_create(load_thread, &dispatch_nullary_boost_function_pointer, new boost::function<void()>([]
+	load_thread.reset(new boost::thread([]
 	{
 		auto* barrier = &load_barrier;
 		modules_loaded = false;
-		uv_mutex_lock(&module_load_mutex);
-		uv_barrier_wait(barrier);
+		boost::unique_lock<boost::mutex> lk(module_load_mutex);
+		load_barrier.wait();
 		frontend_modules.push_back(boost::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		CandidateSet candidates;
 		try {
@@ -123,9 +120,8 @@ static void load_frontend_modules()
 			console::complain("Seekbar: couldn't load optional frontends", e);
 		}
 		modules_loaded = true;
-		uv_mutex_unlock(&module_load_mutex);
 	}));
-	uv_barrier_wait(&load_barrier);
+	load_barrier.wait();
 }
 
 struct frontend_module_init_stage : init_stage_callback
@@ -133,7 +129,6 @@ struct frontend_module_init_stage : init_stage_callback
 	void on_init_stage(t_uint32 stage) override
 	{
 		if (!core_api::is_quiet_mode_enabled()) {
-			uv_mutex_init(&module_load_mutex);
 			if (stage == init_stages::before_config_read)
 				load_frontend_modules();
 		}

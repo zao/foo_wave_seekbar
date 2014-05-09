@@ -24,6 +24,7 @@ using std::min; using std::max;
 #include <wincodec.h>
 #include <atlbase.h>
 #include <atlcom.h>
+#include <atlwin.h>
 
 #include "../waveform_sdk/RefPointer.h"
 
@@ -73,6 +74,13 @@ namespace wave
 		palette colors;
 	};
 
+	struct gl_window : CWindowImpl<gl_window> {
+		DECLARE_WND_CLASS_EX(L"d2d1_opengl", CS_HREDRAW | CS_VREDRAW | CS_OWNDC, NULL)
+
+		BEGIN_MSG_MAP(gl_window)
+		END_MSG_MAP()
+	};
+
 	struct direct2d1_frontend : visual_frontend
 	{
 		direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&);
@@ -93,6 +101,7 @@ namespace wave
 
 		visual_frontend_callback& callback;
 		HWND wnd;
+		gl_window child_wnd;
 
 		CComPtr<ID2D1Factory> factory;
 		CComPtr<ID2D1HwndRenderTarget> rt;

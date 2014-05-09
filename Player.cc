@@ -4,39 +4,33 @@
 #include "Helpers.h"
 
 #include <set>
-#include <uv.h>
+#include <boost/thread/mutex.hpp>
 
 namespace wave
 {
 struct player_impl : player
 {
-	player_impl();
-	~player_impl();
-
 	virtual void register_waveform_listener(waveform_listener* p) override
 	{
-		uv_mutex_lock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
 		_listeners.insert(p);
-		uv_mutex_unlock(&_m);
 	}
 
 	virtual void deregister_waveform_listener(waveform_listener* p) override
 	{
-		uv_mutex_lock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
 		_listeners.erase(p);
-		uv_mutex_unlock(&_m);
 	}
 
-	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const override
+	virtual void enumerate_listeners(boost::function<void (waveform_listener*)> f) const override
 	{
-		uv_mutex_lock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
 		for (auto I = _listeners.begin(); I != _listeners.end(); ++I) {
 			f(*I);
 		}
-		uv_mutex_unlock(&_m);
 	}
 
-	mutable uv_mutex_t _m;
+	mutable boost::mutex _m;
 	std::set<waveform_listener*> _listeners;
 };
 
@@ -125,16 +119,6 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 	virtual void on_playback_edited(metadb_handle_ptr) override {}
 	virtual void on_volume_change(float) override {}
 };
-
-player_impl::player_impl()
-{
-	uv_mutex_init(&_m);
-}
-
-player_impl::~player_impl()
-{
-	uv_mutex_destroy(&_m);
-}
 
 static callbacks* g_callbacks = nullptr;
 

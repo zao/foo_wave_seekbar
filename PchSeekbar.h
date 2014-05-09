@@ -37,5 +37,4 @@ using std::max;
 #undef SelectPen
 
 #include "frontend_sdk/FrontendHelpers.h"
-#include "util/UvHelpers.h"
 #include <boost/atomic.hpp>

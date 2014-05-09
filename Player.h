@@ -1,6 +1,7 @@
 #pragma once
 #include "waveform_sdk/RefPointer.h"
 #include "waveform_sdk/Waveform.h"
+#include <boost/function.hpp>
 
 namespace wave
 {
@@ -18,7 +19,7 @@ struct player : service_base
 {
 	virtual void register_waveform_listener(waveform_listener*) = 0;
 	virtual void deregister_waveform_listener(waveform_listener*) = 0;
-	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const = 0;
+	virtual void enumerate_listeners(boost::function<void (waveform_listener*)> f) const = 0;
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(player)
 };

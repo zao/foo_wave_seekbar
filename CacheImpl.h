@@ -10,9 +10,10 @@
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
 #include <boost/atomic.hpp>
+#include <boost/thread/future.hpp>
+#include <boost/thread.hpp>
 #include <list>
 #include <stack>
-#include <uv.h>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
@@ -30,6 +31,23 @@ namespace wave
 	struct backing_store;
 
 	bool is_of_forbidden_protocol(playable_location const& loc);
+
+	struct asio_worker_pool : boost::noncopyable
+	{
+		asio_worker_pool(size_t num_workers, std::string thread_basename);
+		~asio_worker_pool();
+
+		template <typename NullaryCallable>
+		void post(NullaryCallable callable)
+		{
+			io.post(callable);
+		}
+
+	private:
+		asio::io_service io;
+		asio::io_service::work* work;
+		std::list<boost::shared_ptr<boost::thread>> threads;
+	};
 
 	struct cache_impl : cache
 	{
@@ -63,30 +81,17 @@ namespace wave
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
 
 		boost::atomic<bool> is_initialized;
-		uv_mutex_t init_mutex;
-		future_value<bool> init_sync_point;
-		uv_async_t work_dispatch_work;
-		uv_thread_t work_dispatch_thread;
-		uv_loop_t* work_dispatch_loop;
-		async_post_queue work_post_queue;
+		boost::mutex init_mutex;
+		boost::promise<void> init_sync_point;
 
-		asio::io_service io;
-		std::unique_ptr<asio::io_service::work> io_work;
-
-		uv_mutex_t important_mutex;
+		boost::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;
 
 		pfc::string cache_filename;
-		uv_mutex_t cache_mutex;
-		std::list<uv_thread_t> work_threads;
+		boost::mutex cache_mutex;
 
-		struct worker {
-			cache_impl* cache;
-			size_t i, n;
-		};
-		static void work_thread_func(void*);
-		std::list<worker> work_functions;
-		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
+		boost::shared_ptr<asio_worker_pool> worker_pool;
+
 		abort_callback_impl flush_callback;
 		std::deque<job> job_flush_queue;
 		std::shared_ptr<backing_store> store;
