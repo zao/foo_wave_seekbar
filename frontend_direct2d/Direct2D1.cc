@@ -6,7 +6,10 @@
 #include "Direct2D.h"
 #include "../frontend_sdk/FrontendHelpers.h"
 
-std::function<void (std::function<void ()>)> in_main_thread;
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+
+boost::function<void (boost::function<void ()>)> in_main_thread;
 
 namespace wave
 {
@@ -104,7 +107,7 @@ namespace wave
 		GetClientRect(wnd, &r);
 		child_wnd.Create(wnd, r, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
 
-		in_main_thread = std::bind(&visual_frontend_callback::run_in_main_thread, &callback, std::placeholders::_1);
+		in_main_thread = boost::bind(&visual_frontend_callback::run_in_main_thread, &callback, _1);
 		factory.Attach(create_d2d1_factory_func(opts)());
 		if (!factory)
 			throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
@@ -413,9 +416,9 @@ namespace wave
 	}
 
 	template <typename T>
-	std::shared_ptr<pfc::list_t<T>> copy_list(const pfc::list_base_const_t<T>& l)
+	boost::shared_ptr<pfc::list_t<T>> copy_list(const pfc::list_base_const_t<T>& l)
 	{
-		std::shared_ptr<pfc::list_t<T>> ret;
+		boost::shared_ptr<pfc::list_t<T>> ret;
 		ret->add_items(l);
 		return ret;
 	}

@@ -10,6 +10,8 @@
 #include "Scintilla.h"
 #include <sstream>
 
+#include <boost/bind.hpp>
+
 namespace wave
 {
   namespace direct3d9
@@ -22,8 +24,7 @@ namespace wave
       fn = (decltype(fn))SendMessage(wnd, SCI_GETDIRECTFUNCTION, 0, 0);
       ptr = (decltype(ptr))SendMessage(wnd, SCI_GETDIRECTPOINTER, 0, 0);
 
-      using namespace std::placeholders;
-      f = std::bind(fn, ptr, _1, _2, _3);
+      f = boost::bind(fn, ptr, _1, _2, _3);
     }
 
     config_dialog::config_dialog(ref_ptr<frontend_impl> fe)

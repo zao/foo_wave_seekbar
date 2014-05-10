@@ -14,6 +14,8 @@
 #include "resource.h"
 #include "Scintilla.h"
 
+#include <boost/function.hpp>
+
 namespace wave
 {
   bool has_direct3d9();
@@ -274,7 +276,7 @@ namespace wave
         std::map<int, std::string> annotations;
 
         void init(HWND wnd);
-        std::function<int (int, int, int)> f;
+        boost::function<int (int, int, int)> f;
       };
 
       ref_ptr<frontend_impl> fe;

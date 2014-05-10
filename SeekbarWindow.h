@@ -16,13 +16,13 @@
 #include <boost/thread/recursive_mutex.hpp>
 
 template <typename T>
-T max(T a, T b)
+T (max)(T a, T b)
 {
-	return (b < a) ? a : b;
+	return !(a < b) ? a : b;
 }
 
 template <typename T>
-T min(T a, T b)
+T (min)(T a, T b)
 {
 	return (b < a) ? b : a;
 }
@@ -136,7 +136,7 @@ namespace wave
 
 		ref_ptr<waveform> placeholder_waveform;
 
-		std::shared_ptr<frontend_data> fe;
+		boost::shared_ptr<frontend_data> fe;
 
 		bool initializing_graphics;
 		mouse_drag_state drag_state;
@@ -154,9 +154,9 @@ namespace wave
 
 		::CPoint last_seek_point;
 
-		std::shared_ptr<seek_callback> tooltip;
-		std::vector<std::weak_ptr<seek_callback>> seek_callbacks;
-		std::vector<std::function<void ()>> deferred_init;
+		boost::shared_ptr<seek_callback> tooltip;
+		std::vector<boost::weak_ptr<seek_callback>> seek_callbacks;
+		std::vector<boost::function<void ()>> deferred_init;
 
 	private:
 		void initialize_frontend();

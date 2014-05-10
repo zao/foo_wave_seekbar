@@ -11,7 +11,6 @@
 #include "waveform_sdk/Optional.h"
 #include "Helpers.h"
 #include <regex>
-#include <uv.h>
 
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
 static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
@@ -142,7 +141,7 @@ namespace wave
 		{
 			if (exhausted || !decoder->run(chunk, abort_cb))
 			{
-				int64_t n = std::max(0LL, std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames));
+				int64_t n = (std::max)(0LL, std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames));
 				if (!generated_samples)
 				{
 					// EOF on first decode, happens in foo_midi w/ bad soundfound config.
@@ -198,7 +197,7 @@ namespace wave
 		abort_callback& abort_cb;
 
 		waveform_impl incremental_result;
-		std::shared_ptr<cache_impl::incremental_result_sink> incremental_output;
+		boost::shared_ptr<cache_impl::incremental_result_sink> incremental_output;
 
 		duration_query dur;
 		double last_update;
@@ -206,7 +205,7 @@ namespace wave
 		double const update_interval;
 
 		waveform_builder(t_int64 sample_count, bool should_downmix, abort_callback& abort_cb,
-			std::shared_ptr<cache_impl::incremental_result_sink> incremental_output)
+			boost::shared_ptr<cache_impl::incremental_result_sink> incremental_output)
 			: analysis_pass(sample_count)
 			, bucket(0)
 			, bucket_begins(0)
@@ -267,11 +266,11 @@ namespace wave
 
 		virtual void consume_input(audio_chunk const& chunk) override
 		{
-			t_int64 n = std::min(samples_remaining(), (t_int64)chunk.get_sample_count());
+			t_int64 n = (std::min)(samples_remaining(), (t_int64)chunk.get_sample_count());
 			audio_sample const* data = chunk.get_data();
 			for (t_int64 i = 0; i < n;)
 			{
-				t_int64 const to_process = std::min(bucket_ends() - samples_processed, n - i);
+				t_int64 const to_process = (std::min)(bucket_ends() - samples_processed, n - i);
 				process(data + i*channel_count, to_process);
 				i += to_process;
 				if (bucket_boundary())
@@ -299,8 +298,8 @@ namespace wave
 				audio_sample& min = minimum[target_offset];
 				audio_sample& max = maximum[target_offset];
 				audio_sample sample = *data++;
-				min = std::min(min, sample);
-				max = std::max(max, sample);
+				min = (std::min)(min, sample);
+				max = (std::max)(max, sample);
 				rms[target_offset] += sample * sample;
 			}
 			samples_processed += frames;
@@ -385,7 +384,7 @@ namespace wave
 		return match_pi("(random|record):.*") || match_pi("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*") || match_pi("(cdda)://.*");
 	}
 
-	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output)
+	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested, boost::shared_ptr<incremental_result_sink> incremental_output)
 	{
 		ref_ptr<waveform> out;
 

@@ -5,8 +5,11 @@
 
 #pragma once
 
-#include <vector>
 #include "waveform_sdk/Waveform.h"
+#include <vector>
+
+#include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace wave
 {
@@ -20,16 +23,16 @@ namespace wave
 	struct get_request
 	{
 		get_request()
-			: completion_handler([](std::shared_ptr<get_response>) {})
+			: completion_handler([](boost::shared_ptr<get_response>) {})
 		{}
 		playable_location_impl location;
 		bool user_requested;
-		std::function<void (std::shared_ptr<get_response>)> completion_handler;
+		boost::function<void (boost::shared_ptr<get_response>)> completion_handler;
 	};
 
 	struct cache : service_base
 	{
-		virtual void get_waveform(std::shared_ptr<get_request> request) abstract;
+		virtual void get_waveform(boost::shared_ptr<get_request> request) abstract;
 		virtual void remove_dead_waveforms() abstract;
 		virtual void compact_storage() abstract;
 		virtual void rescan_waveforms() abstract;
@@ -39,7 +42,7 @@ namespace wave
 		virtual bool has_waveform(playable_location const& loc) abstract;
 		virtual void remove_waveform(playable_location const& loc) abstract;
 
-		virtual void defer_action(std::function<void ()> fun) abstract;
+		virtual void defer_action(boost::function<void ()> fun) abstract;
 
 		virtual bool is_location_forbidden(playable_location const& loc) abstract;
 		virtual bool get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out) abstract;

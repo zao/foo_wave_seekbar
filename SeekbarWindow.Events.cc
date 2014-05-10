@@ -11,6 +11,9 @@
 #include <WindowsX.h>
 #include "frontend_sdk/FrontendHelpers.h"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
+
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =
 { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
@@ -224,8 +227,8 @@ namespace wave
 			{
 				drag_data.to = compute_position(point);
 
-				auto from = std::min(drag_data.from, drag_data.to);
-				auto to = std::max(drag_data.from, drag_data.to);
+				auto from = (std::min)(drag_data.from, drag_data.to);
+				auto to = (std::max)(drag_data.from, drag_data.to);
 			
 				if (clipboard::render_audio(source, from, to)) {
 					console::formatter() << "seekbar: rendered waveform from " <<

@@ -5,6 +5,7 @@
 
 #pragma once
 #include <windows.h>
+#include "../SDK/foobar2000.h"
 
 template <typename F>
 auto try_module_call(F f) -> decltype(f())

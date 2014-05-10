@@ -99,6 +99,7 @@ set(JSON_SOURCES
 	"json/json-forwards.h"
 )
 set(UTIL_SOURCES
+	"util/Asio.cc"
 	"util/Asio.h"
 	"util/Filesystem.h"
 )

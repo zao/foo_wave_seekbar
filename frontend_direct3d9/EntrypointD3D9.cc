@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+
 static void f() {}
 
 template <class T>
@@ -19,7 +21,7 @@ struct deref<U*>
   typedef U type;
 };
 
-std::shared_ptr<deref<HMODULE>::type> scintilla;
+boost::shared_ptr<deref<HMODULE>::type> scintilla;
 
 static void replace_filename(std::vector<wchar_t>& v, std::wstring const& new_name)
 {

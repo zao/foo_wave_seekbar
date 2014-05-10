@@ -6,8 +6,9 @@
 #pragma once
 #include "../waveform_sdk/Waveform.h"
 #include "../waveform_sdk/RefPointer.h"
-#include <functional>
 #include <map>
+
+#include <boost/function.hpp>
 
 namespace wave
 {
@@ -208,7 +209,7 @@ namespace wave
 		virtual bool get_flip_display() const = 0;
 		virtual void get_channel_infos(array_sink<channel_info> const&) const = 0;
 
-		virtual void run_in_main_thread(std::function<void ()>) const = 0;
+		virtual void run_in_main_thread(boost::function<void ()>) const = 0;
 	};
 
 	struct visual_frontend_callback_setter {
