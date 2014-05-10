@@ -15,6 +15,14 @@
 #include "Cache.h"
 #include <boost/thread/recursive_mutex.hpp>
 
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atlwin.h>
+#include <atltypes.h>
+#include <atlmisc.h>
+#include <atlcrack.h>
+#include <atlctrls.h>
+
 namespace wave
 {
 	struct frontend_data
@@ -78,13 +86,13 @@ namespace wave
 		LRESULT on_wm_create(LPCREATESTRUCT cs);
 		void on_wm_destroy();
 		LRESULT on_wm_erasebkgnd(HDC dc);
-		void on_wm_lbuttondown(UINT wparam, CPoint point);
-		void on_wm_lbuttonup(UINT wparam, CPoint point);
-		void on_wm_rbuttonup(UINT wparam, CPoint point);
-		void on_wm_mousemove(UINT wparam, CPoint point);
-		LRESULT on_wm_mousewheel(UINT wparam, short z_delta, CPoint point);
+		void on_wm_lbuttondown(UINT wparam, ::CPoint point);
+		void on_wm_lbuttonup(UINT wparam, ::CPoint point);
+		void on_wm_rbuttonup(UINT wparam, ::CPoint point);
+		void on_wm_mousemove(UINT wparam, ::CPoint point);
+		LRESULT on_wm_mousewheel(UINT wparam, short z_delta, ::CPoint point);
 		void on_wm_paint(HDC dc);
-		void on_wm_size(UINT wparam, CSize size);
+		void on_wm_size(UINT wparam, ::CSize size);
 		void on_wm_timer(UINT_PTR wparam);
 
 		virtual void on_waveform(ref_ptr<waveform>) override;
@@ -97,8 +105,8 @@ namespace wave
 	protected:
 		void set_cursor_position(float f);
 		void set_cursor_visibility(bool b);
-		double compute_position(CPoint point);
-		void set_seek_position(CPoint point);
+		double compute_position(::CPoint point);
+		void set_seek_position(::CPoint point);
 		void set_playback_time(double t);
 
 		persistent_settings settings;
@@ -124,12 +132,12 @@ namespace wave
 		void try_get_data();
 		void flush_frontend();
 
-		CRect client_rect;
+		::CRect client_rect;
 		double present_scale;
 		DWORD present_interval;
 		UINT_PTR repaint_timer_id;
 
-		CPoint last_seek_point;
+		::CPoint last_seek_point;
 
 		std::shared_ptr<seek_callback> tooltip;
 		std::vector<std::weak_ptr<seek_callback>> seek_callbacks;

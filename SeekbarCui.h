@@ -5,6 +5,7 @@
 
 #pragma once
 #include "SeekbarWindow.h"
+#include "../columns_ui-sdk/ui_extension.h"
 
 namespace uie
 {

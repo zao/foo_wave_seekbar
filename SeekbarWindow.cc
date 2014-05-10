@@ -182,7 +182,7 @@ namespace wave
 	}
 
 	// time from window coordinates
-	double seekbar_window::compute_position(CPoint point)
+	double seekbar_window::compute_position(::CPoint point)
 	{
 		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		double track_length = fe->callback->get_track_length();
@@ -197,7 +197,7 @@ namespace wave
 		return std::max(0.0, std::min(track_length, position));
 	}
 
-	void seekbar_window::set_seek_position(CPoint point)
+	void seekbar_window::set_seek_position(::CPoint point)
 	{
 		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		auto position = compute_position(point);
