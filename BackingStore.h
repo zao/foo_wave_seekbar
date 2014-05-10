@@ -7,6 +7,9 @@
 #include "Job.h"
 #include "waveform_sdk/Waveform.h"
 
+struct sqlite3;
+struct sqlite3_stmt;
+
 namespace wave
 {
 	struct backing_store

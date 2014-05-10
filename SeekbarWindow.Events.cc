@@ -9,6 +9,7 @@
 #include "Clipboard.h"
 #include "FrontendLoader.h"
 #include <WindowsX.h>
+#include "frontend_sdk/FrontendHelpers.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =

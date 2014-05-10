@@ -10,6 +10,8 @@
 #include "Pack.h"
 #include "waveform_sdk/Optional.h"
 
+#include "sqlite3.h"
+
 namespace wave
 {
 	backing_store::backing_store(pfc::string const& cache_filename)

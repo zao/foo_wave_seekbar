@@ -15,6 +15,18 @@
 #include "Cache.h"
 #include <boost/thread/recursive_mutex.hpp>
 
+template <typename T>
+T max(T a, T b)
+{
+	return (b < a) ? a : b;
+}
+
+template <typename T>
+T min(T a, T b)
+{
+	return (b < a) ? b : a;
+}
+
 #define _WTL_NO_WTYPES
 #include <atlbase.h>
 #include <atlapp.h>

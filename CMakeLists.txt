@@ -101,7 +101,6 @@ set(JSON_SOURCES
 set(UTIL_SOURCES
 	"util/Asio.h"
 	"util/Filesystem.h"
-	"util/UvHelpers.h"
 )
 
 source_group(seekbar FILES ${SEEKBAR_SOURCES})
@@ -114,7 +113,11 @@ source_group(contrib\\json FILES ${JSON_SOURCES})
 source_group(util FILES ${UTIL_SOURCES})
 
 include_directories(.)
-add_definitions(-Zm300)
+add_definitions(
+	-Zm300
+	-wd4005
+	-wd4996
+)
 enable_precompiled_headers("PchSeekbar.h" SEEKBAR_SOURCES)
 add_library(foo_wave_seekbar SHARED
 	${RESOURCE_SOURCES}
