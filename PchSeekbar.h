@@ -22,14 +22,7 @@ using std::max;
 #include <comdef.h>
 #include <tchar.h>
 
-#if 1
 #include "../SDK/foobar2000.h"
-#else
-#include "../ATLHelpers/ATLHelpers.h"
-#include <atlframe.h>
-#include <atlcrack.h>
-#include <dwmapi.h>
-#endif
 
 #include <delayimp.h>
 

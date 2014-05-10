@@ -15,13 +15,16 @@
 #include "Cache.h"
 #include <boost/thread/recursive_mutex.hpp>
 
+#define _WTL_NO_WTYPES
 #include <atlbase.h>
 #include <atlapp.h>
 #include <atlwin.h>
 #include <atltypes.h>
-#include <atlmisc.h>
 #include <atlcrack.h>
 #include <atlctrls.h>
+#include <atlmisc.h>
+
+namespace WTL { using ::CPoint; using ::CRect;  using ::CSize; }
 
 namespace wave
 {

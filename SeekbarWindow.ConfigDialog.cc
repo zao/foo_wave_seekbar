@@ -5,6 +5,7 @@
 
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
+#include <boost/shared_array.hpp>
 
 namespace wave
 {
@@ -385,9 +386,10 @@ namespace wave
 	{
 		channel_info ret;
 		ret.data = box.GetItemData(idx);
-		CString s;
-		box.GetText(idx, s);
-		ret.text = s;
+		int cch = box.GetTextLen(idx)+1;
+		boost::shared_array<wchar_t> s(new wchar_t[cch]);
+		box.GetText(idx, s.get());
+		ret.text = s.get();
 		return ret;
 	}
 }

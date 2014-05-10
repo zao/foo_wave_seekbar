@@ -11,7 +11,6 @@
 #include <atlapp.h>
 #include <atltypes.h>
 #include <atlgdi.h>
-#include <atlmisc.h>
 
 namespace wave
 {

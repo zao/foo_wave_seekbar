@@ -8,6 +8,7 @@
 #include "SeekTooltip.h"
 #include "Clipboard.h"
 #include "FrontendLoader.h"
+#include <WindowsX.h>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =
@@ -40,7 +41,7 @@ static advconfig_integer_factory g_seekbar_screenshot_height("Vertical size (pix
 static advconfig_string_factory g_seekbar_screenshot_filename_format("File format template (either absolute path+filename or just filename)", guid_seekbar_screenshot_filename_format, guid_seekbar_screenshot_branch, 0.3, "%artist% - %tracknumber%. %title%.png");
 static advconfig_checkbox_factory g_seekbar_scroll_to_seek("Scroll mouse wheel to seek", guid_scroll_to_seek, guid_seekbar_branch, 0.0, true);
 
-static bool is_outside(CPoint point, CRect r, int N, bool horizontal)
+static bool is_outside(::CPoint point, ::CRect r, int N, bool horizontal)
 {
 	if (!horizontal)
 	{
@@ -95,7 +96,7 @@ namespace wave
 		ValidateRect(0);
 	}
 
-	void seekbar_window::on_wm_size(UINT wparam, CSize size)
+	void seekbar_window::on_wm_size(UINT wparam, ::CSize size)
 	{
 		if (size.cx < 1 || size.cy < 1)
 			return;
@@ -158,12 +159,12 @@ namespace wave
 	{
 		SetDCBrushColor(dc, color_to_xbgr(fe->callback->get_color(config::color_background)));
 		auto sz = fe->callback->get_size();
-		CRect r(0, 0, sz.cx, sz.cy);
+		::CRect r(0, 0, sz.cx, sz.cy);
 		FillRect(dc, r, GetStockBrush(DC_BRUSH));
 		return 1;
 	}
 
-	void seekbar_window::on_wm_lbuttondown(UINT wparam, CPoint point)
+	void seekbar_window::on_wm_lbuttondown(UINT wparam, ::CPoint point)
 	{
 		drag_state = (wparam & MK_CONTROL) ? MouseDragSelection : MouseDragSeeking;
 		if (!tooltip)
@@ -195,7 +196,7 @@ namespace wave
 		SetCapture();
 	}
 
-	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
+	void seekbar_window::on_wm_lbuttonup(UINT wparam, ::CPoint point)
 	{
 		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		ReleaseCapture();
@@ -238,7 +239,7 @@ namespace wave
 		drag_state = MouseDragNone;
 	}
 
-	void seekbar_window::on_wm_mousemove(UINT wparam, CPoint point)
+	void seekbar_window::on_wm_mousemove(UINT wparam, ::CPoint point)
 	{
 		if (drag_state != MouseDragNone)
 		{
@@ -248,7 +249,7 @@ namespace wave
 			last_seek_point = point;
 
 			boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
-			CRect r;
+			::CRect r;
 			GetWindowRect(r);
 			int const N = 40;
 			bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
@@ -274,7 +275,7 @@ namespace wave
 		}
 	}
 
-	LRESULT seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
+	LRESULT seekbar_window::on_wm_mousewheel(UINT, short z_delta, ::CPoint)
 	{
 		struct SkipEntry { int64_t upper_bound; double skip_size; };
 		SkipEntry const skip_table[] = {
@@ -306,7 +307,7 @@ namespace wave
 		return 0;
 	}
 
-	void seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
+	void seekbar_window::on_wm_rbuttonup(UINT wparam, ::CPoint point)
 	{
 		if (forward_rightclick())
 		{

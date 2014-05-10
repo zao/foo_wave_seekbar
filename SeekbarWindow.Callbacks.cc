@@ -6,6 +6,7 @@
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
 #include <boost/thread/mutex.hpp>
+#include "../helpers/file_info_const_impl.h"
 
 namespace wave
 {
