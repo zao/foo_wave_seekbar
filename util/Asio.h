@@ -10,18 +10,22 @@
 #endif
 
 #if !defined(NOMINMAX)
-#define NOMINMAX
+#define NOMINMAX 1
 #endif
 
-#if !defined(ASIO_NO_WIN32_LEAN_AND_MEAN)
-#define ASIO_NO_WIN32_LEAN_AND_MEAN
+#if !defined(BOOST_ASIO_NO_WIN32_LEAN_AND_MEAN)
+#define BOOST_ASIO_NO_WIN32_LEAN_AND_MEAN 1
+#endif
+
+#if !defined(BOOST_ASIO_DISABLE_IOCP)
+#define BOOST_ASIO_DISABLE_IOCP 1
 #endif
 
 #include <algorithm>
 #include <list>
 #include <string>
 
-#include <asio.hpp>
+#include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
@@ -38,7 +42,7 @@ struct asio_worker_pool : boost::noncopyable
 	}
 
 private:
-	asio::io_service io;
-	asio::io_service::work* work;
+	boost::asio::io_service io;
+	boost::asio::io_service::work* work;
 	std::list<boost::shared_ptr<boost::thread>> threads;
 };

@@ -5,6 +5,7 @@
 
 #include "util/Asio.h"
 #include "Helpers.h"
+#include <Objbase.h>
 
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
@@ -61,7 +62,7 @@ struct coinitialize_scope : boost::noncopyable
 
 asio_worker_pool::asio_worker_pool(size_t num_cores, std::string thread_basename)
 {
-	work = new asio::io_service::work(io);
+	work = new boost::asio::io_service::work(io);
 	for (size_t i = 0; i < num_cores; ++i) {
 		auto fun = [=]
 		{
