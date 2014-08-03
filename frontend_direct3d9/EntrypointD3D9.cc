@@ -50,4 +50,6 @@ void init_scintilla()
 	}
 }
 
+#pragma comment(linker, "\"/manifestdependency:type='win32' name='Zao.SciLexer' version='3.4.4.0' processorArchitecture='x86'\"")
+
 FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(wave::config::frontend_direct3d9, wave::direct3d9::frontend_impl, init_scintilla)

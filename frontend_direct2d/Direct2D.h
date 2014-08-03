@@ -16,7 +16,7 @@
 #include <algorithm>
 using std::min; using std::max;
 #include <memory>
-#include <uv.h>
+#include <boost/thread.hpp>
 
 #include "../frontend_sdk/VisualFrontend.h"
 #include <D2D1.h>
@@ -25,12 +25,75 @@ using std::min; using std::max;
 #include <atlbase.h>
 #include <atlcom.h>
 #include <atlwin.h>
+#include <uv.h>
 
 #include "../waveform_sdk/RefPointer.h"
 
 namespace wave
 {
 	bool has_direct2d1();
+
+    template <typename T>
+    struct Rank;
+
+    template <typename TaskData, typename Ranker = Rank<TaskData> >
+    struct endable_ranked_queue : boost::noncopyable {
+        endable_ranked_queue() {
+            uv_cond_init(&pump_alert);
+            uv_mutex_init(&mutex);
+        }
+
+        ~endable_ranked_queue() {
+            terminate();
+            uv_cond_destroy(&pump_alert);
+            uv_mutex_destroy(&mutex);
+		}
+
+		void push(TaskData t) {
+			uv_mutex_lock(&mutex);
+			tasks.push_back(t);
+			uv_cond_signal(&pump_alert);
+			uv_mutex_unlock(&mutex);
+		}
+
+        bool front_or_end(TaskData& t) {
+            {
+                uv_mutex_lock(&mutex);
+                do {
+                    uv_cond_wait(&pump_alert, &mutex);
+                } while (tasks.empty() && !should_terminate);
+
+                if (should_terminate) return false;
+
+                Ranker ranker;
+                size_t max_index = 0u;
+                image_cache::task_data const* best = &tasks.front();
+                for (size_t i = 1; i < tasks.size(); ++i) {
+                    if (ranker(tasks[i]) > ranker(*best)) {
+                        best = &tasks[i];
+                    }
+                }
+                t = *best;
+                tasks.clear();
+                uv_mutex_unlock(&mutex);
+            }
+            return true;
+        }
+
+        void terminate() {
+            if (!should_terminate) {
+                uv_mutex_lock(&mutex);
+                should_terminate = true;
+                uv_cond_signal(&pump_alert);
+                uv_mutex_unlock(&mutex);
+            }
+        }
+
+        uv_mutex_t mutex;
+        uv_cond_t pump_alert;
+        boost::atomic<bool> should_terminate;
+        std::deque<TaskData> tasks;
+    };
 
 	struct brush_set {
 		CComPtr<ID2D1SolidColorBrush> background_brush, foreground_brush, highlight_brush, selection_brush;
@@ -49,7 +112,9 @@ namespace wave
 		~image_cache();
 		void start();
 
+		void set_colors(palette colors);
 		void update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip, uint64_t serial);
+		bool get_bitmap_if_newer_than(uint64_t reference_serial, CComPtr<IWICBitmap>& out);
 
 		struct task_data
 		{
@@ -62,17 +127,22 @@ namespace wave
 		};
 
 		CComPtr<ID2D1Factory> factory;
-		uv_mutex_t mutex;
-		uv_thread_t pump_thread;
-		uv_cond_t pump_alert;
-		std::deque<task_data> tasks;
-		boost::atomic<bool> should_terminate;
+        endable_ranked_queue<task_data> pump_queue;
+        uv_thread_t pump_thread;
+		boost::mutex mutex;
 
 		CComPtr<IWICImagingFactory> wic_factory;
 		CComPtr<IWICBitmap> last_bitmap;
 		uint64_t bitmap_serial;
 		palette colors;
 	};
+
+    template <>
+    struct Rank<image_cache::task_data> {
+        int64_t operator () (image_cache::task_data const& t) const {
+            return t.serial;
+        }
+    };
 
 	struct gl_window : CWindowImpl<gl_window> {
 		DECLARE_WND_CLASS_EX(L"d2d1_opengl", CS_HREDRAW | CS_VREDRAW | CS_OWNDC, NULL)
