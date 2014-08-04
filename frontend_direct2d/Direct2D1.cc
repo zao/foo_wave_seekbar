@@ -45,6 +45,7 @@ namespace wave
 	D2D1_FACTORY_OPTIONS const opts = { };
 
 	image_cache::image_cache()
+		: pump_thread(nullptr)
 	{
 		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &factory);
 		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
@@ -52,8 +53,11 @@ namespace wave
 
 	image_cache::~image_cache()
 	{
-        pump_queue.terminate();
-        uv_thread_join(&pump_thread);
+		pump_queue.terminate();
+		if (pump_thread) {
+			pump_thread->join();
+		}
+		delete pump_thread;
 	}
 
 	void pump_thread_func(void* data)
@@ -70,7 +74,9 @@ namespace wave
 
 	void image_cache::start()
 	{
-		uv_thread_create(&pump_thread, &pump_thread_func, this);
+		if (!pump_thread) {
+			pump_thread = new boost::thread(&pump_thread_func, this);
+		}
 	}
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)

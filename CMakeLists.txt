@@ -1,12 +1,9 @@
 find_path(ASIO_INCLUDE_DIRS "asio.hpp")
-find_path(LIBUV_INCLUDE_DIRS uv.h)
-find_library(LIBUV_LIBRARIES uv)
 
 include_directories("${WTL_INCLUDE_DIRS}")
 include_directories("${ASIO_INCLUDE_DIRS}")
 include_directories("${Boost_INCLUDE_DIRS}")
 include_directories("${TBB_INCLUDE_DIRS}")
-include_directories("${LIBUV_INCLUDE_DIRS}")
 include_directories(AFTER "${DXSDK_INCLUDE_DIRS}")
 link_directories("${Boost_LIBRARY_DIRS}")
 link_directories("${TBB_LIBRARY_DIRS}")
@@ -137,7 +134,6 @@ target_link_libraries(foo_wave_seekbar
 	SDK
 	shared
 	waveform_sdk
-	${LIBUV_LIBRARIES}
 	"comdlg32.lib"
 	"rpcrt4.lib"
 	"winmm.lib"

@@ -25,7 +25,6 @@ using std::min; using std::max;
 #include <atlbase.h>
 #include <atlcom.h>
 #include <atlwin.h>
-#include <uv.h>
 
 #include "../waveform_sdk/RefPointer.h"
 
@@ -38,30 +37,22 @@ namespace wave
 
     template <typename TaskData, typename Ranker = Rank<TaskData> >
     struct endable_ranked_queue : boost::noncopyable {
-        endable_ranked_queue() {
-            uv_cond_init(&pump_alert);
-            uv_mutex_init(&mutex);
-        }
+        endable_ranked_queue() {}
 
         ~endable_ranked_queue() {
             terminate();
-            uv_cond_destroy(&pump_alert);
-            uv_mutex_destroy(&mutex);
 		}
 
 		void push(TaskData t) {
-			uv_mutex_lock(&mutex);
+			boost::unique_lock<boost::mutex> lk(mutex);
 			tasks.push_back(t);
-			uv_cond_signal(&pump_alert);
-			uv_mutex_unlock(&mutex);
+			pump_alert.notify_one();
 		}
 
         bool front_or_end(TaskData& t) {
             {
-                uv_mutex_lock(&mutex);
-                do {
-                    uv_cond_wait(&pump_alert, &mutex);
-                } while (tasks.empty() && !should_terminate);
+				boost::unique_lock<boost::mutex> lk(mutex);
+				pump_alert.wait(lk, [&]{ return tasks.size() || should_terminate; });
 
                 if (should_terminate) return false;
 
@@ -75,22 +66,20 @@ namespace wave
                 }
                 t = *best;
                 tasks.clear();
-                uv_mutex_unlock(&mutex);
             }
             return true;
         }
 
         void terminate() {
             if (!should_terminate) {
-                uv_mutex_lock(&mutex);
+				boost::unique_lock<boost::mutex> lk(mutex);
                 should_terminate = true;
-                uv_cond_signal(&pump_alert);
-                uv_mutex_unlock(&mutex);
+				pump_alert.notify_all();
             }
         }
 
-        uv_mutex_t mutex;
-        uv_cond_t pump_alert;
+		boost::mutex mutex;
+		boost::condition_variable pump_alert;
         boost::atomic<bool> should_terminate;
         std::deque<TaskData> tasks;
     };
@@ -128,7 +117,7 @@ namespace wave
 
 		CComPtr<ID2D1Factory> factory;
         endable_ranked_queue<task_data> pump_queue;
-        uv_thread_t pump_thread;
+        boost::thread* pump_thread;
 		boost::mutex mutex;
 
 		CComPtr<IWICImagingFactory> wic_factory;
