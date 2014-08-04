@@ -85,10 +85,6 @@ namespace wave
 		, bitmap_serial(0)
 		, last_serial_issued(0)
 	{
-		RECT r;
-		GetClientRect(wnd, &r);
-		child_wnd.Create(wnd, r, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
-
 		in_main_thread = boost::bind(&visual_frontend_callback::run_in_main_thread, &callback, _1);
 		factory.Attach(create_d2d1_factory_func(opts)());
 		if (!factory)

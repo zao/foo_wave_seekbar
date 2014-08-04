@@ -37,7 +37,9 @@ namespace wave
 
     template <typename TaskData, typename Ranker = Rank<TaskData> >
     struct endable_ranked_queue : boost::noncopyable {
-        endable_ranked_queue() {}
+        endable_ranked_queue() 
+		: should_terminate(false)
+		{}
 
         ~endable_ranked_queue() {
             terminate();
@@ -133,13 +135,6 @@ namespace wave
         }
     };
 
-	struct gl_window : CWindowImpl<gl_window> {
-		DECLARE_WND_CLASS_EX(L"d2d1_opengl", CS_HREDRAW | CS_VREDRAW | CS_OWNDC, NULL)
-
-		BEGIN_MSG_MAP(gl_window)
-		END_MSG_MAP()
-	};
-
 	struct direct2d1_frontend : visual_frontend
 	{
 		direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&);
@@ -160,7 +155,6 @@ namespace wave
 
 		visual_frontend_callback& callback;
 		HWND wnd;
-		gl_window child_wnd;
 
 		CComPtr<ID2D1Factory> factory;
 		CComPtr<ID2D1HwndRenderTarget> rt;
