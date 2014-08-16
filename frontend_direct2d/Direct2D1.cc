@@ -254,7 +254,7 @@ namespace wave
 		if (reference_serial < bitmap_serial)
 		{
 			out = last_bitmap;
-			return true;
+			return !!last_bitmap;
 		}
 		return false;
 	}
