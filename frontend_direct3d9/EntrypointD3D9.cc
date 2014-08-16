@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+
 static void f() {}
 
 template <class T>
@@ -19,7 +21,7 @@ struct deref<U*>
   typedef U type;
 };
 
-std::shared_ptr<deref<HMODULE>::type> scintilla;
+boost::shared_ptr<deref<HMODULE>::type> scintilla;
 
 static void replace_filename(std::vector<wchar_t>& v, std::wstring const& new_name)
 {
@@ -47,5 +49,7 @@ void init_scintilla()
 		scintilla.reset(LoadLibraryW(path.data()), &FreeLibrary);
 	}
 }
+
+#pragma comment(linker, "\"/manifestdependency:type='win32' name='Zao.SciLexer' version='3.4.4.0' processorArchitecture='x86'\"")
 
 FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(wave::config::frontend_direct3d9, wave::direct3d9::frontend_impl, init_scintilla)

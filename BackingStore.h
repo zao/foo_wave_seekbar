@@ -7,6 +7,11 @@
 #include "Job.h"
 #include "waveform_sdk/Waveform.h"
 
+#include <boost/shared_ptr.hpp>
+
+struct sqlite3;
+struct sqlite3_stmt;
+
 namespace wave
 {
 	struct backing_store
@@ -27,7 +32,7 @@ namespace wave
 		void get_all(pfc::list_t<playable_location_impl>&);
 
 	private:
-		std::shared_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
-		std::shared_ptr<sqlite3> backing_db;
+		boost::shared_ptr<sqlite3_stmt> prepare_statement(std::string const& query);
+		boost::shared_ptr<sqlite3> backing_db;
 	};
 }

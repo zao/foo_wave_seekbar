@@ -3,6 +3,8 @@
 #include "waveform_sdk/Waveform.h"
 #include <boost/function.hpp>
 
+#include "../SDK/foobar2000.h"
+
 namespace wave
 {
 struct waveform_listener

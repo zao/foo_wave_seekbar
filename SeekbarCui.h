@@ -5,6 +5,7 @@
 
 #pragma once
 #include "SeekbarWindow.h"
+#include "../columns_ui-sdk/ui_extension.h"
 
 namespace uie
 {
@@ -27,7 +28,7 @@ namespace uie
 			else
 			{
 				host = new_host;
-				CRect r;
+				::CRect r;
 				position.convert_to_rect(r);
 				Create(parent, r, 0, WS_CHILD, settings.has_border ? WS_EX_STATICEDGE: 0);
 			}

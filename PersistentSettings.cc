@@ -150,7 +150,7 @@ namespace wave
 	template <typename T>
 	struct extract_fun
 	{
-		typedef typename std::function<void (rxml::xml_node<>*, typename std::remove_const<T>::type&)> type;
+		typedef typename boost::function<void (rxml::xml_node<>*, typename std::remove_const<T>::type&)> type;
 	};
 
 	template <typename M>

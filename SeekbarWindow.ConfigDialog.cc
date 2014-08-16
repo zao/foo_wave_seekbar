@@ -5,6 +5,7 @@
 
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
+#include <boost/shared_array.hpp>
 
 namespace wave
 {
@@ -87,7 +88,7 @@ namespace wave
 			item.mask = LVIF_PARAM | LVIF_TEXT;
 			item.pszText = const_cast<LPWSTR>(text.c_str());
 			item.lParam = data;
-			item.iItem = std::numeric_limits<int>::max();
+			item.iItem = (std::numeric_limits<int>::max)();
 			int idx = this->channels.InsertItem(&item);
 			if (checked)
 				this->channels.SetCheckState(idx, checked ? TRUE : FALSE);
@@ -385,9 +386,10 @@ namespace wave
 	{
 		channel_info ret;
 		ret.data = box.GetItemData(idx);
-		CString s;
-		box.GetText(idx, s);
-		ret.text = s;
+		int cch = box.GetTextLen(idx)+1;
+		boost::shared_array<wchar_t> s(new wchar_t[cch]);
+		box.GetText(idx, s.get());
+		ret.text = s.get();
 		return ret;
 	}
 }

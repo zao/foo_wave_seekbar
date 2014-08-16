@@ -6,6 +6,9 @@
 #include "PchSeekbar.h"
 #include "SeekbarCui.h"
 #include "SeekbarDui.h"
+#undef SubclassWindow
+#undef SelectBitmap
+#include "../ATLHelpers/ATLHelpers.h"
 
 static service_factory_t<ui_element_impl<wave::seekbar_dui>> g_asdf;
 

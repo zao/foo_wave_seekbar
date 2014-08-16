@@ -4,7 +4,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-
+#define D3D_DEBUG_INFO
 #include <algorithm>
 #include <vector>
 

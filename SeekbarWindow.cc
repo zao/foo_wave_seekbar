@@ -15,6 +15,8 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
 namespace pt = boost::property_tree;
+#include <boost/make_shared.hpp>
+#include <boost/weak_ptr.hpp>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
@@ -182,7 +184,7 @@ namespace wave
 	}
 
 	// time from window coordinates
-	double seekbar_window::compute_position(CPoint point)
+	double seekbar_window::compute_position(::CPoint point)
 	{
 		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		double track_length = fe->callback->get_track_length();
@@ -194,17 +196,20 @@ namespace wave
 		if (fe->callback->get_flip_display())
 			position = track_length - position;
 		
-		return std::max(0.0, std::min(track_length, position));
+		return (std::max)(0.0, (std::min)(track_length, position));
 	}
 
-	void seekbar_window::set_seek_position(CPoint point)
+	void seekbar_window::set_seek_position(::CPoint point)
 	{
 		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		auto position = compute_position(point);
 
-		for each(auto cb in seek_callbacks)
+		for (auto I = seek_callbacks.begin(); I != seek_callbacks.end(); ++I)
+		{
+			auto& cb = *I;
 			if (auto p = cb.lock())
 				p->on_seek_position(position, fe->callback->is_seeking());
+		}
 
 		fe->callback->set_seek_position(position);
 		if (fe->frontend)
@@ -219,7 +224,7 @@ namespace wave
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
-	void waveform_completion_handler(std::shared_ptr<frontend_data> fe, std::shared_ptr<get_response> response, uint32_t serial)
+	void waveform_completion_handler(boost::shared_ptr<frontend_data> fe, boost::shared_ptr<get_response> response, uint32_t serial)
 	{
 		{
 			boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
@@ -250,13 +255,13 @@ namespace wave
 			if (core_api::are_services_available())
 			{
 				boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
-				auto request = std::make_shared<get_request>();
+				auto request = boost::make_shared<get_request>();
 				request->user_requested = false;
 				fe->callback->get_playable_location(request->location);
 				uint32_t next_serial = ++fe->auto_get_serial;
 				fe->valid_buckets = 0;
 				auto fed = fe;
-				request->completion_handler = [fed, next_serial](std::shared_ptr<get_response> response)
+				request->completion_handler = [fed, next_serial](boost::shared_ptr<get_response> response)
 				{
 					waveform_completion_handler(fed, response, next_serial);
 				};
@@ -329,7 +334,7 @@ namespace wave
 	void seekbar_window::set_color(config::color which, color what, bool override)
 	{
 		if (!m_hWnd) {
-			deferred_init.push_back(std::bind(&seekbar_window::set_color, this, which, what, override));
+			deferred_init.push_back(boost::bind(&seekbar_window::set_color, this, which, what, override));
 			return;
 		}
 		if (override)

@@ -1,14 +1,9 @@
 find_path(ASIO_INCLUDE_DIRS "asio.hpp")
-find_path(LIBUV_INCLUDE_DIRS uv.h)
-find_library(LIBUV_LIBRARIES uv)
-
-add_definitions("-UBOOST_ALL_NO_LIB")
 
 include_directories("${WTL_INCLUDE_DIRS}")
 include_directories("${ASIO_INCLUDE_DIRS}")
 include_directories("${Boost_INCLUDE_DIRS}")
 include_directories("${TBB_INCLUDE_DIRS}")
-include_directories("${LIBUV_INCLUDE_DIRS}")
 include_directories(AFTER "${DXSDK_INCLUDE_DIRS}")
 link_directories("${Boost_LIBRARY_DIRS}")
 link_directories("${TBB_LIBRARY_DIRS}")
@@ -99,9 +94,9 @@ set(JSON_SOURCES
 	"json/json-forwards.h"
 )
 set(UTIL_SOURCES
+	"util/Asio.cc"
 	"util/Asio.h"
 	"util/Filesystem.h"
-	"util/UvHelpers.h"
 )
 
 source_group(seekbar FILES ${SEEKBAR_SOURCES})
@@ -114,7 +109,11 @@ source_group(contrib\\json FILES ${JSON_SOURCES})
 source_group(util FILES ${UTIL_SOURCES})
 
 include_directories(.)
-add_definitions(-Zm300)
+add_definitions(
+	-Zm300
+	-wd4005
+	-wd4996
+)
 enable_precompiled_headers("PchSeekbar.h" SEEKBAR_SOURCES)
 add_library(foo_wave_seekbar SHARED
 	${RESOURCE_SOURCES}
@@ -135,7 +134,6 @@ target_link_libraries(foo_wave_seekbar
 	SDK
 	shared
 	waveform_sdk
-	${LIBUV_LIBRARIES}
 	"comdlg32.lib"
 	"rpcrt4.lib"
 	"winmm.lib"

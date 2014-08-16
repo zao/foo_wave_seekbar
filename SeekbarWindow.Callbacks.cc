@@ -5,17 +5,19 @@
 
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
+#include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
+#include "../helpers/file_info_const_impl.h"
 
 namespace wave
 {
 	void enqueue(playable_location const& location)
 	{
-		auto request = std::make_shared<get_request>();
+		auto request = boost::make_shared<get_request>();
 
 		request->location.copy(location);
 		request->user_requested = false;
-		request->completion_handler = [](std::shared_ptr<get_response>) {};
+		request->completion_handler = [](boost::shared_ptr<get_response>) {};
 
 		static_api_ptr_t<cache> c;
 		c->get_waveform(request);

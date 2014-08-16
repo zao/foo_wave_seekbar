@@ -10,6 +10,10 @@
 #include "Pack.h"
 #include "waveform_sdk/Optional.h"
 
+#include <iterator>
+
+#include "sqlite3.h"
+
 namespace wave
 {
 	backing_store::backing_store(pfc::string const& cache_filename)
@@ -335,13 +339,13 @@ namespace wave
 		}
 	}
 
-	std::shared_ptr<sqlite3_stmt> backing_store::prepare_statement(std::string const& query)
+	boost::shared_ptr<sqlite3_stmt> backing_store::prepare_statement(std::string const& query)
 	{
 		sqlite3_stmt* p = 0;
 		sqlite3_prepare_v2(
 			backing_db.get(),
 			query.c_str(),
 			query.size(), &p, 0);
-		return std::shared_ptr<sqlite3_stmt>(p, &sqlite3_finalize);
+		return boost::shared_ptr<sqlite3_stmt>(p, &sqlite3_finalize);
 	}
 }

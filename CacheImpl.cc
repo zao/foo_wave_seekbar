@@ -4,6 +4,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #include "PchSeekbar.h"
+#include "util/Asio.h"
 #include "CacheImpl.h"
 #include "BackingStore.h"
 #include "Helpers.h"
@@ -37,56 +38,6 @@ namespace wave
 	{
 	}
 
-	struct idle_priority_scope : boost::noncopyable
-	{
-		idle_priority_scope()
-		{
-			HANDLE this_thread = GetCurrentThread();
-			old_priority = GetThreadPriority(this_thread);
-			SetThreadPriority(this_thread, THREAD_PRIORITY_IDLE);
-			CloseHandle(this_thread);
-		}
-
-		~idle_priority_scope()
-		{
-			HANDLE this_thread = GetCurrentThread();
-			SetThreadPriority(this_thread, old_priority);
-			CloseHandle(this_thread);
-		}
-
-	private:
-		int old_priority;
-	};
-
-	struct with_idle_priority
-	{
-		typedef std::function<void ()> function_type;
-		with_idle_priority(function_type func)
-		: func(func)
-		{}
-
-		void operator ()()
-		{
-			idle_priority_scope ips;
-			func();
-		}
-
-		function_type func;
-	};
-
-	struct coinitialize_scope : boost::noncopyable
-	{
-		coinitialize_scope()
-		{
-			CoInitialize(nullptr);
-		}
-
-		~coinitialize_scope()
-		{
-			CoUninitialize();
-		}
-	};
-
 	void cache_impl::load_data()
 	{
 		open_store();
@@ -97,7 +48,7 @@ namespace wave
 			store->get_jobs(jobs);
 			for each (job j in jobs)
 			{
-				std::shared_ptr<get_request> request(new get_request);
+				boost::shared_ptr<get_request> request(new get_request);
 				request->location.copy(j.loc);
 				request->user_requested = j.user;
 				worker_pool->post([this, request]
@@ -138,33 +89,6 @@ namespace wave
 		store.reset(new backing_store(cache_filename));
 	}
 
-	asio_worker_pool::asio_worker_pool(size_t num_cores, std::string thread_basename)
-	{
-		work = new asio::io_service::work(io);
-		for (size_t i = 0; i < num_cores; ++i) {
-			auto fun = [=]
-			{
-				idle_priority_scope ips;
-				coinitialize_scope cis;
-				char name_buf[128] = {};
-				sprintf_s(name_buf, "%s-%d/%d", thread_basename.c_str(), i + 1, num_cores);
-				::SetThreadName(-1, name_buf);
-				io.run();
-			};
-			auto thread_ptr = boost::make_shared<boost::thread>(fun);
-			threads.push_back(thread_ptr);
-		}
-	}
-
-	asio_worker_pool::~asio_worker_pool()
-	{
-		delete work;
-		for (auto I = threads.begin(); I != threads.end(); ++I)
-		{
-			(*I)->join();
-		}
-	}
-
 	void cache_impl::delayed_init()
 	{
 		boost::unique_lock<boost::mutex> lk(init_mutex);
@@ -187,9 +111,9 @@ namespace wave
 		}
 	}
 
-	void dispatch_partial_response(std::function<void (std::shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
+	void dispatch_partial_response(boost::function<void (boost::shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
 	{
-		auto response = std::make_shared<get_response>();
+		auto response = boost::make_shared<get_response>();
 		response->waveform = waveform;
 		response->valid_bucket_count = buckets_filled;
 		completion_handler(response);
@@ -203,7 +127,7 @@ namespace wave
 		return false;
 	}
 
-	void cache_impl::get_waveform(std::shared_ptr<get_request> request)
+	void cache_impl::get_waveform(boost::shared_ptr<get_request> request)
 	{
 		if (std::regex_match(request->location.get_path(), std::regex("\\s*")))
 			return;
@@ -216,7 +140,7 @@ namespace wave
 		bool force_rescan = g_always_rescan_user.get();
 		bool should_rescan = force_rescan && request->user_requested || !store->has(request->location);
 
-		auto response = std::make_shared<get_response>();
+		auto response = boost::make_shared<get_response>();
 		if (!should_rescan)
 		{
 			store->get(response->waveform, request->location);
@@ -236,7 +160,7 @@ namespace wave
 			worker_pool->post([this, request, response]{
 				auto fun = boost::bind(&dispatch_partial_response, request->completion_handler, _1, _2);
 				response->waveform = process_file(request->location, request->user_requested,
-					std::make_shared<incremental_result_sink>(fun));
+					boost::make_shared<incremental_result_sink>(fun));
 				request->completion_handler(response);
 			});
 		}
@@ -273,12 +197,12 @@ namespace wave
 		{
 			worker_pool->post([this]()
 			{
-				std::function<void (std::shared_ptr<get_request>)> get_func = std::bind(&cache_impl::get_waveform, this, std::placeholders::_1);
+				boost::function<void (boost::shared_ptr<get_request>)> get_func = boost::bind(&cache_impl::get_waveform, this, _1);
 				pfc::list_t<playable_location_impl> locations;
 				store->get_all(locations);
 				auto f = [get_func](playable_location const& loc)
 				{
-					auto req = std::make_shared<get_request>();
+					auto req = boost::make_shared<get_request>();
 					req->user_requested = true;
 					req->location = loc;
 					get_func(req);
@@ -288,7 +212,7 @@ namespace wave
 		}
 	}
 
-	void cache_impl::defer_action(std::function<void ()> fun)
+	void cache_impl::defer_action(boost::function<void ()> fun)
 	{
 		try_delayed_init();
 		worker_pool->post(fun);

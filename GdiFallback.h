@@ -7,13 +7,18 @@
 #include "frontend_sdk/VisualFrontend.h"
 #include "waveform_sdk/Optional.h"
 
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atltypes.h>
+#include <atlgdi.h>
+
 namespace wave
 {
 	struct mem_dc : CDC
 	{
 		CBitmap bmp;
 		CBitmapHandle old_bmp;
-		CSize size;
+		::CSize size;
 
 		explicit mem_dc(HDC src_dc)
 		{
@@ -48,12 +53,12 @@ namespace wave
 		void update_data();
 		void update_positions();
 
-		CPoint orientate(CPoint);
+		::CPoint orientate(::CPoint);
 
 		CWindow wnd;
 		bool cached_rects_valid;
-		wave::optional<CRect> last_play_rect;
-		wave::optional<CRect> last_seek_rect;
+		wave::optional<::CRect> last_play_rect;
+		wave::optional<::CRect> last_seek_rect;
 
 		std::unique_ptr<mem_dc> wave_dc, shaded_wave_dc;
 		std::unique_ptr<CPen> pen_foreground, pen_highlight, pen_selection;

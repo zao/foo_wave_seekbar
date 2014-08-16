@@ -5,6 +5,20 @@
 
 #pragma once
 #include "zlib/zlib.h"
+#include <cstdint>
+#include <cstring>
+
+template <typename T>
+T (max)(T a, T b)
+{
+	return !(a < b) ? a : b;
+}
+
+template <typename T>
+T (min)(T a, T b)
+{
+	return (b < a) ? b : a;
+}
 
 namespace pack
 {
@@ -99,7 +113,7 @@ namespace pack
 				auto self = (source*)p;
 				auto dst = (uint8_t*)buf;
 
-				size_t n = std::min(2048u, std::min(*size, self->cb));
+				size_t n = (min)(2048u, (min)(*size, self->cb));
 				std::memcpy(dst, self->src, n);
 
 				self->cb -= n;

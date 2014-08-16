@@ -28,14 +28,14 @@ namespace wave
 	int map_normalized_float_to_unsigned_range(unsigned dst_low, unsigned dst_high, float value)
 	{
 		unsigned dst_delta = dst_high - dst_low;
-		return dst_low + std::min(dst_delta-1, (unsigned)(dst_delta * value));
+		return dst_low + (std::min)(dst_delta-1, (unsigned)(dst_delta * value));
 	}
 
-	CRect reorient_rect(CRect rect, CSize canvas_size, bool vertical, bool reverse_major_axis) {
+	::CRect reorient_rect(::CRect rect, ::CSize canvas_size, bool vertical, bool reverse_major_axis) {
 		if (reverse_major_axis) {
 			rect.left = canvas_size.cx - rect.left;
 			rect.right = canvas_size.cx - rect.right;
-			CRect::SwapLeftRight(&rect);
+			::CRect::SwapLeftRight(&rect);
 		}
 		if (vertical) {
 			std::swap(rect.left, rect.top);
@@ -44,7 +44,7 @@ namespace wave
 		return rect;
 	}
 
-	CSize reorient_size(CSize size, CSize canvas_size, bool vertical, bool reverse_major_axis) {
+	::CSize reorient_size(::CSize size, ::CSize canvas_size, bool vertical, bool reverse_major_axis) {
 		if (reverse_major_axis) {
 			size.cx = canvas_size.cx - size.cx;
 		}
@@ -54,7 +54,7 @@ namespace wave
 		return size;
 	}
 	
-	CPoint reorient_point(CPoint point, CSize canvas_size, bool vertical, bool reverse_major_axis) {
+	::CPoint reorient_point(::CPoint point, ::CSize canvas_size, bool vertical, bool reverse_major_axis) {
 		if (reverse_major_axis) {
 			point.x = canvas_size.cx - point.x;
 		}
@@ -64,16 +64,16 @@ namespace wave
 		return point;
 	}
 
-	void unity_blit(HDC dst_dc, CRect rect, HDC src_dc)
+	void unity_blit(HDC dst_dc, ::CRect rect, HDC src_dc)
 	{
 		CDCHandle h = dst_dc;
 		h.BitBlt(rect.left, rect.top, rect.Width(), rect.Height(),
 			src_dc, rect.left, rect.top, SRCCOPY);
 	}
 
-	std::pair<CRect, CRect> split_rect(CRect rect, unsigned where)
+	std::pair<::CRect, ::CRect> split_rect(::CRect rect, unsigned where)
 	{
-		CRect other = rect;
+		::CRect other = rect;
 		other.left = where+1;
 		rect.right = where;
 		return std::make_pair(rect, other);
@@ -88,8 +88,8 @@ namespace wave
 	cursor_info make_cursor_info(visual_frontend_callback const& callback)
 	{
 		auto track_length = callback.get_track_length();
-		auto seek_pos = std::min(track_length, callback.get_seek_position());
-		auto playback_pos = std::min(track_length, callback.get_playback_position());
+		auto seek_pos = (std::min)(track_length, callback.get_seek_position());
+		auto playback_pos = (std::min)(track_length, callback.get_playback_position());
 		cursor_info info = {
 			(float)(seek_pos / track_length),
 			(float)(playback_pos / track_length),
@@ -138,18 +138,18 @@ namespace wave
 		return regions;
 	}
 
-	CPoint derive_point(float x, float y, size_t screen_w, size_t screen_h, bool vertical, bool flip)
+	::CPoint derive_point(float x, float y, size_t screen_w, size_t screen_h, bool vertical, bool flip)
 	{
 		if (flip) x = 1.0f - x;
 		if (vertical) {
-			return CPoint(
-				std::min(screen_w-1, (size_t)(screen_w * y)),
-				std::min(screen_h-1, (size_t)(screen_h * x)));
+			return ::CPoint(
+				(std::min)(screen_w-1, (size_t)(screen_w * y)),
+				(std::min)(screen_h-1, (size_t)(screen_h * x)));
 		}
 		else {
-			return CPoint(
-				std::min(screen_w-1, (size_t)(screen_w * x)),
-				std::min(screen_h-1, (size_t)(screen_h * y)));
+			return ::CPoint(
+				(std::min)(screen_w-1, (size_t)(screen_w * x)),
+				(std::min)(screen_h-1, (size_t)(screen_h * y)));
 		}
 	}
 
@@ -157,7 +157,7 @@ namespace wave
 	{
 		bool vertical = callback.get_orientation() == config::orientation_vertical;
 		bool flip = callback.get_flip_display();
-		auto draw_bar = [&](HDC dc, CPoint from, CPoint to)
+		auto draw_bar = [&](HDC dc, ::CPoint from, ::CPoint to)
 		{
 			if (from.x == to.x)
 				++to.y;
@@ -174,14 +174,14 @@ namespace wave
 			auto has_cursor = cursors.has_position;
 			auto is_seeking = cursors.has_seeking;
 			auto size = callback.get_size(), true_size = size;
-			auto canvas_size = CSize(size.cx, size.cy);
+			auto canvas_size = ::CSize(size.cx, size.cy);
 			auto len = callback.get_track_length();
 			auto position = cursors.position_fraction;
 			auto seek_position = cursors.seeking_fraction;
 			auto should_shade = callback.get_shade_played();
 
 			if (!has_cursor && !is_seeking) {
-				unity_blit(dc, CRect(CPoint(0, 0), canvas_size), *wave_dc);
+				unity_blit(dc, ::CRect(::CPoint(0, 0), canvas_size), *wave_dc);
 			}
 			else {
 				auto major_extent = vertical ? size.cy : size.cx;
@@ -196,12 +196,12 @@ namespace wave
 						inc_low = major_extent - inc_low - 1;
 						inc_high = major_extent - inc_high - 1;
 					}
-					CPoint from(inc_low, 0), to(inc_high+1, minor_extent);
+					::CPoint from(inc_low, 0), to(inc_high + 1, minor_extent);
 					if (vertical) {
 						std::swap(from.x, from.y);
 						std::swap(to.x, to.y);
 					}
-					unity_blit(dc, CRect(from, to), (shaded && should_shade) ? *shaded_wave_dc : *wave_dc);
+					unity_blit(dc, ::CRect(from, to), (shaded && should_shade) ? *shaded_wave_dc : *wave_dc);
 				}
 			}
 
@@ -278,10 +278,10 @@ namespace wave
 
 	float4* saturate(float4* in)
 	{
-		in->x = std::max(0.0f, std::min(1.0f, in->x));
-		in->y = std::max(0.0f, std::min(1.0f, in->y));
-		in->z = std::max(0.0f, std::min(1.0f, in->z));
-		in->w = std::max(0.0f, std::min(1.0f, in->w));
+		in->x = (std::max)(0.0f, (std::min)(1.0f, in->x));
+		in->y = (std::max)(0.0f, (std::min)(1.0f, in->y));
+		in->z = (std::max)(0.0f, (std::min)(1.0f, in->z));
+		in->w = (std::max)(0.0f, (std::min)(1.0f, in->w));
 		return in;
 	}
 
@@ -310,7 +310,7 @@ namespace wave
 		ref_ptr<waveform> w;
 		if (!callback.get_waveform(w)) {
 			color bg = callback.get_color(config::color_background);
-			CRect all(0, 0, bitmap_size.cx, bitmap_size.cy);
+			::CRect all(0, 0, bitmap_size.cx, bitmap_size.cy);
 			wave_dc->FillSolidRect(all, color_to_xbgr(bg));
 			shaded_wave_dc->FillSolidRect(all, color_to_xbgr(bg));
 		}
@@ -401,7 +401,7 @@ namespace wave
 						auto sample = samples[tc_x];
 						float below = tc_y - sample.x;
 						float above = tc_y - sample.y;
-						float factor = std::min(fabs(below), fabs(above));
+						float factor = (std::min)(fabs(below), fabs(above));
 						bool outside = (below < 0 || above > 0);
 						bool inside_rms = fabs(tc_y) <= sample.z;
 
@@ -433,32 +433,32 @@ namespace wave
 	void gdi_fallback_frontend::update_positions()
 	{
 		auto size = callback.get_size();
-		CSize canvas_size(size.cx, size.cy);
+		::CSize canvas_size(size.cx, size.cy);
 		auto vertical = callback.get_orientation() == config::orientation_vertical;
 		auto flip = callback.get_flip_display();
 		auto shade_played = callback.get_shade_played();
 		auto cursors = make_cursor_info(callback);
-		wave::optional<CRect> play_rect;
-		wave::optional<CRect> seek_rect;
+		wave::optional<::CRect> play_rect;
+		wave::optional<::CRect> seek_rect;
 		if (cursors.has_position) {
 			auto from = derive_point(cursors.position_fraction, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
 			auto to = derive_point(cursors.position_fraction, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
-			play_rect = CRect(from, to);
+			play_rect = ::CRect(from, to);
 			(*play_rect).InflateRect(0, 0, 1, 1);
 		}
 		if (cursors.has_seeking) {
 			auto from = derive_point(cursors.seeking_fraction, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
 			auto to = derive_point(cursors.seeking_fraction, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
-			seek_rect = CRect(from, to);
+			seek_rect = ::CRect(from, to);
 			(*seek_rect).InflateRect(0, 0, 1, 1);
 			//CRect r(cursors.seeking_offset, 0, cursors.seeking_offset+1, size.cy);
 			//seek_rect = reorient_rect(r, canvas_size, vertical, flip);
 		}
 		if (last_play_rect != play_rect) {
 			if (shade_played && last_play_rect) {
-				CRect extent = play_rect ? *play_rect
-					: reorient_rect(CRect(0, 0, 1, size.cy), canvas_size, vertical, flip);
-				CRect combined_play_rect;
+				::CRect extent = play_rect ? *play_rect
+					: reorient_rect(::CRect(0, 0, 1, size.cy), canvas_size, vertical, flip);
+				::CRect combined_play_rect;
 				combined_play_rect.UnionRect(extent, &*last_play_rect);
 				InvalidateRect(wnd, &combined_play_rect, FALSE);
 			}
@@ -484,10 +484,10 @@ namespace wave
 		}
 	}
 
-	CPoint gdi_fallback_frontend::orientate(CPoint p)
+	::CPoint gdi_fallback_frontend::orientate(::CPoint p)
 	{
 		if (callback.get_orientation() == config::orientation_vertical)
-			return CPoint(p.y, p.x);
+			return ::CPoint(p.y, p.x);
 		return p;
 	}
 }
