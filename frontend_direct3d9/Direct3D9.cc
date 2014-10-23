@@ -266,6 +266,11 @@ namespace wave
 				ref_ptr<frontend_impl> p(this);
 				config.reset(new config_dialog(p));
 				config->Create(parent);
+				STARTUPINFO si = {};
+				si.cb = sizeof(STARTUPINFO);
+				PROCESS_INFORMATION pi = {};
+				CreateProcess(L"direct3d9_editor.exe", L"direct3d9_editor.exe", NULL, NULL,
+					TRUE, 0, NULL, NULL, &si, &pi);
 			}
 		}
 

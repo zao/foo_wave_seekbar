@@ -30,4 +30,9 @@ target_link_libraries(frontend_direct3d9
 	"d3dx9.lib"
 #	"delayimp.lib"
 )
+
 deploy_component(frontend_direct3d9 foo_wave_seekbar)
+
+add_executable(direct3d9_editor WIN32 "D3D9Editor.cc")
+
+deploy_component(direct3d9_editor foo_wave_seekbar)
