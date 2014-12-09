@@ -6,14 +6,11 @@
 #pragma once
 #pragma warning(disable: 4005)
 #define D3D_DEBUG_INFO
-#include "util/Asio.h"
-#include "util/Profiling.h"
 
 #include <algorithm>
-#include <atomic>
 using std::min;
 using std::max;
-#include <cstdint>
+#include <stdint.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -37,5 +34,3 @@ using std::max;
 #undef SelectBitmap
 #undef SelectBrush
 #undef SelectPen
-
-#include "util/UvHelpers.h"

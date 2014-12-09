@@ -9,6 +9,9 @@ link_directories("${TBB_LIBRARY_DIRS}")
 link_directories("${LIBUV_LIBRARY_DIRS}")
 link_directories("${DXSDK_LIBRARY_DIRS}")
 
+include_directories(${LIBLFDS_INCLUDE_DIR})
+link_directories(${LIBLFDS_LIBRARIES})
+
 add_subdirectory(waveform_sdk)
 add_subdirectory(frontend_sdk)
 
@@ -92,11 +95,7 @@ set(JSON_SOURCES
 	"json/json-forwards.h"
 )
 set(UTIL_SOURCES
-	"util/Asio.h"
 	"util/Filesystem.h"
-	"util/Profiling.cc"
-	"util/Profiling.h"
-	"util/UvHelpers.h"
 )
 set(TESTS_SOURCES
 	"tests/TestProcessFile.cc"
@@ -113,7 +112,7 @@ source_group(util FILES ${UTIL_SOURCES})
 source_group(tests FILES ${TESTS_SOURCES})
 
 include_directories(.)
-add_definitions(-Zm300)
+add_definitions(-Zm300 -DNOMINMAX)
 enable_precompiled_headers("PchSeekbar.h" SEEKBAR_SOURCES)
 add_library(foo_wave_seekbar SHARED
 	${RESOURCE_SOURCES}
