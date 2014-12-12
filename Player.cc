@@ -4,7 +4,8 @@
 #include "Helpers.h"
 
 #include <set>
-#include <uv.h>
+#include <boost/bind.hpp>
+#include <boost/thread/mutex.hpp>
 
 namespace wave
 {
@@ -15,27 +16,26 @@ struct player_impl : player
 
 	virtual void register_waveform_listener(waveform_listener* p) override
 	{
-		uv_mutex_lock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
 		_listeners.insert(p);
-		uv_mutex_unlock(&_m);
 	}
 
 	virtual void deregister_waveform_listener(waveform_listener* p) override
 	{
-		uv_mutex_lock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
 		_listeners.erase(p);
-		uv_mutex_unlock(&_m);
 	}
 
 	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const override
 	{
-		uv_mutex_lock(&_m);
-		for (auto listener : _listeners)
-			f(listener);
-		uv_mutex_unlock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
+		for (auto I = _listeners.begin(); I != _listeners.end(); ++I)
+		{
+			f(*I);
+		}
 	}
 
-	mutable uv_mutex_t _m;
+	mutable boost::mutex _m;
 	std::set<waveform_listener*> _listeners;
 };
 
@@ -46,19 +46,19 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		, playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 	{}
 
+	static void invoke_on_waveform(waveform_listener* listener, ref_ptr<waveform> wf)
+	{
+		listener->on_waveform(wf);
+	}
+
 	void on_waveform_result(playable_location_impl loc, std::shared_ptr<get_response> resp)
 	{
 		in_main_thread([=]{
-			util::EventArgs ea;
-			ea["valid_bucket_count"] = std::to_string(resp->valid_bucket_count);
-			util::ScopedEvent se("Player", "on_waveform_result", &ea);
 			static_api_ptr_t<player> p;
 			static_api_ptr_t<playback_control_v2> pc;
 			service_ptr_t<metadb_handle> meta;
 			if (pc->get_now_playing(meta) && meta->get_location() == loc) {
-				p->enumerate_listeners([&](waveform_listener* l) {
-					l->on_waveform(resp->waveform);
-				});
+				p->enumerate_listeners(boost::bind(&invoke_on_waveform, _1, resp->waveform));
 			}
 		});
 	}
@@ -129,12 +129,10 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 
 player_impl::player_impl()
 {
-	uv_mutex_init(&_m);
 }
 
 player_impl::~player_impl()
 {
-	uv_mutex_destroy(&_m);
 }
 
 static callbacks* g_callbacks = nullptr;

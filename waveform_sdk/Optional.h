@@ -19,7 +19,7 @@ namespace wave
 			, laden(true)
 		{}
 
-		explicit operator bool () const {return laden;}
+		bool valid() const {return laden;}
 		T const& operator * () const {return t;}
 		T& operator * () {return t;}
 

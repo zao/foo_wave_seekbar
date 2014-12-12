@@ -22,7 +22,7 @@ using std::min; using std::max;
 #include <wincodec.h>
 #include <atlbase.h>
 #include <atlcom.h>
-#include <boost/atomic/atomic.hpp>
+#include <boost/atomic.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 

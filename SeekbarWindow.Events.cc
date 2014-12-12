@@ -8,7 +8,6 @@
 #include "SeekTooltip.h"
 #include "Clipboard.h"
 #include "FrontendLoader.h"
-#include "util/Profiling.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 static const GUID guid_seekbar_branch =
@@ -104,7 +103,7 @@ namespace wave
 			? config::orientation_horizontal
 			: config::orientation_vertical);
 
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_size(wave::size(size.cx, size.cy));
 		if (fe->frontend)
 			fe->frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
@@ -122,7 +121,6 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_create(LPCREATESTRUCT)
 	{
-		util::ScopedEvent se("Windowing", "seekbar creation");
 		fe->callback.reset(new frontend_callback_impl);
 		fe->conf.reset(new frontend_config_impl(settings));
 		fe->callback->set_waveform(placeholder_waveform);
@@ -131,8 +129,8 @@ namespace wave
 
 		decltype(deferred_init) v;
 		v.swap(deferred_init);
-		for (auto f : v) {
-			f();
+		for (size_t i = 0; i < v.size(); ++i) {
+			v[i]();
 		}
 
 		apply_settings();
@@ -150,7 +148,7 @@ namespace wave
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
 
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->clear();
 	}
 
@@ -172,7 +170,7 @@ namespace wave
 			seek_callbacks.push_back(tooltip);
 		}
 
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		if (drag_state == MouseDragSeeking)
 		{
 			fe->callback->set_seeking(true);
@@ -197,7 +195,7 @@ namespace wave
 
 	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 	{
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		ReleaseCapture();
 		if (drag_state == MouseDragSeeking)
 		{
@@ -247,7 +245,7 @@ namespace wave
 
 			last_seek_point = point;
 
-			lock_guard<recursive_mutex> lk(fe->mutex);
+			boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 			CRect r;
 			GetWindowRect(r);
 			int const N = 40;
@@ -276,27 +274,44 @@ namespace wave
 
 	LRESULT seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
 	{
-		std::pair<int64_t, double> const skip_table[] = {
-			{    50,     1 },
-			{   100,     2 },
-			{   250,     5 },
-			{   500,    10 },
-			{  1500,    30 },
-			{  3000,  1*60 },
-			{  6000,  2*60 },
-			{ 15000,  5*60 },
-			{ 30000, 10*60 },
-			{ 90000, 30*60 }
+#define MAKE_TABLE \
+		BUILD_TABLE_ENTRY(50, 1) \
+		BUILD_TABLE_ENTRY(100, 2) \
+		BUILD_TABLE_ENTRY(250, 5) \
+		BUILD_TABLE_ENTRY(500, 10) \
+		BUILD_TABLE_ENTRY(1500, 30) \
+		BUILD_TABLE_ENTRY(3000, 1*60) \
+		BUILD_TABLE_ENTRY(6000, 2*60) \
+		BUILD_TABLE_ENTRY(15000, 5*60) \
+		BUILD_TABLE_ENTRY(30000, 10*60) \
+		BUILD_TABLE_ENTRY(90000, 30*60)
+
+#define BUILD_TABLE_ENTRY(Duration, Skip) (Duration),
+		int64_t skip_durations[] = {
+			MAKE_TABLE
 		};
+#undef BUILD_TABLE_ENTRY
+
+#define BUILD_TABLE_ENTRY(Duration, Skip) (Skip),
+		double skip_amount[] = {
+			MAKE_TABLE
+		};
+#undef BUILD_TABLE_ENTRY
+
+#define BUILD_TABLE_ENTRY(Duration, Skip) 1+
+		size_t num_entries = MAKE_TABLE 0;
+#undef BUILD_TABLE_ENTRY
+
+#undef MAKE_TABLE
 		if (!g_seekbar_scroll_to_seek)
 			return 0;
 		static_api_ptr_t<playback_control> pc;
 		auto pos = pc->playback_get_position();
 		auto length = pc->playback_get_length();
 		double skip_size = 1*60*60;
-		for (auto p : skip_table) {
-			if ((int64_t)length < p.first) {
-				skip_size = p.second;
+		for (size_t i = 0; i < num_entries; ++i) {
+			if ((int64_t)length < skip_durations[i]) {
+				skip_size = skip_amount[i];
 				break;
 			}
 		}

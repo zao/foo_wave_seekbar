@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <stack>
+#include <string>
 #include "resource.h"
 #include "Scintilla.h"
 

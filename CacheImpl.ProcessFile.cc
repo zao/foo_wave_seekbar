@@ -11,7 +11,6 @@
 #include "waveform_sdk/Optional.h"
 #include "Helpers.h"
 #include <regex>
-#include <uv.h>
 
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
 static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
@@ -147,7 +146,7 @@ namespace wave
 			generated_samples += chunk.get_sample_count();
 
 			unsigned channel_count = chunk.get_channels();
-			if (!track_channel_count)
+			if (!track_channel_count.valid())
 				track_channel_count = channel_count;
 
 			if (*track_channel_count != channel_count)
@@ -388,7 +387,7 @@ namespace wave
 			while (true)
 			{
 				{
-					lock_guard<uv_mutex_t> lk(important_mutex);
+					boost::lock_guard<boost::mutex> lk(important_mutex);
 					if (important_queue.empty()) {
 						break;
 					}
@@ -406,7 +405,7 @@ namespace wave
 		}
 
 		{
-			lock_guard<uv_mutex_t> lk(cache_mutex);
+			boost::lock_guard<boost::mutex> lk(cache_mutex);
 			if (!store || flush_callback.is_aborting())
 			{
 				job_flush_queue.push_back(make_job(loc, user_requested));
@@ -424,23 +423,24 @@ namespace wave
 		// Test whether tracks are in the Media Library or not
 		if (!g_analyse_tracks_outside_library.get())
 		{
-			future_value<bool> res;
+			boost::promise<bool> promise;
 
-			in_main_thread([loc, &res]()
+			in_main_thread([loc, &promise]()
 			{
 				static_api_ptr_t<library_manager> lib;
 				static_api_ptr_t<metadb> mdb;
 				metadb_handle_ptr m;
 				mdb->handle_create(m, loc);
-				res.set(lib->is_item_in_library(m));
+				promise.set_value(lib->is_item_in_library(m));
 			});
 			
+			auto res = promise.get_future();
 			while (!flush_callback.is_aborting())
 			{
-				bool in_library;
-				auto rc = res.try_get(200*1000*1000ull, in_library);
-				if (rc == future_value<bool>::READY)
+				auto rc = res.wait_for(boost::chrono::milliseconds(200));
+				if (rc == boost::future_status::ready)
 				{
+					bool in_library = res.get();
 					if (!in_library)
 						return out;
 					break;
@@ -454,7 +454,6 @@ namespace wave
 			oss << "\"" << loc.get_path() << "\" / index: " << loc.get_subsong_index();
 			location_string = oss.str();
 		}
-		util::AsyncEvent ae("Cache processing", location_string.c_str());
 		try
 		{
 			bool should_downmix = g_downmix_in_analysis.get();
@@ -498,7 +497,7 @@ namespace wave
 				auto out = builder.finalize_waveform();
 
 				console::formatter() << "Wave cache: finished analysis of " << loc;
-				lock_guard<uv_mutex_t> lk(cache_mutex);
+				boost::lock_guard<boost::mutex> lk(cache_mutex);
 				open_store();
 				if (store)
 					store->put(out, loc);
@@ -509,7 +508,7 @@ namespace wave
 		}
 		catch (foobar2000_io::exception_aborted&)
 		{
-			lock_guard<uv_mutex_t> lk(cache_mutex);
+			boost::lock_guard<boost::mutex> lk(cache_mutex);
 			job_flush_queue.push_back(make_job(loc, user_requested));
 		}
 		catch (foobar2000_io::exception_io_not_found& e)

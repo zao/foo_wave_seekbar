@@ -7,7 +7,7 @@
 #include "CacheImpl.h"
 #include "BackingStore.h"
 #include "Helpers.h"
-#include <atomic>
+#include <boost/atomic.hpp>
 #include <regex>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
@@ -27,21 +27,12 @@ static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if r
 namespace wave
 {
 	cache_impl::cache_impl()
-		: work_dispatch_loop(uv_loop_new())
-		, work_post_queue(work_dispatch_loop)
 	{
-		uv_mutex_init(&important_mutex);
-		uv_mutex_init(&cache_mutex);
-		uv_mutex_init(&init_mutex);
-		is_initialized = false;
+		is_initialized = 0;
 	}
 
 	cache_impl::~cache_impl()
 	{
-		uv_mutex_destroy(&init_mutex);
-		uv_mutex_destroy(&cache_mutex);
-		uv_mutex_destroy(&important_mutex);
-		uv_loop_delete(work_dispatch_loop);
 	}
 
 	struct with_idle_priority
@@ -75,10 +66,13 @@ namespace wave
 				std::shared_ptr<get_request> request(new get_request);
 				request->location.copy(j.loc);
 				request->user_requested = j.user;
+				// TODO(zao): enqueue stored job again
+				/*
 				work_post_queue.post([this, request]
 				{
 					get_waveform(request);
 				});
+				*/
 			}
 		}
 		else
@@ -89,6 +83,8 @@ namespace wave
 
 	void cache_impl::flush()
 	{
+		// TODO(zao): Tear down workers, store actively queried jobs in DB
+		/*
 		{
 			lock_guard<uv_mutex_t> lk(cache_mutex);
 			flush_callback.abort();
@@ -108,6 +104,7 @@ namespace wave
 		}
 
 		store.reset();
+		*/
 	}
 
 	void cache_impl::open_store()
@@ -121,6 +118,8 @@ namespace wave
 
 	void cache_impl::delayed_init()
 	{
+		// TODO(zao): Spin up threads, prepare initial data load
+		/*
 		lock_guard<uv_mutex_t> lk(init_mutex);
 		init_sync_point.set(true);
 
@@ -157,13 +156,18 @@ namespace wave
 			}));
 			uv_thread_create(&work_threads.back(), [](void* f){ (*(std::function<void()>*)f)(); }, &work_functions.back());
 		}
-		is_initialized = true;
+		is_initialized = 1;
+		*/
 	}
 
 	void cache_impl::try_delayed_init()
 	{
-		if (!is_initialized)
+		// TODO(zao): Wait for pending initialization
+		/*
+		if (!is_initialized) {
 			lock_guard<uv_mutex_t> lk(init_mutex);
+		}
+		*/
 	}
 
 	void dispatch_partial_response(std::function<void (std::shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
@@ -212,6 +216,8 @@ namespace wave
 			{
 				important_queue.push(request->location);
 			}
+			// TODO(zao): Post job to worker threads/arbiter
+			/*
 			work_post_queue.post([this, request, response]
 			{
 				io.post([this, request, response]{
@@ -221,6 +227,7 @@ namespace wave
 					request->completion_handler(response);
 				});
 			});
+			*/
 		}
 	}
 
@@ -229,10 +236,13 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
+			// TODO(zao): Run maintenance task off-thread
+			/*
 			work_post_queue.post([this]()
 			{
 				store->remove_dead();
 			});
+			*/
 		}
 	}
 
@@ -241,10 +251,13 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
+			// TODO(zao): Run maintenance task off-thread
+			/*
 			work_post_queue.post([this]()
 			{
 				store->compact();
 			});
+			*/
 		}
 	}
 
@@ -253,6 +266,8 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
+			// TODO(zao): Run maintenance task off-thread
+			/*
 			work_post_queue.post([this]()
 			{
 				std::function<void (std::shared_ptr<get_request>)> get_func = std::bind(&cache_impl::get_waveform, this, std::placeholders::_1);
@@ -267,13 +282,17 @@ namespace wave
 				};
 				locations.enumerate(f);
 			});
+			*/
 		}
 	}
 
 	void cache_impl::defer_action(std::function<void ()> fun)
 	{
 		try_delayed_init();
+		// TODO(zao): Run maintenance task off-thread
+		/*
 		work_post_queue.post(fun);
+		*/
 	}
 
 	bool cache_impl::is_location_forbidden(playable_location const& loc)
@@ -320,6 +339,8 @@ namespace wave
 
 	void cache_impl::kick_dynamic_init()
 	{
+		// TODO(zao): Start up cache
+		/*
 		uv_thread_create(&work_dispatch_thread, [](void* data)
 		{
 			auto* self = (cache_impl*)data;
@@ -327,6 +348,7 @@ namespace wave
 		}, this);
 		post_work::queue(work_dispatch_loop, post_work::make(std::bind(&cache_impl::delayed_init, this)));
 		init_sync_point.get();
+		*/
 	}
 
 	struct cache_init_stage : init_stage_callback

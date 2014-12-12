@@ -2,31 +2,35 @@
 #include "FrontendLoader.h"
 #include "GdiFallback.h"
 #include "util/Filesystem.h"
-#include <atomic>
-#include <uv.h>
+#include <boost/atomic/atomic.hpp>
+#include <boost/smart_ptr/make_shared.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/thread/barrier.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <vector>
 
 namespace wave
 {
-static std::atomic<bool> modules_loaded;
-static uv_mutex_t module_load_mutex;
-static std::vector<std::shared_ptr<frontend_module>> frontend_modules;
-static uv_thread_t* load_thread;
-static uv_barrier_t load_barrier;
+static boost::atomic<unsigned> modules_loaded;
+static boost::mutex module_load_mutex;
+static std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
+static boost::thread* load_thread;
+static boost::barrier load_barrier(2);
 
 void wait_for_frontend_module_load()
 {
 	if (!modules_loaded) {
-		uv_mutex_lock(&module_load_mutex);
+		boost::unique_lock<boost::mutex> lk(module_load_mutex);
 		if (load_thread) {
-			uv_thread_join(load_thread);
+			load_thread->join();
 			delete load_thread;
-			load_thread = nullptr;
+			load_thread = 0;
 		}
-		uv_mutex_unlock(&module_load_mutex);
 	}
 }
 
-std::vector<std::shared_ptr<frontend_module>> list_frontend_modules()
+std::vector<boost::shared_ptr<frontend_module>> list_frontend_modules()
 {
 	wait_for_frontend_module_load();
 	return frontend_modules;
@@ -51,15 +55,14 @@ struct Candidate {
 
 static void load_frontend_modules()
 {
-	uv_barrier_init(&load_barrier, 2);
-	load_thread = new uv_thread_t();
-	uv_thread_create(load_thread, [](void* data)
+	// TODO(zao): Load frontend modules and all that jazz
+	/*
+	load_thread = new boost::thread([](void* data)
 	{
-		auto* barrier = (uv_barrier_t*)data;
 		modules_loaded = false;
-		uv_mutex_lock(&module_load_mutex);
-		uv_barrier_wait(barrier);
-		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
+		boost::unique_lock<boost::mutex> lk(module_load_mutex);
+		load_barrier.wait();
+		frontend_modules.push_back(boost::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		Candidate candidates[] = {
 			{ L"frontend_direct3d9.dll", { L"d3d9.dll", L"d3dx9_42.dll", L"D3DCompiler_42.dll" } },
 			{ L"frontend_direct2d.dll", { L"d2d1.dll" } } };
@@ -97,9 +100,9 @@ static void load_frontend_modules()
 			console::complain("Seekbar: couldn't load optional frontends", e);
 		}
 		modules_loaded = true;
-		uv_mutex_unlock(&module_load_mutex);
-	}, &load_barrier);
-	uv_barrier_wait(&load_barrier);
+	});
+	load_barrier.wait();
+	*/
 }
 
 struct frontend_module_init_stage : init_stage_callback
@@ -107,7 +110,6 @@ struct frontend_module_init_stage : init_stage_callback
 	void on_init_stage(t_uint32 stage) override
 	{
 		if (!core_api::is_quiet_mode_enabled()) {
-			uv_mutex_init(&module_load_mutex);
 			if (stage == init_stages::before_config_read)
 				load_frontend_modules();
 		}
