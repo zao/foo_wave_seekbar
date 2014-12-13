@@ -41,9 +41,10 @@ namespace wave
 
 	struct waveform : ref_base
 	{
-		virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out) abstract;
-		virtual unsigned get_channel_count() const abstract;
-		virtual unsigned get_channel_map() const abstract;
+		virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out) = 0;
+		virtual unsigned get_channel_count() const = 0;
+		virtual unsigned get_channel_map() const = 0;
+		virtual ref_ptr<waveform> clone() const = 0;
 	};
 	
 	ref_ptr<waveform> make_placeholder_waveform();

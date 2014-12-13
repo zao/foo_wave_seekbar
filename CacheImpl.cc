@@ -8,6 +8,7 @@
 #include "BackingStore.h"
 #include "Helpers.h"
 #include <regex>
+#include <stdint.h>
 
 #include <boost/atomic.hpp>
 #include <boost/thread/barrier.hpp>
@@ -30,6 +31,30 @@ static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if r
 
 namespace wave
 {
+	struct cache_run_state
+	{
+		cache_run_state()
+			: init_sync(2)
+		{}
+
+		boost::thread* thread;
+		boost::barrier init_sync;
+		boost::mutex mutex;
+		boost::condition_variable bump;
+		boost::atomic<bool> should_shutdown;
+	};
+	static cache_run_state run_state;
+
+	static std::deque<playable_location_impl> queued_requests;
+
+	struct worker_result
+	{
+		playable_location_impl loc;
+		ref_ptr<waveform> sig;
+		uint16_t buckets_filled;
+	};
+	static std::vector<worker_result> worker_results;
+
 	cache_impl::cache_impl()
 	{
 		is_initialized = 0;
@@ -65,8 +90,9 @@ namespace wave
 		if (store)
 		{
 			store->get_jobs(jobs);
-			for each (job j in jobs)
+			for (auto I = jobs.begin(); I != jobs.end(); ++I)
 			{
+				auto j = *I;
 				std::shared_ptr<get_request> request(new get_request);
 				request->location.copy(j.loc);
 				request->user_requested = j.user;
@@ -221,6 +247,9 @@ namespace wave
 				important_queue.push(request->location);
 			}
 			// TODO(zao): Post job to worker threads/arbiter
+			boost::unique_lock<boost::mutex> lk(run_state.mutex);
+			queued_requests.push_back(request->location);
+			worker_bump.notify_one();
 			/*
 			work_post_queue.post([this, request, response]
 			{
@@ -294,6 +323,7 @@ namespace wave
 	{
 		try_delayed_init();
 		// TODO(zao): Run maintenance task off-thread
+		fun();
 		/*
 		work_post_queue.post(fun);
 		*/
@@ -342,20 +372,6 @@ namespace wave
 		}
 	}
 
-	struct cache_run_state
-	{
-		cache_run_state()
-			: init_sync(2)
-		{}
-
-		boost::thread* thread;
-		boost::barrier init_sync;
-		boost::mutex mutex;
-		boost::condition_variable bump;
-		boost::atomic<bool> should_shutdown;
-	};
-	static cache_run_state run_state;
-
 	void cache_impl::start()
 	{
 		OutputDebugStringA("Starting cache.\n");
@@ -381,12 +397,30 @@ namespace wave
 		sprintf_s(name_buf, "wave-processing-%d/%d", i+1, n);
 		::SetThreadName(-1, name_buf);
 		CoInitialize(nullptr);
-		auto is_ready = [&]() -> bool { return should_workers_terminate; };
+		auto is_ready = [&]() -> bool { return should_workers_terminate || queued_requests.size(); };
 		while (1) {
-			boost::unique_lock<boost::mutex> lk(worker_mutex);
-			worker_bump.wait(lk, is_ready);
-			if (should_workers_terminate) {
-				break;
+			playable_location_impl requested_loc;
+			{
+				boost::unique_lock<boost::mutex> lk(worker_mutex);
+				worker_bump.wait(lk, is_ready);
+				if (should_workers_terminate) {
+					break;
+				}
+				requested_loc = queued_requests.front();
+				queued_requests.pop_front();
+				OutputDebugStringA("Got a request in worker.\n");
+			}
+			// TODO(zao): Get hold of user-requestedness
+			worker_result out;
+			out.loc = requested_loc;
+			out.sig = process_file(requested_loc, true);
+			for (int i = 1; i <= 4; ++i) {
+				out.buckets_filled = i*(2048/4);
+				{
+					boost::unique_lock<boost::mutex> lk(worker_mutex);
+					worker_results.push_back(out);
+					run_state.bump.notify_one();
+				}
 			}
 		}
 		CoUninitialize();
@@ -411,13 +445,25 @@ namespace wave
 
 		OutputDebugStringA("Cache ready.\n");
 		boost::unique_lock<boost::mutex> lk(run_state.mutex);
-		auto is_ready = [&]() -> bool { return run_state.should_shutdown; };
+		auto is_ready = [&]() -> bool { return run_state.should_shutdown || worker_results.size(); };
 		while (1) {
 			run_state.bump.wait(lk, is_ready);
 			if (run_state.should_shutdown) {
 				break;
 			}
+			for (auto I = worker_results.begin(); I != worker_results.end(); ++I) {
+				if (I->buckets_filled == 2048) {
+					OutputDebugStringA("Got a final result from worker.\n");
+				}
+				else {
+					char buf[128] = {};
+					sprintf_s(buf, "Got a partial result from worker, %d/2048 buckets.\n", I->buckets_filled);
+					OutputDebugStringA(buf);
+				}
+			}
+			worker_results.clear();
 		}
+		queued_requests.clear();
 	}
 
 	struct cache_init_stage : init_stage_callback
