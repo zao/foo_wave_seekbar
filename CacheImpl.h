@@ -57,14 +57,21 @@ namespace wave
 
 		typedef std::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
 
-		void kick_dynamic_init();
+		void start();
+		void shutdown();
 
 	private:
+		void cache_main();
+		void worker_main(size_t i, size_t n);
 		void open_store();
 		void load_data();
 		void try_delayed_init();
 		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
+
+		boost::atomic<bool> should_workers_terminate;
+		boost::mutex worker_mutex;
+		boost::condition_variable worker_bump;
 
 		boost::atomic<long> is_initialized;
 		boost::mutex init_mutex;

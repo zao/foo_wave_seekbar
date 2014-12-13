@@ -153,7 +153,7 @@ namespace wave
 				throw channel_mismatch_exception();
 		}
 
-		unsigned channel_count() const { assert(track_channel_count); return *track_channel_count; }
+		unsigned channel_count() const { assert(track_channel_count.valid()); return *track_channel_count; }
 	};
 
 	class analysis_pass
