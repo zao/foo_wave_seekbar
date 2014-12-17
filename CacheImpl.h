@@ -71,8 +71,6 @@ namespace wave
 		void worker_main(size_t i, size_t n);
 		void open_store();
 		void load_data();
-		void try_delayed_init();
-		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
 
 		boost::atomic<bool> should_workers_terminate;

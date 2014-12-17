@@ -17,11 +17,11 @@ namespace wave
 	void processing_contextmenu_item::get_item_name(unsigned p_index, pfc::string_base& p_out)
 	{
 		if (p_index == 0)
-			p_out = "Extract signature if missing";
+			p_out = "Extract waveform signature if missing";
 		if (p_index == 1)
-			p_out = "Force-extract signature";
+			p_out = "Force-extract waveform signature";
 		if (p_index == 2)
-			p_out = "Remove signature";
+			p_out = "Remove waveform signature";
 	}
 
 	void processing_contextmenu_item::get_item_default_path(unsigned p_index, pfc::string_base& p_out)

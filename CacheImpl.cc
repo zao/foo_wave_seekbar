@@ -203,60 +203,6 @@ namespace wave
 		store.reset(new backing_store(cache_filename));
 	}
 
-	void cache_impl::delayed_init()
-	{
-		// TODO(zao): Spin up threads, prepare initial data load
-		/*
-		lock_guard<uv_mutex_t> lk(init_mutex);
-		init_sync_point.set(true);
-
-		uv_async_init(work_dispatch_loop, &work_dispatch_work, [](uv_async_t* handle, int status)
-		{
-		uv_close((uv_handle_t*)handle, nullptr);
-		});
-
-		work_post_queue.post([this]
-		{
-		load_data();
-		});
-
-		auto hardware_concurrency = []{
-		SYSTEM_INFO info = {};
-		GetSystemInfo(&info);
-		return info.dwNumberOfProcessors;
-		};
-
-		size_t n_cores = hardware_concurrency();
-		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
-		size_t n = std::min(n_cores, n_cap);
-
-		io_work.reset(new asio::io_service::work(io));
-		for (size_t i = 0; i < n; ++i) {
-		work_threads.emplace_back();
-		work_functions.emplace_back(with_idle_priority([this, i, n]
-		{
-		std::string name = "wave-processing-" + std::to_string(i+1) + "/" + std::to_string(n);
-		::SetThreadName(-1, name.c_str());
-		CoInitialize(nullptr);
-		this->io.run();
-		CoUninitialize();
-		}));
-		uv_thread_create(&work_threads.back(), [](void* f){ (*(std::function<void()>*)f)(); }, &work_functions.back());
-		}
-		is_initialized = 1;
-		*/
-	}
-
-	void cache_impl::try_delayed_init()
-	{
-		// TODO(zao): Wait for pending initialization
-		/*
-		if (!is_initialized) {
-		lock_guard<uv_mutex_t> lk(init_mutex);
-		}
-		*/
-	}
-
 	void dispatch_partial_response(std::function<void(std::shared_ptr<get_response>)> completion_handler, ref_ptr<waveform> waveform, size_t buckets_filled)
 	{
 		auto response = std::make_shared<get_response>();
@@ -267,7 +213,6 @@ namespace wave
 
 	bool cache_impl::get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out)
 	{
-		try_delayed_init();
 		if (has_waveform(loc))
 			return store->get(out, loc);
 		return false;
@@ -278,8 +223,6 @@ namespace wave
 		auto& loc = request->get_location();
 		if (std::regex_match(loc.get_path(), std::regex("\\s*")))
 			return;
-
-		try_delayed_init();
 
 		if (!store)
 			return;
@@ -293,10 +236,6 @@ namespace wave
 			ref_ptr<waveform> wf;
 			store->get(wf, loc);
 			request->set_waveform(wf, 2048);
-			// TODO(zao): Return responses for callbacks
-			/*
-			request->completion_handler(response);
-			*/
 		}
 		else
 		{
@@ -305,11 +244,9 @@ namespace wave
 			case waveform_query::needed_urgency: {
 				requests_by_urgency[waveform_query::needed_urgency].push_front(request);
 			} break;
-			case waveform_query::desired_urgency: {
-				requests_by_urgency[waveform_query::desired_urgency].push_back(request);
-			} break;
+			case waveform_query::desired_urgency:
 			case waveform_query::bulk_urgency: {
-				requests_by_urgency[waveform_query::bulk_urgency].push_back(request);
+				requests_by_urgency[request->get_urgency()].push_back(request);
 			} break;
 			}
 			worker_bump.notify_one();
@@ -318,7 +255,6 @@ namespace wave
 
 	void cache_impl::remove_dead_waveforms()
 	{
-		try_delayed_init();
 		if (store)
 		{
 			defer_action([this]{
@@ -329,7 +265,6 @@ namespace wave
 
 	void cache_impl::compact_storage()
 	{
-		try_delayed_init();
 		if (store)
 		{
 			defer_action([this]{
@@ -340,7 +275,6 @@ namespace wave
 
 	void cache_impl::rescan_waveforms()
 	{
-		try_delayed_init();
 		if (store)
 		{
 			defer_action([this]{
@@ -356,7 +290,6 @@ namespace wave
 
 	void cache_impl::defer_action(std::function<void()> fun)
 	{
-		try_delayed_init();
 		// TODO(zao): Run maintenance task off-thread. Do these in cache_main?
 		fun();
 	}
@@ -368,7 +301,6 @@ namespace wave
 
 	bool cache_impl::has_waveform(playable_location const& loc)
 	{
-		try_delayed_init();
 		if (store)
 		{
 			return store->has(loc);
@@ -378,7 +310,6 @@ namespace wave
 
 	void cache_impl::remove_waveform(playable_location const& loc)
 	{
-		try_delayed_init();
 		if (store)
 		{
 			store->remove(loc);
@@ -429,20 +360,35 @@ namespace wave
 		sprintf_s(name_buf, "wave-processing-%d/%d", i+1, n);
 		::SetThreadName(-1, name_buf);
 		CoInitialize(nullptr);
-		auto is_ready = [&]() -> bool { return should_workers_terminate; };
+		auto is_ready = [&]() -> bool {
+			return should_workers_terminate ||
+				requests_by_urgency[0].size() ||
+				requests_by_urgency[1].size() ||
+				requests_by_urgency[2].size();
+		};
 		while (1) {
-			playable_location_impl requested_loc;
+			service_ptr_t<waveform_query> q;
 			{
 				boost::unique_lock<boost::mutex> lk(worker_mutex);
 				worker_bump.wait(lk, is_ready);
 				if (should_workers_terminate) {
 					break;
 				}
+				for (size_t i = 0; i < 3; ++i) {
+					if (requests_by_urgency[i].size()) {
+						q = requests_by_urgency[i].front();
+						requests_by_urgency[i].pop_front();
+						break;
+					}
+				}
 			}
 			// TODO(zao): Prepare and use priority-bucketed in-progress state.
 			// TODO(zao): Turn process_file use into an incremental pre-emptible process.
 			// TODO(zao): Get hold of user-requestedness
-
+			if (q.is_valid()) {
+				q->set_waveform(process_file(q->get_location(), q->get_forced() == waveform_query::forced_query), 1.0f);
+				q.release();
+			}
 
 			/*
 			worker_result out;
@@ -463,10 +409,10 @@ namespace wave
 
 	void cache_impl::cache_main()
 	{
-		run_state.init_sync.wait();
-
 		// TODO(zao): Should data loading be in this thread?
 		load_data();
+		run_state.init_sync.wait();
+
 		std::vector<boost::thread*> worker_threads;
 
 		size_t n_cores = boost::thread::hardware_concurrency();
