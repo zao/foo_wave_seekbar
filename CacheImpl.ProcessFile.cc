@@ -375,6 +375,145 @@ namespace wave
 		return match_pi("(random|record):.*") || match_pi("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*") || match_pi("(cdda)://.*");
 	}
 
+
+	// TODO(zao): Implement incremental analysis
+#if 0
+	namespace process_stage
+	{
+		enum type {
+			fresh,
+			failed,
+			aborted,
+			not_done,
+			done,
+		};
+	}
+
+	struct process_state
+	{
+		// inputs
+		playable_location_impl loc;
+		abort_callback* abort_cb;
+		bool should_downmix;
+
+		// state
+		process_stage::type stage;
+		service_ptr_t<input_decoder> decoder;
+		audio_source source;
+		waveform_builder builder;
+	};
+
+	static process_stage::type set_process_stage(process_state* state, process_stage::type value) {
+		state->stage = value;
+		switch (value) {
+		case process_stage::failed:
+		case process_stage::aborted:
+		case process_stage::done: {
+			state->decoder.release();
+		} break;
+		}
+		return state->stage;
+	}
+
+	process_stage::type process_file_incremental(process_state* state)
+	{
+		abort_callback_dummy dummy_abort_cb;
+		try {
+			switch (state->stage) {
+			case process_stage::fresh: {
+				abort_callback& abort_cb = state->abort_cb ? *state->abort_cb : dummy_abort_cb;
+				input_entry::g_open_for_decoding(state->decoder, 0, state->loc.get_path(), abort_cb);
+				t_uint32 subsong = state->loc.get_subsong();
+				state->decoder->initialize(subsong, input_flag_simpledecode, abort_cb);
+				if (!state->decoder->can_seek()) {
+					return set_process_stage(state, process_stage::failed);
+				}
+
+				t_int64 sample_rate = 0;
+				t_int64 sample_count = 0;
+				if (!try_determine_song_parameters(state->decoder, subsong, sample_rate, sample_count, abort_cb)) {
+					return set_process_stage(state, process_stage::failed);
+				}
+
+				// around a month ought to be enough for anyone
+				if (sample_count <= 0 || sample_count > sample_rate * 60 * 60 * 24 * 31) {
+					return set_process_stage(state, process_stage::failed);
+				}
+				state->builder = waveform_builder(sample_count, state->should_downmix, abort_cb, 0);
+				state->source = audio_source(abort_cb);
+				state->stage = process_stage::not_done;
+			} break;
+			case process_stage::not_done: {
+				audio_chunk_impl chunk;
+			} break;
+			}
+		}
+		catch (foobar2000_io::exception_aborted&)
+		{
+			return set_process_stage(state, process_stage::aborted);
+		}
+		catch (foobar2000_io::exception_io_not_found& e)
+		{
+			console::formatter() << "Wave cache: could not open/find " << loc << ", " << e.what();
+			return set_process_stage(state, process_stage::failed);
+		}
+		catch (foobar2000_io::exception_io& ex)
+		{
+			console::formatter() << "Wave cache: generic IO exception (" << ex.what() <<") for " << loc;
+			return set_process_stage(state, process_stage::failed);
+		}
+		catch (channel_mismatch_exception&)
+		{
+			console::formatter() << "Wave cache: track with mismatching channels, bailing out on " << loc;
+			return set_process_stage(state, process_stage::failed);
+		}
+		catch (std::exception& ex)
+		{
+			console::formatter() << "Wave cache: generic exception (" << ex.what() <<") for " << loc;
+			return set_process_stage(state, process_stage::failed);
+		}
+#if 0
+			// TODO(zao): Migrate these out to caller or init
+			bool should_downmix = g_downmix_in_analysis.get();
+
+			if (!input_entry::g_is_supported_path(loc.get_path()))
+				return out;
+			// on abort
+			job_flush_queue.push_back(make_job(loc, user_requested));
+			// End migrate region
+#endif
+
+				audio_source source(abort_cb, decoder, sample_count);
+				while (!builder.finished())
+				{
+					throw_if_aborting(abort_cb);
+					source.render(chunk);
+					if (builder.uninitialized())
+					{
+						builder.initialize(chunk.get_channels(), chunk.get_channel_config());
+					}
+					builder.consume_input(chunk);
+				}
+				auto out = builder.finalize_waveform();
+
+				console::formatter() << "Wave cache: finished analysis of " << loc;
+				boost::lock_guard<boost::mutex> lk(cache_mutex);
+				open_store();
+				if (store)
+					store->put(out, loc);
+				else
+					console::formatter() << "Wave cache: could not open backend database, losing new data for " << loc;
+				return out;
+		return process_stage::done;
+	}
+
+	ref_ptr<waveform> render_process_state(process_state* state)
+	{
+		return state->wf;
+	}
+
+
+#endif
 	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output)
 	{
 		ref_ptr<waveform> out;

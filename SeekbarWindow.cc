@@ -220,15 +220,17 @@ namespace wave
 			fe->frontend->on_state_changed(visual_frontend::state_position);
 	}
 
-	void waveform_completion_handler(std::shared_ptr<frontend_data> fe, std::shared_ptr<get_response> response, uint32_t serial)
+	void waveform_completion_handler(std::shared_ptr<frontend_data> fe, service_ptr_t<waveform_query> q, uint32_t serial)
 	{
+		// TODO(zao): Migrate these to new query interface.
+		/*
 		{
 			boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 			if (serial != fe->auto_get_serial)
 				return;
-			if (fe->valid_buckets >= response->valid_bucket_count)
+			if (fe->valid_buckets/2048.0f >= q->get_progress())
 				return;
-			fe->valid_buckets = response->valid_bucket_count;
+			fe->valid_buckets = (unsigned)(q->get_progress() * 2048);
 			fe->pending_response = *response;
 			fe->pending_serial = serial;
 		}
@@ -242,6 +244,7 @@ namespace wave
 			if (fe->frontend)
 				fe->frontend->on_state_changed(visual_frontend::state_data);
 		});
+		*/
 	}
 
 	void seekbar_window::try_get_data()
@@ -251,19 +254,23 @@ namespace wave
 			if (core_api::are_services_available())
 			{
 				boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
-				auto request = std::make_shared<get_request>();
-				request->user_requested = false;
-				fe->callback->get_playable_location(request->location);
+				playable_location_impl loc;
+				fe->callback->get_playable_location(loc);
+
 				uint32_t next_serial = ++fe->auto_get_serial;
 				fe->valid_buckets = 0;
 				auto fed = fe;
-				request->completion_handler = [fed, next_serial](std::shared_ptr<get_response> response)
+				auto cb = [fed, next_serial](service_ptr_t<waveform_query> q)
 				{
-					waveform_completion_handler(fed, response, next_serial);
+					waveform_completion_handler(fed, q, next_serial);
 				};
+				auto urgency = waveform_query::needed_urgency;
+				auto forced = waveform_query::unforced_query;
 
 				static_api_ptr_t<cache> c;
-				c->get_waveform(request);
+				auto q = c->create_callback_query(loc, urgency, forced, cb);
+				fe->pending_playback_query = q;
+				c->get_waveform(q);
 			}
 		}
 		catch (exception_service_not_found&)

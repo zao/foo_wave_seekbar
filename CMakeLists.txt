@@ -1,14 +1,8 @@
 include_directories("${WTL_INCLUDE_DIRS}")
-include_directories("${ASIO_ROOT}/include")
 include_directories("${Boost_INCLUDE_DIRS}")
-include_directories("${TBB_INCLUDE_DIRS}")
 include_directories(AFTER "${DXSDK_INCLUDE_DIRS}")
 link_directories("${Boost_LIBRARY_DIRS}")
-link_directories("${TBB_LIBRARY_DIRS}")
 link_directories("${DXSDK_LIBRARY_DIRS}")
-
-include_directories(${LIBLFDS_INCLUDE_DIR})
-link_directories(${LIBLFDS_LIBRARIES})
 
 add_subdirectory(waveform_sdk)
 add_subdirectory(frontend_sdk)

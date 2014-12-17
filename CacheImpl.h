@@ -40,7 +40,13 @@ namespace wave
 		cache_impl();
 		~cache_impl();
 
-		void get_waveform(std::shared_ptr<get_request>) override;
+		virtual service_ptr_t<waveform_query> create_query(playable_location const& loc,
+			waveform_query::query_urgency urgency, waveform_query::query_force forced) override;
+		virtual service_ptr_t<waveform_query> create_callback_query(playable_location const& loc,
+			waveform_query::query_urgency urgency, waveform_query::query_force forced,
+			std::function<void(service_ptr_t<waveform_query>)> callback) override;
+
+		void get_waveform(service_ptr_t<waveform_query> query) override;
 		void remove_dead_waveforms() override;
 		void compact_storage() override;
 		void rescan_waveforms() override;

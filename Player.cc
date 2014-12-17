@@ -46,21 +46,29 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		, playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 	{}
 
+	service_ptr_t<waveform_query> current_playing_request;
+	service_ptr_t<waveform_query> current_selected_request;
+
 	static void invoke_on_waveform(waveform_listener* listener, ref_ptr<waveform> wf)
 	{
 		listener->on_waveform(wf);
 	}
 
-	void on_waveform_result(playable_location_impl loc, std::shared_ptr<get_response> resp)
+	void on_waveform_result(playable_location_impl loc, ref_ptr<waveform> wf)
 	{
 		in_main_thread([=]{
 			static_api_ptr_t<player> p;
 			static_api_ptr_t<playback_control_v2> pc;
 			service_ptr_t<metadb_handle> meta;
 			if (pc->get_now_playing(meta) && meta->get_location() == loc) {
-				p->enumerate_listeners(boost::bind(&invoke_on_waveform, _1, resp->waveform));
+				p->enumerate_listeners(boost::bind(&invoke_on_waveform, _1, wf));
 			}
 		});
+	}
+
+	void on_query_result(playable_location_impl loc, service_ptr_t<waveform_query> q)
+	{
+		on_waveform_result(loc, q->get_waveform());
 	}
 
 	virtual void on_playback_new_track(metadb_handle_ptr meta) override
@@ -73,16 +81,19 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		static_api_ptr_t<cache> c;
 		if (! c->get_waveform_sync(loc, wf) && ! c->is_location_forbidden(loc)) {
 			// if not, schedule a scan
-			auto req = std::make_shared<get_request>();
-			req->completion_handler = std::bind(&callbacks::on_waveform_result, this, playable_location_impl(loc), std::placeholders::_1);
-			req->location = loc;
-			req->user_requested = false;
-			c->get_waveform(req);
+			if (current_playing_request.is_valid() && loc != current_playing_request->get_location()) {
+				current_playing_request->abort();
+				current_playing_request.release();
+			}
+			if (current_playing_request.is_empty()) {
+				auto cb = std::bind(&callbacks::on_query_result, this, playable_location_impl(loc), std::placeholders::_1);
+				auto req = c->create_callback_query(loc, waveform_query::needed_urgency, waveform_query::unforced_query, cb);
+				current_playing_request = req;
+				c->get_waveform(req);
+			}
 		}
 		else {
-			auto resp = std::make_shared<get_response>();
-			resp->waveform = wf;
-			on_waveform_result(loc, resp);
+			on_waveform_result(loc, wf);
 		}
 		p->enumerate_listeners([&](waveform_listener* l) {
 			l->on_duration(duration);

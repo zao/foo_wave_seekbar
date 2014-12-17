@@ -30,11 +30,9 @@ namespace wave
 	{
 		for (auto I = locs->begin(); I != locs->end(); ++I)
 		{
-			auto request = std::make_shared<get_request>();
-			auto const& loc = *I;
-			request->location = loc;
-			request->user_requested = true;
-			cache->get_waveform(request);
+			// TODO(zao): Handle urgency and forcedness.
+			auto q = cache->create_query(*I, waveform_query::bulk_urgency, waveform_query::unforced_query);
+			cache->get_waveform(q);
 		}
 	}
 

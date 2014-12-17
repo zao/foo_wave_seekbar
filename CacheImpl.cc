@@ -45,7 +45,7 @@ namespace wave
 	};
 	static cache_run_state run_state;
 
-	static std::deque<playable_location_impl> queued_requests;
+	static std::deque<service_ptr_t<waveform_query> > requests_by_urgency[3];
 
 	struct worker_result
 	{
@@ -62,6 +62,71 @@ namespace wave
 
 	cache_impl::~cache_impl()
 	{
+	}
+
+	struct waveform_query_shared : waveform_query
+	{
+		waveform_query_shared()
+			: progress(0), aborted(false)
+		{}
+
+		virtual playable_location const& get_location() const override { return loc; }
+		virtual query_urgency get_urgency() const override { return urgency; }
+		virtual query_force get_forced() const override { return forced; }
+		virtual float get_progress() const override { return progress; }
+		virtual ref_ptr<waveform> get_waveform() const { return wf; }
+		virtual void abort() { aborted = true; }
+
+	public:
+		playable_location_impl loc;
+		query_urgency urgency;
+		query_force forced;
+		float progress;
+		ref_ptr<waveform> wf;
+		bool aborted;
+	};
+
+	struct plain_query : waveform_query_shared
+	{
+		virtual void set_waveform(ref_ptr<waveform> wf, float progress) override
+		{
+			this->wf = wf;
+		}
+	};
+
+	struct callback_query : waveform_query_shared
+	{
+		virtual void set_waveform(ref_ptr<waveform> wf, float progress) override
+		{
+			this->wf = wf;
+			service_ptr_t<waveform_query> self;
+			service_query_t(self);
+			callback(self);
+		}
+
+		std::function<void(service_ptr_t<waveform_query>)> callback;
+	};
+
+	service_ptr_t<waveform_query> cache_impl::create_query(playable_location const& loc,
+		waveform_query::query_urgency urgency, waveform_query::query_force forced)
+	{
+		service_ptr_t<plain_query> q = new service_impl_t<plain_query>();
+		q->loc = loc;
+		q->urgency = urgency;
+		q->forced = forced;
+		return q;
+	}
+
+	service_ptr_t<waveform_query> cache_impl::create_callback_query(playable_location const& loc,
+		waveform_query::query_urgency urgency, waveform_query::query_force forced,
+		std::function<void(service_ptr_t<waveform_query>)> callback)
+	{
+		service_ptr_t<callback_query> q = new service_impl_t<callback_query>();
+		q->loc = loc;
+		q->urgency = urgency;
+		q->forced = forced;
+		q->callback = callback;
+		return q;
 	}
 
 	struct with_idle_priority
@@ -92,17 +157,9 @@ namespace wave
 			store->get_jobs(jobs);
 			for (auto I = jobs.begin(); I != jobs.end(); ++I)
 			{
-				auto j = *I;
-				std::shared_ptr<get_request> request(new get_request);
-				request->location.copy(j.loc);
-				request->user_requested = j.user;
-				// TODO(zao): enqueue stored job again
-				/*
-				work_post_queue.post([this, request]
-				{
-				get_waveform(request);
-				});
-				*/
+				auto forced = I->user ? waveform_query::forced_query : waveform_query::unforced_query;
+				auto q = create_query(I->loc, waveform_query::bulk_urgency, forced);
+				get_waveform(q);
 			}
 		}
 		else
@@ -216,9 +273,10 @@ namespace wave
 		return false;
 	}
 
-	void cache_impl::get_waveform(std::shared_ptr<get_request> request)
+	void cache_impl::get_waveform(service_ptr_t<waveform_query> request)
 	{
-		if (std::regex_match(request->location.get_path(), std::regex("\\s*")))
+		auto& loc = request->get_location();
+		if (std::regex_match(loc.get_path(), std::regex("\\s*")))
 			return;
 
 		try_delayed_init();
@@ -227,40 +285,34 @@ namespace wave
 			return;
 
 		bool force_rescan = g_always_rescan_user.get();
-		bool should_rescan = force_rescan && request->user_requested || !store->has(request->location);
+		bool should_rescan = request->get_forced() || !store->has(loc);
 
 		auto response = std::make_shared<get_response>();
 		if (!should_rescan)
 		{
-			store->get(response->waveform, request->location);
+			ref_ptr<waveform> wf;
+			store->get(wf, loc);
+			request->set_waveform(wf, 2048);
+			// TODO(zao): Return responses for callbacks
+			/*
 			request->completion_handler(response);
+			*/
 		}
 		else
 		{
-			response->waveform = make_placeholder_waveform();
-			response->valid_bucket_count = 0;
-			request->completion_handler(response);
-
-			response.reset(new get_response);
-			if (!request->user_requested)
-			{
-				important_queue.push(request->location);
+			boost::unique_lock<boost::mutex> lk(worker_mutex);
+			switch (request->get_urgency()) {
+			case waveform_query::needed_urgency: {
+				requests_by_urgency[waveform_query::needed_urgency].push_front(request);
+			} break;
+			case waveform_query::desired_urgency: {
+				requests_by_urgency[waveform_query::desired_urgency].push_back(request);
+			} break;
+			case waveform_query::bulk_urgency: {
+				requests_by_urgency[waveform_query::bulk_urgency].push_back(request);
+			} break;
 			}
-			// TODO(zao): Post job to worker threads/arbiter
-			boost::unique_lock<boost::mutex> lk(run_state.mutex);
-			queued_requests.push_back(request->location);
 			worker_bump.notify_one();
-			/*
-			work_post_queue.post([this, request, response]
-			{
-			io.post([this, request, response]{
-			auto fun = std::bind(&dispatch_partial_response, request->completion_handler, std::placeholders::_1, std::placeholders::_2);
-			response->waveform = process_file(request->location, request->user_requested,
-			std::make_shared<incremental_result_sink>(fun));
-			request->completion_handler(response);
-			});
-			});
-			*/
 		}
 	}
 
@@ -269,13 +321,9 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			// TODO(zao): Run maintenance task off-thread
-			/*
-			work_post_queue.post([this]()
-			{
-			store->remove_dead();
+			defer_action([this]{
+				store->remove_dead();
 			});
-			*/
 		}
 	}
 
@@ -284,13 +332,9 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			// TODO(zao): Run maintenance task off-thread
-			/*
-			work_post_queue.post([this]()
-			{
-			store->compact();
+			defer_action([this]{
+				store->compact();
 			});
-			*/
 		}
 	}
 
@@ -299,34 +343,22 @@ namespace wave
 		try_delayed_init();
 		if (store)
 		{
-			// TODO(zao): Run maintenance task off-thread
-			/*
-			work_post_queue.post([this]()
-			{
-			std::function<void (std::shared_ptr<get_request>)> get_func = std::bind(&cache_impl::get_waveform, this, std::placeholders::_1);
-			pfc::list_t<playable_location_impl> locations;
-			store->get_all(locations);
-			auto f = [get_func](playable_location const& loc)
-			{
-			auto req = std::make_shared<get_request>();
-			req->user_requested = true;
-			req->location = loc;
-			get_func(req);
-			};
-			locations.enumerate(f);
+			defer_action([this]{
+				pfc::list_t<playable_location_impl> locations;
+				store->get_all(locations);
+				for (size_t i = 0; i < locations.get_size(); ++i) {
+					auto q = create_query(locations[i], waveform_query::bulk_urgency, waveform_query::forced_query);
+					get_waveform(q);
+				}
 			});
-			*/
 		}
 	}
 
 	void cache_impl::defer_action(std::function<void()> fun)
 	{
 		try_delayed_init();
-		// TODO(zao): Run maintenance task off-thread
+		// TODO(zao): Run maintenance task off-thread. Do these in cache_main?
 		fun();
-		/*
-		work_post_queue.post(fun);
-		*/
 	}
 
 	bool cache_impl::is_location_forbidden(playable_location const& loc)
@@ -397,7 +429,7 @@ namespace wave
 		sprintf_s(name_buf, "wave-processing-%d/%d", i+1, n);
 		::SetThreadName(-1, name_buf);
 		CoInitialize(nullptr);
-		auto is_ready = [&]() -> bool { return should_workers_terminate || queued_requests.size(); };
+		auto is_ready = [&]() -> bool { return should_workers_terminate; };
 		while (1) {
 			playable_location_impl requested_loc;
 			{
@@ -406,11 +438,13 @@ namespace wave
 				if (should_workers_terminate) {
 					break;
 				}
-				requested_loc = queued_requests.front();
-				queued_requests.pop_front();
-				OutputDebugStringA("Got a request in worker.\n");
 			}
+			// TODO(zao): Prepare and use priority-bucketed in-progress state.
+			// TODO(zao): Turn process_file use into an incremental pre-emptible process.
 			// TODO(zao): Get hold of user-requestedness
+
+
+			/*
 			worker_result out;
 			out.loc = requested_loc;
 			out.sig = process_file(requested_loc, true);
@@ -422,6 +456,7 @@ namespace wave
 					run_state.bump.notify_one();
 				}
 			}
+			*/
 		}
 		CoUninitialize();
 	}
@@ -463,7 +498,6 @@ namespace wave
 			}
 			worker_results.clear();
 		}
-		queued_requests.clear();
 	}
 
 	struct cache_init_stage : init_stage_callback
