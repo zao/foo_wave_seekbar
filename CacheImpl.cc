@@ -168,32 +168,6 @@ namespace wave
 		}
 	}
 
-	void cache_impl::flush()
-	{
-		// TODO(zao): Tear down workers, store actively queried jobs in DB
-		/*
-		{
-		lock_guard<uv_mutex_t> lk(cache_mutex);
-		flush_callback.abort();
-		}
-		io_work.reset();
-		for (auto& t : work_threads) {
-		uv_thread_join(&t);
-		}
-		work_post_queue.stop();
-		uv_async_send(&work_dispatch_work);
-		uv_thread_join(&work_dispatch_thread);
-
-		open_store();
-		if (store)
-		{
-		store->put_jobs(job_flush_queue);
-		}
-
-		store.reset();
-		*/
-	}
-
 	void cache_impl::open_store()
 	{
 		if (store) return;
@@ -384,25 +358,16 @@ namespace wave
 			}
 			// TODO(zao): Prepare and use priority-bucketed in-progress state.
 			// TODO(zao): Turn process_file use into an incremental pre-emptible process.
-			// TODO(zao): Get hold of user-requestedness
 			if (q.is_valid()) {
-				q->set_waveform(process_file(q->get_location(), q->get_forced() == waveform_query::forced_query), 1.0f);
+				auto wf = process_file(q->get_location(), q->get_forced() == waveform_query::forced_query);
+				if (wf && !flush_callback.is_aborting()) {
+					q->set_waveform(wf, 1.0f);
+				}
+				else {
+					job_flush_queue.push_back(q);
+				}
 				q.release();
 			}
-
-			/*
-			worker_result out;
-			out.loc = requested_loc;
-			out.sig = process_file(requested_loc, true);
-			for (int i = 1; i <= 4; ++i) {
-				out.buckets_filled = i*(2048/4);
-				{
-					boost::unique_lock<boost::mutex> lk(worker_mutex);
-					worker_results.push_back(out);
-					run_state.bump.notify_one();
-				}
-			}
-			*/
 		}
 		CoUninitialize();
 	}
@@ -444,6 +409,36 @@ namespace wave
 			}
 			worker_results.clear();
 		}
+		should_workers_terminate = true;
+		flush_callback.abort();
+		worker_bump.notify_all();
+		for (size_t i = 0; i < n; ++i) {
+			auto t = worker_threads[i];
+			t->join();
+			delete t;
+		}
+
+		auto make_bulk_job = [](service_ptr_t<waveform_query> const& q) -> job {
+			job j = {};
+			j.loc = q->get_location();
+			j.user = q->get_forced() == waveform_query::forced_query;
+			return j;
+		};
+
+		// NOTE(zao): We degrade all jobs to bulk on restart, while they may be
+		// relevant on startup, they may also not be.
+		std::deque<job> flush_jobs;
+		for (auto I = job_flush_queue.begin(); I != job_flush_queue.end(); ++I) {
+			flush_jobs.push_back(make_bulk_job(*I));
+		}
+		for (size_t i = 0; i < 3; ++i) {
+			auto& bulk_requests = requests_by_urgency[i];
+			for (auto I = bulk_requests.begin(); I != bulk_requests.end(); ++I) {
+				flush_jobs.push_back(make_bulk_job(*I));
+			}
+		}
+		store->put_jobs(flush_jobs);
+		store.reset();
 	}
 
 	struct cache_init_stage : init_stage_callback

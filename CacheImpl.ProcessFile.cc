@@ -547,7 +547,6 @@ namespace wave
 			boost::lock_guard<boost::mutex> lk(cache_mutex);
 			if (!store || flush_callback.is_aborting())
 			{
-				job_flush_queue.push_back(make_job(loc, user_requested));
 				return out;
 			}
 			if (!user_requested && store->has(loc))
@@ -647,8 +646,7 @@ namespace wave
 		}
 		catch (foobar2000_io::exception_aborted&)
 		{
-			boost::lock_guard<boost::mutex> lk(cache_mutex);
-			job_flush_queue.push_back(make_job(loc, user_requested));
+			// NOTE(zao): Abort state is detected in caller.
 		}
 		catch (foobar2000_io::exception_io_not_found& e)
 		{

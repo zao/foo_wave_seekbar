@@ -51,8 +51,6 @@ namespace wave
 		void compact_storage() override;
 		void rescan_waveforms() override;
 
-		void flush() override;
-
 		bool has_waveform(playable_location const& loc) override;
 		void remove_waveform(playable_location const& loc) override;
 
@@ -90,7 +88,7 @@ namespace wave
 		std::list<boost::function<void()>> work_functions;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
-		std::deque<job> job_flush_queue;
+		std::deque<service_ptr_t<waveform_query> > job_flush_queue;
 		std::shared_ptr<backing_store> store;
 	};
 

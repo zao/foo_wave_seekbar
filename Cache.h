@@ -66,8 +66,6 @@ namespace wave
 		virtual void compact_storage() abstract;
 		virtual void rescan_waveforms() abstract;
 
-		virtual void flush() abstract;
-
 		virtual bool has_waveform(playable_location const& loc) abstract;
 		virtual void remove_waveform(playable_location const& loc) abstract;
 
