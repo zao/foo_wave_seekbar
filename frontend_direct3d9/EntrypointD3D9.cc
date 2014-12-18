@@ -36,14 +36,13 @@ static void replace_filename(std::vector<wchar_t>& v, std::wstring const& new_na
 
 void init_scintilla()
 {
+	std::vector<wchar_t> path(9001);
+	HMODULE self;
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&f, &self);
+	GetModuleFileName(self, &path[0], path.size()-1);
 	if (!scintilla)
 	{
-		std::vector<wchar_t> path(9001);
-		HMODULE self;
-		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&f, &self);
-		GetModuleFileName(self, &path[0], path.size()-1);
 		replace_filename(path, L"SciLexer.dll");
-
 		scintilla.reset(LoadLibraryW(path.data()), &FreeLibrary);
 	}
 }
