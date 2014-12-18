@@ -13,6 +13,7 @@ namespace wave
 		virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out) override;
 		virtual unsigned get_channel_count() const override;
 		virtual unsigned get_channel_map() const override;
+		virtual ref_ptr<waveform> clone() const override;
 
 		typedef pfc::list_t<float> signal;
 		typedef pfc::list_t<signal> bundle;

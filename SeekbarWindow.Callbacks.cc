@@ -5,26 +5,19 @@
 
 #include "PchSeekbar.h"
 #include "SeekbarWindow.h"
-#include <mutex>
 
 namespace wave
 {
-	void enqueue(playable_location const& location)
+	void enqueue_desired(playable_location const& location)
 	{
-		auto request = std::make_shared<get_request>();
-
-		request->location.copy(location);
-		request->user_requested = false;
-		request->completion_handler = [](std::shared_ptr<get_response>) {};
-
 		static_api_ptr_t<cache> c;
-		c->get_waveform(request);
+		auto q = c->create_query(location, waveform_query::desired_urgency, waveform_query::unforced_query);
+		c->get_waveform(q);
 	}
 
 	void seekbar_window::on_waveform(ref_ptr<waveform> wf)
 	{
-		util::ScopedEvent se("Callbacks", "on_waveform");
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_waveform(wf);
 		if (fe->frontend)
 			fe->frontend->on_state_changed(visual_frontend::state_data);
@@ -37,8 +30,7 @@ namespace wave
 
 	void seekbar_window::on_duration(double t)
 	{
-		util::ScopedEvent se("Callbacks", "on_duration");
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
 		fe->callback->set_track_length(t);
@@ -48,8 +40,7 @@ namespace wave
 
 	void seekbar_window::on_location(playable_location const& loc)
 	{
-		util::ScopedEvent se("Callbacks", "on_location");
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		{
 			static_api_ptr_t<metadb> db;
 			service_ptr_t<metadb_handle> meta;
@@ -75,8 +66,7 @@ namespace wave
 	
 	void seekbar_window::on_play()
 	{
-		util::ScopedEvent se("Callbacks", "on_play");
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(true);
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend) {
@@ -87,8 +77,7 @@ namespace wave
 
 	void seekbar_window::on_stop()
 	{
-		util::ScopedEvent se("Callbacks", "on_stop");
-		lock_guard<recursive_mutex> lk(fe->mutex);
+		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_cursor_visible(false);
 		fe->callback->set_playback_position(0.0);
 		if (fe->frontend) {
@@ -122,7 +111,7 @@ namespace wave
 				metadb_handle_ptr next = pm->playlist_get_item_handle(playlist, (index + 1) % count);
 				try
 				{
-					enqueue(next->get_location());
+					enqueue_desired(next->get_location());
 					possible_next_enqueued = true;
 				}
 				catch (exception_service_not_found&)

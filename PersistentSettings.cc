@@ -226,43 +226,48 @@ namespace wave
 	{
 		std::fill(colors.begin(), colors.end(), color());
 		std::fill(override_colors.begin(), override_colors.end(), false);
-		channel_order = {
-			{ audio_chunk::channel_back_left, true },
-			{ audio_chunk::channel_front_left, true },
-			{ audio_chunk::channel_front_center, true },
-			{ audio_chunk::channel_front_right, true },
-			{ audio_chunk::channel_back_right, true },
-			{ audio_chunk::channel_lfe, true }
-		};
+#define APPEND_CHANNEL(Ch, Val) channel_order.push_back(std::make_pair((Ch), (Val)))
+		APPEND_CHANNEL(audio_chunk::channel_back_left, true);
+		APPEND_CHANNEL(audio_chunk::channel_front_left, true);
+		APPEND_CHANNEL(audio_chunk::channel_front_center, true);
+		APPEND_CHANNEL(audio_chunk::channel_front_right, true);
+		APPEND_CHANNEL(audio_chunk::channel_back_right, true);
+		APPEND_CHANNEL(audio_chunk::channel_lfe, true);
+#undef APPEND_CHANNEL
 		insert_remaining_channels();
 	}
 
 	void persistent_settings::insert_remaining_channels()
 	{
-		std::set<int> all_channels = {
-			(audio_chunk::channel_back_left),
-			(audio_chunk::channel_front_left),
-			(audio_chunk::channel_front_center),
-			(audio_chunk::channel_front_right),
-			(audio_chunk::channel_back_right),
-			(audio_chunk::channel_lfe),
-			(audio_chunk::channel_front_center_left),
-			(audio_chunk::channel_front_center_right),
-			(audio_chunk::channel_back_center),
-			(audio_chunk::channel_side_left),
-			(audio_chunk::channel_side_right),
-			(audio_chunk::channel_top_center),
-			(audio_chunk::channel_top_front_left),
-			(audio_chunk::channel_top_front_center),
-			(audio_chunk::channel_top_front_right),
-			(audio_chunk::channel_top_back_left),
-			(audio_chunk::channel_top_back_center),
-			(audio_chunk::channel_top_back_right)
-		};
-		for (int ch : all_channels)
+		std::set<int> all_channels;
+#define INSERT_CHANNEL(Ch) all_channels.insert(Ch)
+		INSERT_CHANNEL(audio_chunk::channel_back_left);
+		INSERT_CHANNEL(audio_chunk::channel_front_left);
+		INSERT_CHANNEL(audio_chunk::channel_front_center);
+		INSERT_CHANNEL(audio_chunk::channel_front_right);
+		INSERT_CHANNEL(audio_chunk::channel_back_right);
+		INSERT_CHANNEL(audio_chunk::channel_lfe);
+		INSERT_CHANNEL(audio_chunk::channel_front_center_left);
+		INSERT_CHANNEL(audio_chunk::channel_front_center_right);
+		INSERT_CHANNEL(audio_chunk::channel_back_center);
+		INSERT_CHANNEL(audio_chunk::channel_side_left);
+		INSERT_CHANNEL(audio_chunk::channel_side_right);
+		INSERT_CHANNEL(audio_chunk::channel_top_center);
+		INSERT_CHANNEL(audio_chunk::channel_top_front_left);
+		INSERT_CHANNEL(audio_chunk::channel_top_front_center);
+		INSERT_CHANNEL(audio_chunk::channel_top_front_right);
+		INSERT_CHANNEL(audio_chunk::channel_top_back_left);
+		INSERT_CHANNEL(audio_chunk::channel_top_back_center);
+		INSERT_CHANNEL(audio_chunk::channel_top_back_right);
+#undef INSERT_CHANNEL
+		for (auto I = all_channels.begin(); I != all_channels.end(); ++I)
 		{
-			if (std::find_if(channel_order.begin(), channel_order.end(), [ch](decltype(channel_order[0]) const& a) { return a.first == ch; }) == channel_order.end())
+			int ch = *I;
+			auto pred = [ch](decltype(channel_order[0]) const& a) { return a.first == ch; };
+			if (std::find_if(channel_order.begin(), channel_order.end(), pred) == channel_order.end())
+			{
 				channel_order.push_back(std::make_pair(ch, false));
+			}
 		}
 	}
 
@@ -396,16 +401,18 @@ namespace wave
 		out.put("downmix_display", downmix_display);
 		 
 		ptree& channel_order_pt = out.add("channel_order", "");
-		for (auto& p : channel_order)
+		for (auto I = channel_order.begin(); I != channel_order.end(); ++I)
 		{
+			auto p = *I;
 			ptree& _ = channel_order_pt.add("mapping", "");
 			_.add("channel", p.first);
 			_.add("enabled", p.second);
 		}
 			 
 		ptree& generic_strings_pt = out.add("generic_strings", "");
-		for (auto& p : generic_strings)
+		for (auto I = generic_strings.begin(); I != generic_strings.end(); ++I)
 		{
+			auto p = *I;
 			generic_strings_pt.add(as_string(p.first), p.second);
 		}
 	}
@@ -426,15 +433,15 @@ namespace wave
 	{
 		std::match_results<Iterator> m;
 		if (std::regex_search(begin, end, m, re)) {
-			return { m[0].first, m[0].second };
+			return std::make_pair(m[0].first, m[0].second);
 		}
-		return { end, end };
+		return std::make_pair(end, end);
 	}
 
 	static std::string extract_xml_part(std::string const& contents)
 	{
-		auto first_tag = find_first_regex(std::cbegin(contents), std::cend(contents), std::regex(R"(<\?xml version=)"));
-		auto last_tag = find_first_regex(first_tag.second, std::cend(contents), std::regex("</boost_serialization>"));
+		auto first_tag = find_first_regex(std::begin(contents), std::end(contents), std::regex("(<\\?xml version=)"));
+		auto last_tag = find_first_regex(first_tag.second, std::end(contents), std::regex("</boost_serialization>"));
 		return std::string(first_tag.first, last_tag.second);
 	}
 

@@ -15,7 +15,6 @@
 #include <algorithm>
 using std::min; using std::max;
 #include <memory>
-#include <uv.h>
 
 #include "../frontend_sdk/VisualFrontend.h"
 #include <D2D1.h>
@@ -23,6 +22,9 @@ using std::min; using std::max;
 #include <wincodec.h>
 #include <atlbase.h>
 #include <atlcom.h>
+#include <boost/atomic.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 
 #include "../waveform_sdk/RefPointer.h"
 
@@ -47,6 +49,7 @@ namespace wave
 		~image_cache();
 		void start();
 
+		static void thread_func(void* data);
 		void update_texture_target(ref_ptr<waveform> wf, pfc::list_t<channel_info> infos, D2D1_SIZE_F size, bool vertical, bool flip, uint64_t serial);
 
 		struct task_data
@@ -60,11 +63,11 @@ namespace wave
 		};
 
 		CComPtr<ID2D1Factory> factory;
-		uv_mutex_t mutex;
-		uv_thread_t pump_thread;
-		uv_cond_t pump_alert;
+		boost::mutex mutex;
+		boost::condition_variable pump_alert;
+		boost::thread* pump_thread;
 		std::deque<task_data> tasks;
-		std::atomic<bool> should_terminate;
+		boost::atomic<long> should_terminate;
 
 		CComPtr<IWICImagingFactory> wic_factory;
 		CComPtr<IWICBitmap> last_bitmap;

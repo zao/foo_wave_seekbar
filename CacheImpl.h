@@ -5,14 +5,18 @@
 
 #pragma once
 
-#include "util/Asio.h"
 #include "Cache.h"
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
-#include <atomic>
 #include <list>
 #include <stack>
-#include <uv.h>
+#include <intrin.h>
+#include <boost/atomic/atomic.hpp>
+#include <boost/function.hpp>
+#include <boost/thread/future.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
@@ -36,12 +40,16 @@ namespace wave
 		cache_impl();
 		~cache_impl();
 
-		void get_waveform(std::shared_ptr<get_request>) override;
+		virtual service_ptr_t<waveform_query> create_query(playable_location const& loc,
+			waveform_query::query_urgency urgency, waveform_query::query_force forced) override;
+		virtual service_ptr_t<waveform_query> create_callback_query(playable_location const& loc,
+			waveform_query::query_urgency urgency, waveform_query::query_force forced,
+			std::function<void(service_ptr_t<waveform_query>)> callback) override;
+
+		void get_waveform(service_ptr_t<waveform_query> query) override;
 		void remove_dead_waveforms() override;
 		void compact_storage() override;
 		void rescan_waveforms() override;
-
-		void flush() override;
 
 		bool has_waveform(playable_location const& loc) override;
 		void remove_waveform(playable_location const& loc) override;
@@ -53,36 +61,34 @@ namespace wave
 
 		typedef std::function<void (ref_ptr<waveform>, size_t)> incremental_result_sink;
 
-		void kick_dynamic_init();
+		void start();
+		void shutdown();
 
 	private:
+		void cache_main();
+		void worker_main(size_t i, size_t n);
 		void open_store();
 		void load_data();
-		void try_delayed_init();
-		void delayed_init();
 		ref_ptr<waveform> process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>());
 
-		std::atomic<bool> is_initialized;
-		uv_mutex_t init_mutex;
-		future_value<bool> init_sync_point;
-		uv_async_t work_dispatch_work;
-		uv_thread_t work_dispatch_thread;
-		uv_loop_t* work_dispatch_loop;
-		async_post_queue work_post_queue;
+		boost::atomic<bool> should_workers_terminate;
+		boost::mutex worker_mutex;
+		boost::condition_variable worker_bump;
 
-		asio::io_service io;
-		std::unique_ptr<asio::io_service::work> io_work;
+		boost::atomic<long> is_initialized;
+		boost::mutex init_mutex;
+		boost::unique_future<bool> init_sync_point;
 
-		uv_mutex_t important_mutex;
+		boost::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;
 
 		pfc::string cache_filename;
-		uv_mutex_t cache_mutex;
-		std::list<uv_thread_t> work_threads;
-		std::list<std::function<void()>> work_functions;
+		boost::mutex cache_mutex;
+		std::list<boost::thread*> work_threads;
+		std::list<boost::function<void()>> work_functions;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
-		std::deque<job> job_flush_queue;
+		std::deque<service_ptr_t<waveform_query> > job_flush_queue;
 		std::shared_ptr<backing_store> store;
 	};
 

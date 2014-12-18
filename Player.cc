@@ -4,7 +4,8 @@
 #include "Helpers.h"
 
 #include <set>
-#include <uv.h>
+#include <boost/bind.hpp>
+#include <boost/thread/mutex.hpp>
 
 namespace wave
 {
@@ -15,27 +16,26 @@ struct player_impl : player
 
 	virtual void register_waveform_listener(waveform_listener* p) override
 	{
-		uv_mutex_lock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
 		_listeners.insert(p);
-		uv_mutex_unlock(&_m);
 	}
 
 	virtual void deregister_waveform_listener(waveform_listener* p) override
 	{
-		uv_mutex_lock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
 		_listeners.erase(p);
-		uv_mutex_unlock(&_m);
 	}
 
 	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const override
 	{
-		uv_mutex_lock(&_m);
-		for (auto listener : _listeners)
-			f(listener);
-		uv_mutex_unlock(&_m);
+		boost::unique_lock<boost::mutex> lk(_m);
+		for (auto I = _listeners.begin(); I != _listeners.end(); ++I)
+		{
+			f(*I);
+		}
 	}
 
-	mutable uv_mutex_t _m;
+	mutable boost::mutex _m;
 	std::set<waveform_listener*> _listeners;
 };
 
@@ -46,21 +46,29 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		, playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
 	{}
 
-	void on_waveform_result(playable_location_impl loc, std::shared_ptr<get_response> resp)
+	service_ptr_t<waveform_query> current_playing_request;
+	service_ptr_t<waveform_query> current_selected_request;
+
+	static void invoke_on_waveform(waveform_listener* listener, ref_ptr<waveform> wf)
+	{
+		listener->on_waveform(wf);
+	}
+
+	void on_waveform_result(playable_location_impl loc, ref_ptr<waveform> wf)
 	{
 		in_main_thread([=]{
-			util::EventArgs ea;
-			ea["valid_bucket_count"] = std::to_string(resp->valid_bucket_count);
-			util::ScopedEvent se("Player", "on_waveform_result", &ea);
 			static_api_ptr_t<player> p;
 			static_api_ptr_t<playback_control_v2> pc;
 			service_ptr_t<metadb_handle> meta;
 			if (pc->get_now_playing(meta) && meta->get_location() == loc) {
-				p->enumerate_listeners([&](waveform_listener* l) {
-					l->on_waveform(resp->waveform);
-				});
+				p->enumerate_listeners(boost::bind(&invoke_on_waveform, _1, wf));
 			}
 		});
+	}
+
+	void on_query_result(playable_location_impl loc, service_ptr_t<waveform_query> q)
+	{
+		on_waveform_result(loc, q->get_waveform());
 	}
 
 	virtual void on_playback_new_track(metadb_handle_ptr meta) override
@@ -73,16 +81,19 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 		static_api_ptr_t<cache> c;
 		if (! c->get_waveform_sync(loc, wf) && ! c->is_location_forbidden(loc)) {
 			// if not, schedule a scan
-			auto req = std::make_shared<get_request>();
-			req->completion_handler = std::bind(&callbacks::on_waveform_result, this, playable_location_impl(loc), std::placeholders::_1);
-			req->location = loc;
-			req->user_requested = false;
-			c->get_waveform(req);
+			if (current_playing_request.is_valid() && loc != current_playing_request->get_location()) {
+				current_playing_request->abort();
+				current_playing_request.release();
+			}
+			if (current_playing_request.is_empty()) {
+				auto cb = std::bind(&callbacks::on_query_result, this, playable_location_impl(loc), std::placeholders::_1);
+				auto req = c->create_callback_query(loc, waveform_query::needed_urgency, waveform_query::unforced_query, cb);
+				current_playing_request = req;
+				c->get_waveform(req);
+			}
 		}
 		else {
-			auto resp = std::make_shared<get_response>();
-			resp->waveform = wf;
-			on_waveform_result(loc, resp);
+			on_waveform_result(loc, wf);
 		}
 		p->enumerate_listeners([&](waveform_listener* l) {
 			l->on_duration(duration);
@@ -129,12 +140,10 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 
 player_impl::player_impl()
 {
-	uv_mutex_init(&_m);
 }
 
 player_impl::~player_impl()
 {
-	uv_mutex_destroy(&_m);
 }
 
 static callbacks* g_callbacks = nullptr;

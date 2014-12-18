@@ -128,12 +128,12 @@ namespace wave
 			if (sqlite3_column_type(stmt.get(), 4) != SQLITE_NULL)
 				compression = sqlite3_column_int(stmt.get(), 4);
 
-			if (compression && *compression > 1)
+			if (compression.valid() && *compression > 1)
 				return false;
 
-			unsigned channel_count = channels ? count_bits_set(*channels) : 1;
+			unsigned channel_count = channels.valid() ? count_bits_set(*channels) : 1;
 
-			if (compression && *compression < 0 || channels && *channels < 0 || channel_count > 18) {
+			if (compression.valid() && *compression < 0 || channels.valid() && *channels < 0 || channel_count > 18) {
 				remove(file); // corrupt entry
 			}
 
@@ -145,7 +145,7 @@ namespace wave
 				float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
 				t_size count = sqlite3_column_bytes(stmt.get(), col);
 
-				if (compression)
+				if (compression.valid())
 				{
 					typedef std::back_insert_iterator<std::vector<char>> Iterator;
 					bool (*unpack_func)(void const*, size_t, Iterator) = 0;
@@ -192,7 +192,7 @@ namespace wave
 				clear_and_set("maximum", 1) &&
 				clear_and_set("rms", 2))
 			{
-				w->channel_map = channels ? *channels : audio_chunk::channel_config_mono;
+				w->channel_map = channels.valid() ? *channels : audio_chunk::channel_config_mono;
 
 				out = w;
 			}
@@ -202,7 +202,7 @@ namespace wave
 			}
 		}
 
-		if(!compression || *compression == 0)
+		if (!compression.valid() || *compression == 0)
 		{
 			put(out, file);
 		}
@@ -276,8 +276,9 @@ namespace wave
 			"INSERT INTO job (location, subsong, user_submitted) "
 			"VALUES (?, ?, ?)");
 
-		for (auto& j : jobs)
+		for (size_t i = 0; i < jobs.size(); ++i)
 		{
+			auto& j = jobs[i];
 			sqlite3_bind_text(stmt.get(), 1, j.loc.get_path(), -1, SQLITE_STATIC);
 			sqlite3_bind_int(stmt.get(), 2, j.loc.get_subsong());
 			sqlite3_bind_int(stmt.get(), 3, j.user);

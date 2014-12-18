@@ -19,6 +19,7 @@ namespace wave
 		virtual GUID get_parent();
 
 		static const GUID extract_guid;
+		static const GUID force_extract_guid;
 		static const GUID remove_guid;
 	};
 }

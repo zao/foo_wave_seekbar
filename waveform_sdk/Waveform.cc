@@ -107,6 +107,13 @@ namespace wave
 
 		virtual unsigned get_channel_count() const { return audio_chunk::defined_channel_count; }
 		virtual unsigned get_channel_map() const { return (1 << audio_chunk::defined_channel_count) - 1; } // channel mask of bits 0 to 17 set.
+		virtual ref_ptr<waveform> clone() const {
+			waveform_placeholder* out = new waveform_placeholder;
+			out->minimum = minimum;
+			out->maximum = maximum;
+			out->rms = rms;
+			return ref_ptr<waveform>(out);
+		}
 
 	private:
 		pfc::list_t<float> minimum, maximum, rms;
