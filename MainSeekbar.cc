@@ -14,9 +14,3 @@ static uie::window_factory<wave::seekbar_uie_t<uie::type_toolbar>> g_sadf_toolba
 
 DECLARE_COMPONENT_VERSION("Waveform seekbar", "0.2.45", "Zao")
 VALIDATE_COMPONENT_FILENAME("foo_wave_seekbar.dll")
-
-#if defined(DEBUG)
-# pragma comment(lib,"libboost_system-mt-gd.lib")
-#else
-# pragma comment(lib,"libboost_system-mt.lib")
-#endif
