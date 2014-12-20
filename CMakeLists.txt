@@ -4,6 +4,9 @@ include_directories(AFTER "${DXSDK_INCLUDE_DIRS}")
 link_directories("${Boost_LIBRARY_DIRS}")
 link_directories("${DXSDK_LIBRARY_DIRS}")
 
+find_path(MICROHTTPD_INCLUDE_DIRS microhttpd.h)
+find_library(MICROHTTPD_LIBRARIES libmicrohttpd)
+
 add_subdirectory(waveform_sdk)
 add_subdirectory(frontend_sdk)
 

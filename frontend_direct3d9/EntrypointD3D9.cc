@@ -5,6 +5,7 @@
 
 #include "PchDirect3D9.h"
 #include "Direct3D9.h"
+#include "frontend_sdk/FrontendHelpers.h"
 #include <cstdint>
 #include <vector>
 
@@ -20,6 +21,7 @@ struct deref<U*>
 };
 
 std::shared_ptr<deref<HMODULE>::type> scintilla;
+std::shared_ptr<deref<HMODULE>::type> microhttpd;
 
 static void replace_filename(std::vector<wchar_t>& v, std::wstring const& new_name)
 {
@@ -29,21 +31,20 @@ static void replace_filename(std::vector<wchar_t>& v, std::wstring const& new_na
 			last_component = i+1;
 		}
 	}
-	if (v.size() > last_component + new_name.size() + 1) {
-		memcpy(&v[last_component], new_name.c_str(), (1+new_name.size()) * sizeof(wchar_t));
+	size_t total_length = last_component + new_name.size() + 1;
+	if (v.size() < total_length) {
+		v.resize(total_length);
 	}
+	memcpy(&v[last_component], new_name.c_str(), (1+new_name.size()) * sizeof(wchar_t));
 }
 
 void init_scintilla()
 {
-	std::vector<wchar_t> path(9001);
-	HMODULE self;
-	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&f, &self);
-	GetModuleFileName(self, &path[0], path.size()-1);
+	auto path = get_component_directory();
 	if (!scintilla)
 	{
-		replace_filename(path, L"SciLexer.dll");
-		scintilla.reset(LoadLibraryW(path.data()), &FreeLibrary);
+		auto filepath = path + L"SciLexer.dll";
+		scintilla.reset(LoadLibraryW(filepath.c_str()), &FreeLibrary);
 	}
 }
 

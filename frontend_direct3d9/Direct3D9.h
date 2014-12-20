@@ -113,6 +113,8 @@ namespace wave
       void update_flipped();
       void update_shade_played();
 
+	  friend struct config_handler;
+
     private: // Misc state
       CComPtr<IDirect3D9> d3d;
       CComPtr<IDirect3DDevice9> dev;

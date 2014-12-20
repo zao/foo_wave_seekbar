@@ -4,6 +4,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <string>
+#include <vector>
 
 template <typename T>
 inline std::vector<T> expand_flags(T map)
@@ -36,4 +38,20 @@ void get_resource_contents(Cont& out, WORD id)
 	if (!p) return;
 
 	std::copy(p, p + size, std::back_inserter(out));
+}
+
+inline std::wstring get_component_directory()
+{
+	std::vector<wchar_t> path(1<<15);
+	HMODULE self;
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		(LPCWSTR)&get_component_directory, &self);
+	GetModuleFileName(self, &path[0], path.size()-1);
+	size_t last_component = 0u;
+	for (size_t i = 0; path[i] != L'\0'; ++i) {
+		if (path[i] == L'\\' || path[i] == L'/') {
+			last_component = i+1;
+		}
+	}
+	return std::wstring(path.begin(), path.begin() + last_component);
 }

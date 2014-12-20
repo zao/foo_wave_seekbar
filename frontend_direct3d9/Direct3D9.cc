@@ -8,6 +8,11 @@
 #include "Direct3D9.Effects.h"
 #include "../frontend_sdk/FrontendHelpers.h"
 #include "resource.h"
+#include "microhttpd.h"
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+#include <json/json.h>
+#include <json/jsoncpp.cpp>
 
 namespace wave
 {
@@ -257,6 +262,133 @@ namespace wave
 			return device_lost;
 		}
 
+		bool slurp_component_file(wchar_t const* filename, std::vector<char>& out)
+		{
+			auto root = get_component_directory();
+			root += filename;
+			HANDLE f = CreateFile(root.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+			if (!f) {
+				out.clear();
+				return false;
+			}
+			LARGE_INTEGER sz = {};
+			GetFileSizeEx(f, &sz);
+			if (sz.HighPart) {
+				CloseHandle(f);
+				out.clear();
+				return false;
+			}
+			out.resize(sz.LowPart);
+			DWORD num_read = 0;
+			ReadFile(f, out.data(), out.size(), &num_read, 0);
+			CloseHandle(f);
+			if (num_read != sz.LowPart) {
+				out.clear();
+				return false;
+			}
+			return true;
+		}
+
+		bool slurp_webroot_file(wchar_t const* webroot, char const* url, std::vector<char>& out)
+		{
+			std::wstring filepath = webroot;
+			if (filepath.back() != L'\\') {
+				filepath += L"\\";
+			}
+			std::wstring s(url + 1, url + strlen(url));
+			for (auto I = s.begin(); I != s.end(); ++I) {
+				if (*I == L'/') *I = L'\\';
+			}
+			filepath += s;
+			return slurp_component_file(filepath.c_str(), out);
+		}
+
+		struct config_handler
+		{
+			static int on_web_connection(void* cls, MHD_Connection* connection, char const* url,
+				char const* method, char const* version, char const* upload_data, size_t* upload_data_size,
+				void** conn_cls)
+			{
+				frontend_impl* self = (frontend_impl*)cls;
+				MHD_Response* response;
+				int ret = MHD_NO;
+				if (strcmp(url, "/") == 0) {
+					url = "/index.html";
+				}
+				if (strcmp(url, "/data") == 0) {
+					Json::Value root;
+					if (strcmp(method, MHD_HTTP_METHOD_GET) == 0) {
+						std::string stored_body;
+						self->conf.get_configuration_string(guid_fx_string, std_string_sink(stored_body));
+						root["effect"] = stored_body;
+						Json::FastWriter w;
+						auto data = w.write(root);
+						response = MHD_create_response_from_buffer(data.size(), (void*)data.data(), MHD_RESPMEM_MUST_COPY);
+						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "application/json");
+						ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+						MHD_destroy_response(response);
+					}
+					else if (strcmp(method, MHD_HTTP_METHOD_PUT) == 0) {
+						if (!*conn_cls) {
+							*conn_cls = (void*)1;
+							return MHD_YES;
+						}
+						else {
+							Json::Reader r;
+							if (r.parse(upload_data, upload_data + *upload_data_size, root) &&
+								root.isMember("effect") && root["effect"].isString()) {
+								std::string effect_body = root["effect"].asString();
+								ref_ptr<effect_compiler> ec;
+								self->get_effect_compiler(ec);
+								ref_ptr<effect_handle> fx;
+								std::deque<diagnostic_collector::entry> output;
+								ec->compile_fragment(fx, diagnostic_collector(output), effect_body.data(), effect_body.size());
+								self->set_effect(fx, false);
+								response = MHD_create_response_from_buffer(0, "", MHD_RESPMEM_PERSISTENT);
+								ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+								MHD_destroy_response(response);
+								*upload_data_size = 0;
+							}
+							else {
+								response = MHD_create_response_from_buffer(0, "", MHD_RESPMEM_PERSISTENT);
+								ret = MHD_queue_response(connection, MHD_HTTP_CONFLICT, response);
+								MHD_destroy_response(response);
+							}
+						}
+					}
+					else {
+						response = MHD_create_response_from_buffer(0, "", MHD_RESPMEM_PERSISTENT);
+						ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+						MHD_destroy_response(response);
+					}
+				}
+				else if (strcmp(method, MHD_HTTP_METHOD_GET) == 0) {
+					std::vector<char> data;
+					if (slurp_webroot_file(L"editor", url, data)) {
+						response = MHD_create_response_from_buffer(data.size(), data.data(), MHD_RESPMEM_MUST_COPY);
+						if (boost::iends_with(std::string(url), ".js")) {
+							MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/javascript");
+						}
+						ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+						MHD_destroy_response(response);
+					}
+					else {
+						response = MHD_create_response_from_buffer(0, "", MHD_RESPMEM_PERSISTENT);
+						ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+						MHD_destroy_response(response);
+					}
+				}
+				else {
+					response = MHD_create_response_from_buffer(0, "", MHD_RESPMEM_PERSISTENT);
+					ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+					MHD_destroy_response(response);
+				}
+				return ret;
+			}
+		};
+
+		static MHD_Daemon* web_server;
+
 		void frontend_impl::show_configuration(HWND parent)
 		{
 			if (config)
@@ -267,10 +399,18 @@ namespace wave
 				config.reset(new config_dialog(p));
 				config->Create(parent);
 			}
+			if (!web_server) {
+				web_server = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, 9001, 0, 0,
+					&config_handler::on_web_connection, (void*)this, MHD_OPTION_END);
+			}
+			ShellExecuteA(0, "open", "http://localhost:9001/", 0, 0, SW_SHOWNORMAL);
 		}
 
 		void frontend_impl::close_configuration()
 		{
+			if (web_server) {
+				MHD_stop_daemon(web_server);
+			}
 			if (config)
 			{
 				config->DestroyWindow();
