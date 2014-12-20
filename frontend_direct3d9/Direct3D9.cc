@@ -369,6 +369,10 @@ namespace wave
 						if (boost::iends_with(std::string(url), ".js")) {
 							MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/javascript");
 						}
+						else if (boost::iends_with(std::string(url), ".html") ||
+							boost::iends_with(std::string(url), ".htm")) {
+							MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/html");
+						}
 						ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 						MHD_destroy_response(response);
 					}
