@@ -514,46 +514,31 @@ namespace wave
 
 
 #endif
-	ref_ptr<waveform> cache_impl::process_file(playable_location_impl loc, bool user_requested, std::shared_ptr<incremental_result_sink> incremental_output)
+	process_result::type cache_impl::process_file(service_ptr_t<waveform_query> q, std::unique_ptr<process_state>& state)
 	{
-		ref_ptr<waveform> out;
-
-		// Check for priority jobs.
-		if (user_requested)
-		{
-			bool done = false;
-			playable_location_impl prio_loc;
-			while (true)
-			{
-				{
-					boost::lock_guard<boost::mutex> lk(important_mutex);
-					if (important_queue.empty()) {
-						break;
-					}
-					prio_loc = important_queue.top();
-					important_queue.pop();
-				}
-				process_file(prio_loc, false);
-			}
-		}
+		state.reset(new process_state);
+		ref_ptr<waveform>& out = state->wf;
+		playable_location_impl loc = q->get_location();
+		bool user_requested = q->get_forced() == waveform_query::forced_query;
+		std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>();
 
 		if (is_of_forbidden_protocol(loc) && !user_requested)
 		{
 			console::formatter() << "Wave cache: skipping location " << loc;
-			return out;
+			return process_result::elided;
 		}
 
 		{
 			boost::lock_guard<boost::mutex> lk(cache_mutex);
 			if (!store || flush_callback.is_aborting())
 			{
-				return out;
+				return process_result::aborted;
 			}
 			if (!user_requested && store->has(loc))
 			{
 				console::formatter() << "Wave cache: redundant request for " << loc;
 				if (store->get(out, loc)) {
-					return out;
+					return process_result::elided;
 				}
 			}
 		}
@@ -580,7 +565,7 @@ namespace wave
 				{
 					bool in_library = res.get();
 					if (!in_library)
-						return out;
+						return process_result::elided;
 					break;
 				}
 			}
@@ -599,7 +584,7 @@ namespace wave
 			abort_callback& abort_cb = flush_callback;
 			
 			if (!input_entry::g_is_supported_path(loc.get_path()))
-				return out;
+				return process_result::failed;
 
 			input_entry::g_open_for_decoding(decoder, 0, loc.get_path(), abort_cb);
 
@@ -607,16 +592,16 @@ namespace wave
 			{
 				decoder->initialize(subsong, input_flag_simpledecode, abort_cb);
 				if (!decoder->can_seek())
-					return out;
+					return process_result::failed;
 
 				t_int64 sample_rate = 0;
 				t_int64 sample_count = 0;
 				if (!try_determine_song_parameters(decoder, subsong, sample_rate, sample_count, abort_cb))
-					return out;
+					return process_result::failed;
 
 				// around a month ought to be enough for anyone
 				if (sample_count <= 0 || sample_count > sample_rate * 60 * 60 * 24 * 31)
-					return out;
+					return process_result::failed;
 
 				audio_chunk_impl chunk;
 				waveform_builder builder(sample_count, should_downmix, abort_cb, incremental_output);
@@ -632,7 +617,7 @@ namespace wave
 					}
 					builder.consume_input(chunk);
 				}
-				auto out = builder.finalize_waveform();
+				out = builder.finalize_waveform();
 
 				console::formatter() << "Wave cache: finished analysis of " << loc;
 				boost::lock_guard<boost::mutex> lk(cache_mutex);
@@ -641,12 +626,13 @@ namespace wave
 					store->put(out, loc);
 				else
 					console::formatter() << "Wave cache: could not open backend database, losing new data for " << loc;
-				return out;
+				return process_result::completed;
 			}
 		}
 		catch (foobar2000_io::exception_aborted&)
 		{
 			// NOTE(zao): Abort state is detected in caller.
+			return process_result::aborted;
 		}
 		catch (foobar2000_io::exception_io_not_found& e)
 		{
@@ -664,6 +650,10 @@ namespace wave
 		{
 			console::formatter() << "Wave cache: generic exception (" << ex.what() <<") for " << loc;
 		}
-		return out;
+		return process_result::failed;
+	}
+
+	ref_ptr<waveform> cache_impl::render_waveform(std::unique_ptr<process_state> const& state) {
+		return state->wf;
 	}
 }

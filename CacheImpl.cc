@@ -340,8 +340,9 @@ namespace wave
 				requests_by_urgency[1].size() ||
 				requests_by_urgency[2].size();
 		};
+		service_ptr_t<waveform_query> jobs[3];
+		std::unique_ptr<process_state> states[3];
 		while (1) {
-			service_ptr_t<waveform_query> q;
 			{
 				boost::unique_lock<boost::mutex> lk(worker_mutex);
 				worker_bump.wait(lk, is_ready);
@@ -350,7 +351,7 @@ namespace wave
 				}
 				for (size_t i = 0; i < 3; ++i) {
 					if (requests_by_urgency[i].size()) {
-						q = requests_by_urgency[i].front();
+						jobs[i] = requests_by_urgency[i].front();
 						requests_by_urgency[i].pop_front();
 						break;
 					}
@@ -358,15 +359,36 @@ namespace wave
 			}
 			// TODO(zao): Prepare and use priority-bucketed in-progress state.
 			// TODO(zao): Turn process_file use into an incremental pre-emptible process.
-			if (q.is_valid()) {
-				auto wf = process_file(q->get_location(), q->get_forced() == waveform_query::forced_query);
-				if (wf && !flush_callback.is_aborting()) {
-					q->set_waveform(wf, 1.0f);
+			for (size_t i = 0; i < 3; ++i) {
+				auto& q = jobs[i];
+				auto& s = states[i];
+				if (q.is_valid()) {
+					float progress = 1.0f;
+					ref_ptr<waveform> wf;
+					auto res = process_file(q, s);
+					switch (res) {
+					case process_result::partial:
+						// TODO(zao): Get progress from state, persist into query.
+					case process_result::completed: {
+						wf = render_waveform(s);
+					} break;
+					case process_result::elided: {
+						store->get(wf, q->get_location());
+					} break;
+					case process_result::aborted: {
+						boost::unique_lock<boost::mutex> lk(run_state.mutex);
+						job_flush_queue.push_back(q);
+					} break;
+					case process_result::failed: {
+					} break;
+					}
+					if (wf) {
+						q->set_waveform(wf, 1.0f);
+						wf.reset();
+					}
+					q.release();
+					s.reset();
 				}
-				else {
-					job_flush_queue.push_back(q);
-				}
-				q.release();
 			}
 		}
 		CoUninitialize();
@@ -390,28 +412,30 @@ namespace wave
 		}
 
 		OutputDebugStringA("Cache ready.\n");
-		boost::unique_lock<boost::mutex> lk(run_state.mutex);
-		auto is_ready = [&]() -> bool { return run_state.should_shutdown || worker_results.size(); };
-		while (1) {
-			run_state.bump.wait(lk, is_ready);
-			if (run_state.should_shutdown) {
-				break;
-			}
-			for (auto I = worker_results.begin(); I != worker_results.end(); ++I) {
-				if (I->buckets_filled == 2048) {
-					OutputDebugStringA("Got a final result from worker.\n");
+		{
+			boost::unique_lock<boost::mutex> lk(run_state.mutex);
+			auto is_ready = [&]() -> bool { return run_state.should_shutdown || worker_results.size(); };
+			while (1) {
+				run_state.bump.wait(lk, is_ready);
+				if (run_state.should_shutdown) {
+					break;
 				}
-				else {
-					char buf[128] = {};
-					sprintf_s(buf, "Got a partial result from worker, %d/2048 buckets.\n", I->buckets_filled);
-					OutputDebugStringA(buf);
+				for (auto I = worker_results.begin(); I != worker_results.end(); ++I) {
+					if (I->buckets_filled == 2048) {
+						OutputDebugStringA("Got a final result from worker.\n");
+					}
+					else {
+						char buf[128] = {};
+						sprintf_s(buf, "Got a partial result from worker, %d/2048 buckets.\n", I->buckets_filled);
+						OutputDebugStringA(buf);
+					}
 				}
+				worker_results.clear();
 			}
-			worker_results.clear();
+			should_workers_terminate = true;
+			flush_callback.abort();
+			worker_bump.notify_all();
 		}
-		should_workers_terminate = true;
-		flush_callback.abort();
-		worker_bump.notify_all();
 		for (size_t i = 0; i < n; ++i) {
 			auto t = worker_threads[i];
 			t->join();
