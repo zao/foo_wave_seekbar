@@ -102,6 +102,9 @@ namespace wave
 			service_ptr_t<waveform_query> self;
 			service_query_t(self);
 			callback(self);
+			char buf[1024] = {};
+			sprintf_s(buf, "Progress on %s,%d: %f\n", loc.get_path(), loc.get_subsong(), progress);
+			console::info(buf);
 		}
 
 		std::function<void(service_ptr_t<waveform_query>)> callback;
@@ -334,14 +337,17 @@ namespace wave
 		sprintf_s(name_buf, "wave-processing-%d/%d", i+1, n);
 		::SetThreadName(-1, name_buf);
 		CoInitialize(nullptr);
+		service_ptr_t<waveform_query> jobs[3];
+		std::shared_ptr<process_state> states[3] = {};
 		auto is_ready = [&]() -> bool {
 			return should_workers_terminate ||
+				jobs[0].is_valid() ||
+				jobs[1].is_valid() ||
+				jobs[2].is_valid() ||
 				requests_by_urgency[0].size() ||
 				requests_by_urgency[1].size() ||
 				requests_by_urgency[2].size();
 		};
-		service_ptr_t<waveform_query> jobs[3];
-		std::unique_ptr<process_state> states[3];
 		while (1) {
 			{
 				boost::unique_lock<boost::mutex> lk(worker_mutex);
@@ -350,6 +356,9 @@ namespace wave
 					break;
 				}
 				for (size_t i = 0; i < 3; ++i) {
+					if (jobs[i].is_valid()) {
+						break;
+					}
 					if (requests_by_urgency[i].size()) {
 						jobs[i] = requests_by_urgency[i].front();
 						requests_by_urgency[i].pop_front();
@@ -357,20 +366,24 @@ namespace wave
 					}
 				}
 			}
-			// TODO(zao): Prepare and use priority-bucketed in-progress state.
-			// TODO(zao): Turn process_file use into an incremental pre-emptible process.
 			for (size_t i = 0; i < 3; ++i) {
+				bool done = true;
 				auto& q = jobs[i];
 				auto& s = states[i];
 				if (q.is_valid()) {
 					float progress = 1.0f;
 					ref_ptr<waveform> wf;
 					auto res = process_file(q, s);
+
 					switch (res) {
-					case process_result::partial:
+					case process_result::not_done: {
 						// TODO(zao): Get progress from state, persist into query.
-					case process_result::completed: {
-						wf = render_waveform(s);
+						done = false;
+						progress = render_progress(s.get());
+						wf = render_waveform(s.get());
+					} break;
+					case process_result::done: {
+						wf = render_waveform(s.get());
 					} break;
 					case process_result::elided: {
 						store->get(wf, q->get_location());
@@ -382,14 +395,19 @@ namespace wave
 					case process_result::failed: {
 					} break;
 					}
-					if (wf) {
-						q->set_waveform(wf, 1.0f);
-						wf.reset();
+
+					q->set_waveform(wf, progress);
+
+					if (done) {
+						q.release();
+						s.reset();
 					}
-					q.release();
-					s.reset();
 				}
 			}
+		}
+		for (size_t i = 0; i < 3; ++i) {
+			jobs[i].release();
+			states[i].reset();
 		}
 		CoUninitialize();
 	}

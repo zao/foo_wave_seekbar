@@ -102,7 +102,10 @@ namespace wave
 		{
 			OSVERSIONINFOEX osv = {};
 			osv.dwOSVersionInfoSize = sizeof(osv);
+#pragma warning(push)
+#pragma warning(disable: 4996)
 			GetVersionEx((OSVERSIONINFO*)&osv);
+#pragma warning(pop)
 			bool vista_least_sp1 = (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0 && osv.wServicePackMajor >= 1);
 			bool seven_and_up = (osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1) || (osv.dwMajorVersion >= 7);
 

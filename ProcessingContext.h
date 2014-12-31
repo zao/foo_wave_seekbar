@@ -21,5 +21,6 @@ namespace wave
 		static const GUID extract_guid;
 		static const GUID force_extract_guid;
 		static const GUID remove_guid;
+		static const GUID test_guid;
 	};
 }

@@ -35,11 +35,6 @@ namespace wave
 
 	bool is_of_forbidden_protocol(playable_location const& loc);
 
-	struct process_state
-	{
-		ref_ptr<waveform> wf;
-	};
-
 	namespace process_result
 	{
 		enum type
@@ -47,10 +42,12 @@ namespace wave
 			failed,
 			aborted,
 			elided,
-			partial,
-			completed,
+			not_done,
+			done,
 		};
 	};
+
+	struct process_state;
 
 	struct cache_impl : cache
 	{
@@ -86,8 +83,9 @@ namespace wave
 		void worker_main(size_t i, size_t n);
 		void open_store();
 		void load_data();
-		process_result::type process_file(service_ptr_t<waveform_query> q, std::unique_ptr<process_state>& state);
-		ref_ptr<waveform> render_waveform(std::unique_ptr<process_state> const& state);
+		process_result::type process_file(service_ptr_t<waveform_query> q, std::shared_ptr<process_state>& state);
+		float render_progress(process_state* state);
+		ref_ptr<waveform> render_waveform(process_state* state);
 
 		boost::atomic<bool> should_workers_terminate;
 		boost::mutex worker_mutex;
