@@ -33,3 +33,4 @@ target_link_libraries(frontend_direct3d9
     ${MICROHTTPD_LIBRARIES}
 )
 deploy_component(frontend_direct3d9 foo_wave_seekbar)
+deploy_aux_directory(frontend_direct3d9 foo_wave_seekbar/editor "${CMAKE_CURRENT_SOURCE_DIR}/editor")
