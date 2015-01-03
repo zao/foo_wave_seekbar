@@ -8,7 +8,6 @@
 #include "Direct3D9.Effects.h"
 #include "../frontend_sdk/FrontendHelpers.h"
 #include "resource.h"
-#include "microhttpd.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include <json/json.h>
@@ -44,6 +43,7 @@ namespace wave
 	{
 		frontend_impl::frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
 			: mip_count(4), callback(callback), conf(conf), floating_point_texture(true)
+			, web_server(0), config_port(0)
 		{
 			HRESULT hr = S_OK;
 
@@ -391,9 +391,6 @@ namespace wave
 			}
 		};
 
-		static MHD_Daemon* web_server;
-		static uint16_t config_port;
-
 		void frontend_impl::show_configuration(HWND parent)
 		{
 			if (config)
@@ -438,6 +435,7 @@ namespace wave
 
 		void frontend_impl::close_configuration()
 		{
+			config_port = 0;
 			if (web_server) {
 				MHD_stop_daemon(web_server);
 			}
