@@ -30,6 +30,7 @@ target_link_libraries(frontend_direct3d9
     waveform_sdk
     "d3d9.lib"
     "d3dx9.lib"
+    "ws2_32.lib"
     ${MICROHTTPD_LIBRARIES}
 )
 deploy_component(frontend_direct3d9 foo_wave_seekbar)

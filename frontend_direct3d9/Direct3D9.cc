@@ -392,6 +392,7 @@ namespace wave
 		};
 
 		static MHD_Daemon* web_server;
+		static uint16_t config_port;
 
 		void frontend_impl::show_configuration(HWND parent)
 		{
@@ -404,10 +405,35 @@ namespace wave
 				config->Create(parent);
 			}
 			if (!web_server) {
-				web_server = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, 9001, 0, 0,
-					&config_handler::on_web_connection, (void*)this, MHD_OPTION_END);
+				SOCKET listen_socket = socket(PF_INET, SOCK_STREAM, 0);
+				sockaddr_in saddr = {};
+				int len = sizeof(saddr);
+				saddr.sin_family = AF_INET;
+				saddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+				int rc = 0;
+				unsigned n = 0x4000;
+				srand((unsigned)time(0)); rand();
+				unsigned base = rand() % n;
+				for (unsigned i = 0; i < n; ++i) {
+					unsigned offset = (i+base) % n;
+					uint16_t port = 0xC000 + offset;
+					saddr.sin_port = htons(port);
+					rc = bind(listen_socket, (sockaddr*)&saddr, len);
+					if (rc != -1) {
+						config_port = port;
+						break;
+					}
+				}
+				if (rc == 0) {
+					listen(listen_socket, 10);
+					web_server = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, 9001, 0, 0,
+						&config_handler::on_web_connection, (void*)this,
+						MHD_OPTION_LISTEN_SOCKET, listen_socket, MHD_OPTION_END);
+				}
 			}
-			ShellExecuteA(0, "open", "http://localhost:9001/", 0, 0, SW_SHOWNORMAL);
+			char url[128] = {};
+			sprintf_s(url, "http://127.0.0.1:%d/", config_port);
+			ShellExecuteA(0, "open", url, 0, 0, SW_SHOWNORMAL);
 		}
 
 		void frontend_impl::close_configuration()
