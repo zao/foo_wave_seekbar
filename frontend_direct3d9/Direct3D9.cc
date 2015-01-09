@@ -152,7 +152,7 @@ namespace wave
 						-1.0f,  3.0f, -1.0f,  3.0f,
 						 3.0f, -1.0f,  3.0f, -1.0f,
 					};
-					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
+					buf.insert(buf.end(), std::begin(arr), std::end(arr));
 				}
 				else
 				{
@@ -165,7 +165,7 @@ namespace wave
 						-1.0f,  3.0f,  1.0f,  3.0f,
 						 3.0f, -1.0f, -3.0f, -1.0f,
 					};
-					buf.insert(buf.end(), std::cbegin(arr), std::cend(arr));
+					buf.insert(buf.end(), std::begin(arr), std::end(arr));
 				}
 
 				effect_params.set(parameters::viewport_size, viewport);

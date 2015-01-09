@@ -8,7 +8,9 @@
 #include <algorithm>
 #include <vector>
 
+#if !defined(NOMINMAX)
 #define NOMINMAX
+#endif
 using std::min; using std::max;
 
 #include <atlbase.h>

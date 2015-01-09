@@ -39,15 +39,16 @@ namespace tests
 					track_durations[std::tie(sample_count, sample_rate)].push_back(loc);
 				};				
 				elems.enumerate(f);
-				for (auto e : track_durations)
+				for (auto I = track_durations.begin(); I != track_durations.end(); ++I)
 				{
+					auto e = *I;
 					t_int64 sample_count, sample_rate;
 					std::tie(sample_count, sample_rate) = e.first;
 					console::formatter() << "Tracks with sample count " << sample_count << " ("
 						<< ((double)sample_count / sample_rate) << " seconds):";
-					for (auto loc : e.second)
+					for (auto loc_I = e.second.begin(); loc_I != e.second.end(); ++loc_I)
 					{
-						console::formatter() << "  " << loc;
+						console::formatter() << "  " << *loc_I;
 					}
 				}
 				console::formatter() << "Done verifying durations.";

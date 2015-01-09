@@ -13,6 +13,7 @@
 #include "SeekCallback.h"
 #include "Player.h"
 #include "Cache.h"
+#include <boost/thread/recursive_mutex.hpp>
 
 namespace wave
 {
@@ -24,14 +25,14 @@ namespace wave
 			callback.reset();
 			frontend.reset();
 		}
-		recursive_mutex mutex;
+		boost::recursive_mutex mutex;
 		std::unique_ptr<frontend_callback_impl> callback;
 		std::unique_ptr<frontend_config_impl> conf;
 		ref_ptr<visual_frontend> frontend;
 		metadb_handle_ptr displayed_song;
 		uint32_t auto_get_serial;
 		unsigned valid_buckets;
-		get_response pending_response;
+		service_ptr_t<waveform_query> pending_playback_query;
 		uint32_t pending_serial;
 	};
 

@@ -14,6 +14,8 @@ set(D3D9_SOURCES
 	"frontend_direct3d9.rc"
 )
 
+include_directories(${MICROHTTPD_INCLUDE_DIRS})
+
 add_definitions(-Zm300)
 enable_precompiled_headers("PchDirect3D9.h" D3D9_SOURCES)
 
@@ -28,6 +30,5 @@ target_link_libraries(frontend_direct3d9
 	waveform_sdk
 	"d3d9.lib"
 	"d3dx9.lib"
-#	"delayimp.lib"
 )
 deploy_component(frontend_direct3d9 foo_wave_seekbar)

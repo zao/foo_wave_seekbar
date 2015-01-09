@@ -35,4 +35,12 @@ namespace wave
 	{
 		return channel_map;
 	}
+
+	ref_ptr<waveform> waveform_impl::clone() const
+	{
+		waveform_impl* out = new waveform_impl;
+		out->channel_map = channel_map;
+		out->fields = fields;
+		return ref_ptr<waveform>(out);
+	}
 }

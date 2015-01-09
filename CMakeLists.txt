@@ -1,12 +1,7 @@
 include_directories("${WTL_INCLUDE_DIRS}")
-include_directories("${ASIO_ROOT}/include")
 include_directories("${Boost_INCLUDE_DIRS}")
-include_directories("${TBB_INCLUDE_DIRS}")
-include_directories("${LIBUV_INCLUDE_DIRS}")
 include_directories(AFTER "${DXSDK_INCLUDE_DIRS}")
 link_directories("${Boost_LIBRARY_DIRS}")
-link_directories("${TBB_LIBRARY_DIRS}")
-link_directories("${LIBUV_LIBRARY_DIRS}")
 link_directories("${DXSDK_LIBRARY_DIRS}")
 
 add_subdirectory(waveform_sdk)
@@ -92,11 +87,7 @@ set(JSON_SOURCES
 	"json/json-forwards.h"
 )
 set(UTIL_SOURCES
-	"util/Asio.h"
 	"util/Filesystem.h"
-	"util/Profiling.cc"
-	"util/Profiling.h"
-	"util/UvHelpers.h"
 )
 set(TESTS_SOURCES
 	"tests/TestProcessFile.cc"
@@ -113,7 +104,7 @@ source_group(util FILES ${UTIL_SOURCES})
 source_group(tests FILES ${TESTS_SOURCES})
 
 include_directories(.)
-add_definitions(-Zm300)
+add_definitions(-Zm300 -DNOMINMAX)
 enable_precompiled_headers("PchSeekbar.h" SEEKBAR_SOURCES)
 add_library(foo_wave_seekbar SHARED
 	${RESOURCE_SOURCES}
@@ -138,7 +129,6 @@ target_link_libraries(foo_wave_seekbar
 	"comdlg32.lib"
 	"rpcrt4.lib"
 	"winmm.lib"
-	"libuv.lib"
 	"ws2_32.lib"
 	"psapi.lib"
 	"iphlpapi.lib"

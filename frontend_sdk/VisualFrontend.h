@@ -6,6 +6,7 @@
 #pragma once
 #include "../waveform_sdk/Waveform.h"
 #include "../waveform_sdk/RefPointer.h"
+#include <stdint.h>
 #include <functional>
 #include <map>
 
@@ -69,26 +70,31 @@ namespace wave
 			{
 				L"Keep as-is", L"Mix-down to mono", L"Mix-down to stereo"
 			};
-			__declspec(selectany) std::map<int, wchar_t const*> channel_names = {
-				{ audio_chunk::channel_front_left, L"Front left" },
-				{ audio_chunk::channel_front_right, L"Front right" },
-				{ audio_chunk::channel_front_center, L"Front center (mono)" },
-				{ audio_chunk::channel_lfe, L"LFE" },
-				{ audio_chunk::channel_back_left, L"Rear left" },
-				{ audio_chunk::channel_back_right, L"Rear right" },
-				{ audio_chunk::channel_front_center_left, L"Front center left" },
-				{ audio_chunk::channel_front_center_right, L"Front center right" },
-				{ audio_chunk::channel_back_center, L"Back center" },
-				{ audio_chunk::channel_side_left, L"Side left" },
-				{ audio_chunk::channel_side_right, L"Side right" },
-				{ audio_chunk::channel_top_center, L"Top center" },
-				{ audio_chunk::channel_top_front_left, L"Top front left" },
-				{ audio_chunk::channel_top_front_center, L"Top front center" },
-				{ audio_chunk::channel_top_front_right, L"Top front right" },
-				{ audio_chunk::channel_top_back_left, L"Top back left" },
-				{ audio_chunk::channel_top_back_center, L"Top back center" },
-				{ audio_chunk::channel_top_back_right, L"Top back right" },
-			};
+			inline std::map<int, wchar_t const*> make_channel_names() {
+				std::map<int, wchar_t const*> o;
+#define CHANNEL_NAME_INSERT(Tag, Name) o[Tag] = Name;
+				CHANNEL_NAME_INSERT(audio_chunk::channel_front_left, L"Front left");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_front_right, L"Front right");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_front_center, L"Front center (mono)");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_lfe, L"LFE");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_back_left, L"Rear left");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_back_right, L"Rear right");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_front_center_left, L"Front center left");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_front_center_right, L"Front center right");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_back_center, L"Back center");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_side_left, L"Side left");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_side_right, L"Side right");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_top_center, L"Top center");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_left, L"Top front left");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_center, L"Top front center");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_right, L"Top front right");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_top_back_left, L"Top back left");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_top_back_center, L"Top back center");
+				CHANNEL_NAME_INSERT(audio_chunk::channel_top_back_right, L"Top back right");
+#undef CHANNEL_NAME_INSERT
+				return o;
+			}
+			__declspec(selectany) std::map<int, wchar_t const*> channel_names = make_channel_names();
 		}
 	}
 

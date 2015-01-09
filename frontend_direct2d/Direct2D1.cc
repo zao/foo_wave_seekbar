@@ -42,6 +42,8 @@ namespace wave
 	D2D1_FACTORY_OPTIONS const opts = { };
 
 	image_cache::image_cache()
+		: should_terminate(false)
+		, bitmap_serial(0)
 	{
 		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &factory);
 		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
@@ -50,45 +52,50 @@ namespace wave
 	image_cache::~image_cache()
 	{
 		{
-			uv_mutex_lock(&mutex);
-			should_terminate = true;
-			uv_cond_signal(&pump_alert);
-			uv_mutex_unlock(&mutex);
+			boost::unique_lock<boost::mutex> lk(mutex);
+			should_terminate = 1;
+			pump_alert.notify_all();
 		}
-		uv_thread_join(&pump_thread);
-		uv_cond_destroy(&pump_alert);
-		uv_mutex_destroy(&mutex);
+		pump_thread->join();
+		delete pump_thread;
+		tasks.clear();
 	}
 
 	void image_cache::start()
 	{
-		uv_cond_init(&pump_alert);
-		uv_mutex_init(&mutex);
-		uv_thread_create(&pump_thread, [](void* data)
-		{
-			auto self = (image_cache*)data;
-			while (1) {
-				task_data t;
+		pump_thread = new boost::thread(&thread_func, this);
+	}
+
+	bool worker_task_ready(image_cache* self)
+	{
+		return self->should_terminate || self->tasks.size();
+	}
+
+	void image_cache::thread_func(void* data)
+	{
+		auto self = (image_cache*)data;
+		while (1) {
+			std::deque<task_data> ts;
+			{
+				boost::unique_lock<boost::mutex> lk(self->mutex);
+				while (!worker_task_ready(self))
 				{
-					uv_mutex_lock(&self->mutex);
-					do {
-						uv_cond_wait(&self->pump_alert, &self->mutex);
-					} while (self->tasks.empty() && !self->should_terminate);
-					
-					if (self->should_terminate) return;
-					size_t max_index = 0u;
-					task_data const* best = &self->tasks.front();
-					for (auto& t : self->tasks) {
-						if (t.serial > best->serial)
-							best = &t;
-					}
-					t = *best;
-					self->tasks.clear();
-					uv_mutex_unlock(&self->mutex);
+					self->pump_alert.wait(lk);
 				}
-				self->update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
+				if (self->should_terminate) return;
+				std::swap(ts, self->tasks);
 			}
-		}, this);
+			size_t max_index = 0u;
+			task_data const* best = &ts.front();
+			for (size_t i = 0; i < ts.size(); ++i)
+			{
+				auto& t = ts[i];
+				if (t.serial > best->serial)
+					best = &t;
+			}
+			task_data t = *best;
+			self->update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
+		}
 	}
 
 	direct2d1_frontend::direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&)
@@ -152,7 +159,7 @@ namespace wave
 			}
 
 			{
-				uv_mutex_lock(&cache->mutex);
+				boost::unique_lock<boost::mutex> lk(cache->mutex);
 				if (cache->last_bitmap && bitmap_serial < cache->bitmap_serial)
 				{
 					wave_bitmap.Release();
@@ -162,7 +169,6 @@ namespace wave
 				{
 					rt->DrawBitmap(wave_bitmap);
 				}
-				uv_mutex_unlock(&cache->mutex);
 			}
 
 			if (callback.is_seeking())
@@ -214,7 +220,7 @@ namespace wave
 
 	void direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
 	{
-		uv_mutex_lock(&cache->mutex);
+		boost::unique_lock<boost::mutex> lk(cache->mutex);
 		switch (callback.get_downmix_display())
 		{
 		case config::downmix_mono:   if (wf->get_channel_count() > 1) wf = downmix_waveform(wf, 1); break;
@@ -231,8 +237,7 @@ namespace wave
 		t.flipped = callback.get_flip_display();
 		t.serial = serial;
 		cache->tasks.push_back(t);
-		uv_cond_signal(&cache->pump_alert);
-		uv_mutex_unlock(&cache->mutex);
+		cache->pump_alert.notify_all();
 	}
 
 	void direct2d1_frontend::on_state_changed(state s)
@@ -398,10 +403,9 @@ namespace wave
 		image_cache* self = this;
 		in_main_thread([self, bm, serial]()
 		{
-			uv_mutex_lock(&self->mutex);
+			boost::unique_lock<boost::mutex> lk(self->mutex);
 			self->last_bitmap = bm;
 			self->bitmap_serial = serial;
-			uv_mutex_unlock(&self->mutex);
 		});
 	}
 
@@ -431,14 +435,13 @@ namespace wave
 			callback.get_color(config::color_selection)
 		};
 		colors = p;
-		uv_mutex_lock(&cache->mutex);
+		boost::unique_lock<boost::mutex> lk(cache->mutex);
 		cache->colors = p;
 
 		if (rt)
 		{
 			brushes = create_brush_set(rt, colors);
 		}
-		uv_mutex_unlock(&cache->mutex);
 	}
 
 	brush_set create_brush_set(ID2D1RenderTarget* target, palette pal)
