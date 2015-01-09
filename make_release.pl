@@ -10,7 +10,7 @@ my $temp_dir = "build";
 
 sub pub {
 	if (@_) {
-		system("pscp -i C:/uni.ppk @_ zao\@hirohito.acc.umu.se:public_html/");
+		system("pscp -i D:/work/uni.ppk @_ zao\@hirohito.acc.umu.se:public_html/");
 	}
 }
 
