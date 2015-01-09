@@ -96,6 +96,7 @@ namespace wave
 		visual_frontend_callback& callback;
 		HWND wnd;
 
+		FLOAT dpi[2];
 		CComPtr<ID2D1Factory> factory;
 		CComPtr<ID2D1HwndRenderTarget> rt;
 		CComPtr<ID2D1Bitmap> wave_bitmap;
