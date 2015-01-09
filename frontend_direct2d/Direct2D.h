@@ -67,7 +67,7 @@ namespace wave
 		boost::condition_variable pump_alert;
 		boost::thread* pump_thread;
 		std::deque<task_data> tasks;
-		boost::atomic<long> should_terminate;
+		boost::atomic<bool> should_terminate;
 
 		CComPtr<IWICImagingFactory> wic_factory;
 		CComPtr<IWICBitmap> last_bitmap;
@@ -96,6 +96,7 @@ namespace wave
 		visual_frontend_callback& callback;
 		HWND wnd;
 
+		FLOAT dpi[2];
 		CComPtr<ID2D1Factory> factory;
 		CComPtr<ID2D1HwndRenderTarget> rt;
 		CComPtr<ID2D1Bitmap> wave_bitmap;

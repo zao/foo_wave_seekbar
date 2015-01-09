@@ -42,6 +42,8 @@ namespace wave
 	D2D1_FACTORY_OPTIONS const opts = { };
 
 	image_cache::image_cache()
+		: should_terminate(false)
+		, bitmap_serial(0)
 	{
 		D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &factory);
 		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
@@ -106,6 +108,7 @@ namespace wave
 		factory.Attach(create_d2d1_factory_func(opts)());
 		if (!factory)
 			throw std::runtime_error("Direct2D not found. Ensure you're running Vista SP2 or later with the Platform Update pack.");
+		factory->GetDesktopDpi(&dpi[0], &dpi[1]);
 
 		cache.reset(new image_cache);
 		cache->start();
@@ -130,7 +133,10 @@ namespace wave
 			if (! rt)
 			{
 				auto sz = callback.get_size();
-				factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(sz.cx, sz.cy)), &rt);
+				D2D1_RENDER_TARGET_PROPERTIES rt_props = D2D1::RenderTargetProperties();
+				rt_props.dpiX = dpi[0];
+				rt_props.dpiY = dpi[1];
+				factory->CreateHwndRenderTarget(rt_props, D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(sz.cx, sz.cy)), &rt);
 				brushes = create_brush_set(rt, colors);
 			}
 
@@ -161,7 +167,10 @@ namespace wave
 				if (cache->last_bitmap && bitmap_serial < cache->bitmap_serial)
 				{
 					wave_bitmap.Release();
-					rt->CreateBitmapFromWicBitmap(cache->last_bitmap, &wave_bitmap);
+					D2D1_BITMAP_PROPERTIES bitmap_props = D2D1::BitmapProperties();
+					bitmap_props.dpiX = dpi[0];
+					bitmap_props.dpiY = dpi[1];
+					rt->CreateBitmapFromWicBitmap(cache->last_bitmap, &bitmap_props, &wave_bitmap);
 				}
 				if (wave_bitmap)
 				{
@@ -298,7 +307,7 @@ namespace wave
 		while (! SUCCEEDED(hr))
 		{
 			CComPtr<ID2D1RenderTarget> temp_target;
-			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat()); //, dpi[0], dpi[1]);
+			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(), dpi[0], dpi[1]);
 			factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
 
 			brush_set brushes = create_brush_set(temp_target, colors);
