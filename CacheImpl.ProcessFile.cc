@@ -323,9 +323,7 @@ namespace wave
 			{
 				auto downmix_one = [this](audio_sample const* l) -> audio_sample
 				{
-					pfc::list_t<audio_sample> frame;
-					frame.add_items_fromptr(l, this->channel_count);
-					return downmix(frame);
+					return downmix(l, this->channel_count);
 				};
 				for (size_t i = 0; i < bucket_count; ++i)
 				{
@@ -378,6 +376,8 @@ namespace wave
 	struct process_state {
 		size_t buckets_filled;
 		ref_ptr<waveform> wf;
+		uint64_t time_frequency;
+		uint64_t last_update_time_count;
 		service_ptr_t<input_decoder> decoder;
 		abort_callback* abort_cb;
 
@@ -455,6 +455,8 @@ namespace wave
 
 				state.reset(new process_state, destroy_process_state);
 				state->buckets_filled = 0;
+				state->last_update_time_count = 0;
+				QueryPerformanceFrequency((LARGE_INTEGER*)&state->time_frequency);
 				state->abort_cb = &flush_callback;
 				bool should_downmix = g_downmix_in_analysis.get();
 
@@ -540,5 +542,18 @@ namespace wave
 
 	ref_ptr<waveform> cache_impl::render_waveform(process_state* state) {
 		return state->wf;
+	}
+
+	bool cache_impl::is_refresh_due(process_state* state) {
+		if (!g_report_incremental_results.get()) {
+			return false;
+		}
+		uint64_t time_count;
+		QueryPerformanceCounter((LARGE_INTEGER*)&time_count);
+		if ((float)(time_count - state->last_update_time_count) / (float)state->time_frequency > 0.1f) {
+			state->last_update_time_count = time_count;
+			return true;
+		}
+		return false;
 	}
 }

@@ -86,6 +86,7 @@ namespace wave
 		process_result::type process_file(service_ptr_t<waveform_query> q, std::shared_ptr<process_state>& state);
 		float render_progress(process_state* state);
 		ref_ptr<waveform> render_waveform(process_state* state);
+		bool is_refresh_due(process_state* state);
 
 		boost::atomic<bool> should_workers_terminate;
 		boost::mutex worker_mutex;

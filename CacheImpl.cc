@@ -333,6 +333,8 @@ namespace wave
 
 	void cache_impl::worker_main(size_t i, size_t n)
 	{
+		uint64_t time_frequency;
+		QueryPerformanceFrequency((LARGE_INTEGER*)&time_frequency);
 		char name_buf[128] = {};
 		sprintf_s(name_buf, "wave-processing-%d/%d", i+1, n);
 		::SetThreadName(-1, name_buf);
@@ -374,13 +376,19 @@ namespace wave
 					float progress = 1.0f;
 					ref_ptr<waveform> wf;
 					auto res = process_file(q, s);
+					bool should_refresh = true;
 
 					switch (res) {
 					case process_result::not_done: {
 						// TODO(zao): Get progress from state, persist into query.
 						done = false;
 						progress = render_progress(s.get());
-						wf = render_waveform(s.get());
+						if (is_refresh_due(s.get())) {
+							wf = render_waveform(s.get());
+						}
+						else {
+							should_refresh = false;
+						}
 					} break;
 					case process_result::done: {
 						wf = render_waveform(s.get());
@@ -396,7 +404,9 @@ namespace wave
 					} break;
 					}
 
-					q->set_waveform(wf, progress);
+					if (should_refresh) {
+						q->set_waveform(wf, progress);
+					}
 
 					if (done) {
 						q.release();
