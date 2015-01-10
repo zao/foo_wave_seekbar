@@ -102,9 +102,6 @@ namespace wave
 			service_ptr_t<waveform_query> self;
 			service_query_t(self);
 			callback(self);
-			char buf[1024] = {};
-			sprintf_s(buf, "Progress on %s,%d: %f\n", loc.get_path(), loc.get_subsong(), progress);
-			console::info(buf);
 		}
 
 		std::function<void(service_ptr_t<waveform_query>)> callback;

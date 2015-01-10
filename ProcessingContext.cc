@@ -13,7 +13,7 @@ namespace wave
 {
 	unsigned processing_contextmenu_item::get_num_items()
 	{
-		return 4;
+		return 3;
 	}
 
 	void processing_contextmenu_item::get_item_name(unsigned p_index, pfc::string_base& p_out)
@@ -24,8 +24,6 @@ namespace wave
 			p_out = "Force-extract waveform signature";
 		if (p_index == 2)
 			p_out = "Remove waveform signature";
-		if (p_index == 3)
-			p_out = "Submit cache priority test";
 	}
 
 	void processing_contextmenu_item::get_item_default_path(unsigned p_index, pfc::string_base& p_out)
@@ -66,26 +64,6 @@ namespace wave
 			infoCache->defer_action(std::bind(&enqueue, infoCache, locs, waveform_query::forced_query));
 		if (p_index == 2)
 			infoCache->defer_action(std::bind(&remove, infoCache, locs));
-		if (p_index == 3) {
-			std::map<waveform_query::query_urgency, std::list<service_ptr_t<waveform_query> > > bins;
-			for (size_t i = 0; i < locs->size(); ++i) {
-				auto loc = (*locs)[i];
-				auto urgency = waveform_query::bulk_urgency;
-				if (i == 3) {
-					urgency = waveform_query::desired_urgency;
-				}
-				if (i == 5) {
-					urgency = waveform_query::needed_urgency;
-				}
-				auto q = infoCache->create_query(loc, urgency, waveform_query::forced_query);
-				bins[urgency].push_back(q);
-			}
-			for (auto I = bins.rbegin(); I != bins.rend(); ++I) {
-				for (auto J = I->second.begin(); J != I->second.end(); ++J) {
-					infoCache->get_waveform(*J);
-				}
-			}
-		}
 	}
 
 	GUID processing_contextmenu_item::get_item_guid(unsigned p_index)
@@ -96,7 +74,8 @@ namespace wave
 			return force_extract_guid;
 		if (p_index == 2)
 			return remove_guid;
-		return test_guid;
+		GUID g = {};
+		return g;
 	}
 
 	bool processing_contextmenu_item::get_item_description(unsigned p_index, pfc::string_base& p_out)
@@ -107,8 +86,6 @@ namespace wave
 			p_out = "Extracts a signature suitable for consumption by the waveform seekbar, overwriting any previous signature.";
 		if (p_index == 2)
 			p_out = "Removes the signature from the waveform database, if present.";
-		if (p_index == 3)
-			p_out = "Test stuff.";
 		return true;
 	}
 
@@ -123,10 +100,6 @@ namespace wave
 	// {AF04D9DF-6C2B-4E70-AC05-0E3691B83224}
 	const GUID processing_contextmenu_item::remove_guid =
 	{ 0xaf04d9df, 0x6c2b, 0x4e70, { 0xac, 0x5, 0xe, 0x36, 0x91, 0xb8, 0x32, 0x24 } };
-
-	// {483EFC09-9738-48FA-AE1A-81A86F168614}
-	const GUID processing_contextmenu_item::test_guid =
-	{ 0x483efc09, 0x9738, 0x48fa, { 0xae, 0x1a, 0x81, 0xa8, 0x6f, 0x16, 0x86, 0x14 } };
 
 
 	GUID processing_contextmenu_item::get_parent()
