@@ -102,6 +102,9 @@ namespace wave
 			service_ptr_t<waveform_query> self;
 			service_query_t(self);
 			callback(self);
+			char buf[1024] = {};
+			sprintf_s(buf, "Progress on %s,%d: %f\n", loc.get_path(), loc.get_subsong(), progress);
+			console::info(buf);
 		}
 
 		std::function<void(service_ptr_t<waveform_query>)> callback;
@@ -330,18 +333,24 @@ namespace wave
 
 	void cache_impl::worker_main(size_t i, size_t n)
 	{
+		uint64_t time_frequency;
+		QueryPerformanceFrequency((LARGE_INTEGER*)&time_frequency);
 		char name_buf[128] = {};
 		sprintf_s(name_buf, "wave-processing-%d/%d", i+1, n);
 		::SetThreadName(-1, name_buf);
 		CoInitialize(nullptr);
+		service_ptr_t<waveform_query> jobs[3];
+		std::shared_ptr<process_state> states[3] = {};
 		auto is_ready = [&]() -> bool {
 			return should_workers_terminate ||
+				jobs[0].is_valid() ||
+				jobs[1].is_valid() ||
+				jobs[2].is_valid() ||
 				requests_by_urgency[0].size() ||
 				requests_by_urgency[1].size() ||
 				requests_by_urgency[2].size();
 		};
 		while (1) {
-			service_ptr_t<waveform_query> q;
 			{
 				boost::unique_lock<boost::mutex> lk(worker_mutex);
 				worker_bump.wait(lk, is_ready);
@@ -349,25 +358,66 @@ namespace wave
 					break;
 				}
 				for (size_t i = 0; i < 3; ++i) {
+					if (jobs[i].is_valid()) {
+						break;
+					}
 					if (requests_by_urgency[i].size()) {
-						q = requests_by_urgency[i].front();
+						jobs[i] = requests_by_urgency[i].front();
 						requests_by_urgency[i].pop_front();
 						break;
 					}
 				}
 			}
-			// TODO(zao): Prepare and use priority-bucketed in-progress state.
-			// TODO(zao): Turn process_file use into an incremental pre-emptible process.
-			if (q.is_valid()) {
-				auto wf = process_file(q->get_location(), q->get_forced() == waveform_query::forced_query);
-				if (wf && !flush_callback.is_aborting()) {
-					q->set_waveform(wf, 1.0f);
+			for (size_t i = 0; i < 3; ++i) {
+				bool done = true;
+				auto& q = jobs[i];
+				auto& s = states[i];
+				if (q.is_valid()) {
+					float progress = 1.0f;
+					ref_ptr<waveform> wf;
+					auto res = process_file(q, s);
+					bool should_refresh = true;
+
+					switch (res) {
+					case process_result::not_done: {
+						// TODO(zao): Get progress from state, persist into query.
+						done = false;
+						progress = render_progress(s.get());
+						if (is_refresh_due(s.get())) {
+							wf = render_waveform(s.get());
+						}
+						else {
+							should_refresh = false;
+						}
+					} break;
+					case process_result::done: {
+						wf = render_waveform(s.get());
+					} break;
+					case process_result::elided: {
+						store->get(wf, q->get_location());
+					} break;
+					case process_result::aborted: {
+						boost::unique_lock<boost::mutex> lk(run_state.mutex);
+						job_flush_queue.push_back(q);
+					} break;
+					case process_result::failed: {
+					} break;
+					}
+
+					if (should_refresh) {
+						q->set_waveform(wf, progress);
+					}
+
+					if (done) {
+						q.release();
+						s.reset();
+					}
 				}
-				else {
-					job_flush_queue.push_back(q);
-				}
-				q.release();
 			}
+		}
+		for (size_t i = 0; i < 3; ++i) {
+			jobs[i].release();
+			states[i].reset();
 		}
 		CoUninitialize();
 	}
@@ -390,28 +440,30 @@ namespace wave
 		}
 
 		OutputDebugStringA("Cache ready.\n");
-		boost::unique_lock<boost::mutex> lk(run_state.mutex);
-		auto is_ready = [&]() -> bool { return run_state.should_shutdown || worker_results.size(); };
-		while (1) {
-			run_state.bump.wait(lk, is_ready);
-			if (run_state.should_shutdown) {
-				break;
-			}
-			for (auto I = worker_results.begin(); I != worker_results.end(); ++I) {
-				if (I->buckets_filled == 2048) {
-					OutputDebugStringA("Got a final result from worker.\n");
+		{
+			boost::unique_lock<boost::mutex> lk(run_state.mutex);
+			auto is_ready = [&]() -> bool { return run_state.should_shutdown || worker_results.size(); };
+			while (1) {
+				run_state.bump.wait(lk, is_ready);
+				if (run_state.should_shutdown) {
+					break;
 				}
-				else {
-					char buf[128] = {};
-					sprintf_s(buf, "Got a partial result from worker, %d/2048 buckets.\n", I->buckets_filled);
-					OutputDebugStringA(buf);
+				for (auto I = worker_results.begin(); I != worker_results.end(); ++I) {
+					if (I->buckets_filled == 2048) {
+						OutputDebugStringA("Got a final result from worker.\n");
+					}
+					else {
+						char buf[128] = {};
+						sprintf_s(buf, "Got a partial result from worker, %d/2048 buckets.\n", I->buckets_filled);
+						OutputDebugStringA(buf);
+					}
 				}
+				worker_results.clear();
 			}
-			worker_results.clear();
+			should_workers_terminate = true;
+			flush_callback.abort();
+			worker_bump.notify_all();
 		}
-		should_workers_terminate = true;
-		flush_callback.abort();
-		worker_bump.notify_all();
 		for (size_t i = 0; i < n; ++i) {
 			auto t = worker_threads[i];
 			t->join();

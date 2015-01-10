@@ -104,7 +104,7 @@ source_group(util FILES ${UTIL_SOURCES})
 source_group(tests FILES ${TESTS_SOURCES})
 
 include_directories(.)
-add_definitions(-Zm300 -DNOMINMAX)
+add_definitions(-Zm300 -DNOMINMAX -D_SCL_SECURE_NO_WARNINGS)
 enable_precompiled_headers("PchSeekbar.h" SEEKBAR_SOURCES)
 add_library(foo_wave_seekbar SHARED
 	${RESOURCE_SOURCES}

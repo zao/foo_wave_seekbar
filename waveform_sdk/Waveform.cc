@@ -8,6 +8,7 @@
 #include "Downmix.h"
 
 #include <list>
+#include <boost/scoped_array.hpp>
 
 namespace wave
 {
@@ -17,6 +18,10 @@ namespace wave
 		typedef pfc::list_t<float> t_frame;
 
 		auto channel_count = w->get_channel_count();
+		boost::scoped_array<float> source_samples(new float[2048 * channel_count]);
+		boost::scoped_array<float> target_samples(new float[2048 * target_channels]);
+		float* src = source_samples.get();
+		float* dst = target_samples.get();
 
 		ref_ptr<waveform_impl> ret(new waveform_impl);
 		switch(target_channels)
@@ -26,51 +31,45 @@ namespace wave
 		default: return make_placeholder_waveform();
 		}
 
-		std::list<char const*> field_names;
-		field_names.push_back("minimum");
-		field_names.push_back("maximum");
-		field_names.push_back("rms");
+		char const* field_names[] = {
+			"minimum", "maximum", "rms", 0
+		};
 
-		for (auto I = field_names.begin(); I != field_names.end(); ++I)
+		for (auto I = &field_names[0]; *I; ++I)
 		{
 			auto name = *I;
 
-			pfc::list_t<float> frame;
-			frame.set_count(channel_count);
-
-			pfc::list_t<t_channel> channels;
-			channels.set_count(channel_count);
-
-			pfc::list_t<t_channel> mix;
-			for (size_t channel_idx = 0; channel_idx < target_channels; ++channel_idx)
-			{
-				t_channel buf;
-				buf.set_count(2048);
-				mix.add_item(buf);
-			}
+			float frame[audio_chunk::defined_channel_count];
 
 			for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx)
 			{
-				w->get_field(name, channel_idx, list_array_sink<float>(channels[channel_idx]));
+				w->get_field(name, channel_idx, pointer_array_sink<float>(src + channel_idx*2048, 2048));
 			}
 
 			for (size_t sample_index = 0; sample_index < 2048; ++sample_index)
 			{
 				for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx)
 				{
-					frame[channel_idx] = channels[channel_idx][sample_index];
+					frame[channel_idx] = src[channel_idx * 2048 + sample_index];
 				}
 				switch (target_channels)
 				{
-				case 1: mix[0][sample_index] = downmix(frame); break;
+				case 1: dst[sample_index] = downmix_to_mono(frame, channel_count); break;
 				case 2:
 					{
-						auto pair = downmix_to_stereo(frame);
-						mix[0][sample_index] = pair.first;
-						mix[1][sample_index] = pair.second;
+						auto pair = downmix_to_stereo(frame, channel_count);
+						dst[0*2048 + sample_index] = pair.first;
+						dst[1*2048 + sample_index] = pair.second;
 						break;
 					}
 				}
+			}
+			pfc::list_t<t_channel> mix;
+			for (size_t channel_idx = 0; channel_idx < target_channels; ++channel_idx)
+			{
+				t_channel ch;
+				ch.add_items_fromptr(dst + channel_idx*2048, 2048);
+				mix.add_item(ch);
 			}
 			ret->fields[name].add_items(mix);
 		}

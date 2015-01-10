@@ -39,6 +39,20 @@ namespace wave
 		}
 	};
 
+	template <typename T>
+	struct pointer_array_sink : array_sink < T >
+	{
+		T* p;
+		size_t n;
+
+		pointer_array_sink(T* p, size_t n) : p(p), n(n) {}
+		virtual void set(T const* data, size_t element_count) const override
+		{
+			assert(element_count <= n);
+			std::copy_n(data, element_count, p);
+		}
+	};
+
 	struct waveform : ref_base
 	{
 		virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out) = 0;

@@ -27343,7 +27343,10 @@ static int sqlite3_os_type = 0;
     if( sqlite3_os_type==0 ){
       OSVERSIONINFO sInfo;
       sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+#pragma warning(push)
+#pragma warning(disable: 4996)
       GetVersionEx(&sInfo);
+#pragma warning(pop)
       sqlite3_os_type = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
     }
     return sqlite3_os_type==2;
