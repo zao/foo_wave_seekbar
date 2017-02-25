@@ -101,12 +101,6 @@ namespace wave
 	struct color {
 		explicit color(float r = 0.f, float g = 0.f, float b = 0.f, float a = 1.f) : r(r), g(g), b(b), a(a) {}
 		float r, g, b, a;
-
-		template <typename Archive>
-		void serialize(Archive& ar, const unsigned version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(r) & BOOST_SERIALIZATION_NVP(g) & BOOST_SERIALIZATION_NVP(b) & BOOST_SERIALIZATION_NVP(a);
-		}
 	};
 
 	struct size {

@@ -52,7 +52,7 @@ namespace wave
 	image_cache::~image_cache()
 	{
 		{
-			boost::unique_lock<boost::mutex> lk(mutex);
+			std::unique_lock<std::mutex> lk(mutex);
 			should_terminate = 1;
 			pump_alert.notify_all();
 		}
@@ -63,7 +63,7 @@ namespace wave
 
 	void image_cache::start()
 	{
-		pump_thread = new boost::thread(&thread_func, this);
+		pump_thread = new std::thread(&thread_func, this);
 	}
 
 	bool worker_task_ready(image_cache* self)
@@ -77,7 +77,7 @@ namespace wave
 		while (1) {
 			std::deque<task_data> ts;
 			{
-				boost::unique_lock<boost::mutex> lk(self->mutex);
+				std::unique_lock<std::mutex> lk(self->mutex);
 				while (!worker_task_ready(self))
 				{
 					self->pump_alert.wait(lk);
@@ -163,7 +163,7 @@ namespace wave
 			}
 
 			{
-				boost::unique_lock<boost::mutex> lk(cache->mutex);
+				std::unique_lock<std::mutex> lk(cache->mutex);
 				if (cache->last_bitmap && bitmap_serial < cache->bitmap_serial)
 				{
 					wave_bitmap.Release();
@@ -227,7 +227,7 @@ namespace wave
 
 	void direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
 	{
-		boost::unique_lock<boost::mutex> lk(cache->mutex);
+		std::unique_lock<std::mutex> lk(cache->mutex);
 		switch (callback.get_downmix_display())
 		{
 		case config::downmix_mono:   if (wf->get_channel_count() > 1) wf = downmix_waveform(wf, 1); break;
@@ -410,7 +410,7 @@ namespace wave
 		image_cache* self = this;
 		in_main_thread([self, bm, serial]()
 		{
-			boost::unique_lock<boost::mutex> lk(self->mutex);
+			std::unique_lock<std::mutex> lk(self->mutex);
 			self->last_bitmap = bm;
 			self->bitmap_serial = serial;
 		});
@@ -442,7 +442,7 @@ namespace wave
 			callback.get_color(config::color_selection)
 		};
 		colors = p;
-		boost::unique_lock<boost::mutex> lk(cache->mutex);
+		std::unique_lock<std::mutex> lk(cache->mutex);
 		cache->colors = p;
 
 		if (rt)

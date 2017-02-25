@@ -8,7 +8,7 @@
 #include "Downmix.h"
 
 #include <list>
-#include <boost/scoped_array.hpp>
+#include <memory>
 
 namespace wave
 {
@@ -18,8 +18,8 @@ namespace wave
 		typedef pfc::list_t<float> t_frame;
 
 		auto channel_count = w->get_channel_count();
-		boost::scoped_array<float> source_samples(new float[2048 * channel_count]);
-		boost::scoped_array<float> target_samples(new float[2048 * target_channels]);
+    auto source_samples = std::make_unique<float[]>(2048 * channel_count);
+    auto target_samples = std::make_unique<float[]>(2048 * target_channels);
 		float* src = source_samples.get();
 		float* dst = target_samples.get();
 

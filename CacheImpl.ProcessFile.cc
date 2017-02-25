@@ -10,7 +10,10 @@
 #include "waveform_sdk/Downmix.h"
 #include "waveform_sdk/Optional.h"
 #include "Helpers.h"
+
+#include <chrono>
 #include <regex>
+#include <sstream>
 
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
 static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
@@ -405,7 +408,7 @@ namespace wave
 				}
 
 				{
-					boost::lock_guard<boost::mutex> lk(cache_mutex);
+					std::lock_guard<std::mutex> lk(cache_mutex);
 					if (!store || flush_callback.is_aborting())
 					{
 						return process_result::aborted;
@@ -422,7 +425,7 @@ namespace wave
 				// Test whether tracks are in the Media Library or not
 				if (!g_analyse_tracks_outside_library.get())
 				{
-					boost::promise<bool> promise;
+					std::promise<bool> promise;
 
 					in_main_thread([loc, &promise]()
 					{
@@ -436,8 +439,8 @@ namespace wave
 					auto res = promise.get_future();
 					while (!flush_callback.is_aborting())
 					{
-						auto rc = res.wait_for(boost::chrono::milliseconds(200));
-						if (rc == boost::future_status::ready)
+						auto rc = res.wait_for(std::chrono::milliseconds(200));
+						if (rc == std::future_status::ready)
 						{
 							bool in_library = res.get();
 							if (!in_library)
@@ -503,7 +506,7 @@ namespace wave
 					state->wf = state->builder->finalize_waveform();
 
 					console::formatter() << "Wave cache: finished analysis of " << loc;
-					boost::lock_guard<boost::mutex> lk(cache_mutex);
+					std::lock_guard<std::mutex> lk(cache_mutex);
 					open_store();
 					if (store)
 						store->put(state->wf, loc);

@@ -11,12 +11,12 @@
 #include <list>
 #include <stack>
 #include <intrin.h>
-#include <boost/atomic/atomic.hpp>
-#include <boost/function.hpp>
-#include <boost/thread/future.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
 
+#include <atomic>
+#include <functional>
+#include <future>
+#include <mutex>
+#include <thread>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 extern const GUID guid_seekbar_branch;
@@ -88,21 +88,21 @@ namespace wave
 		ref_ptr<waveform> render_waveform(process_state* state);
 		bool is_refresh_due(process_state* state);
 
-		boost::atomic<bool> should_workers_terminate;
-		boost::mutex worker_mutex;
-		boost::condition_variable worker_bump;
+		std::atomic<bool> should_workers_terminate;
+		std::mutex worker_mutex;
+		std::condition_variable worker_bump;
 
-		boost::atomic<long> is_initialized;
-		boost::mutex init_mutex;
-		boost::unique_future<bool> init_sync_point;
+		std::atomic<long> is_initialized;
+		std::mutex init_mutex;
+		std::future<bool> init_sync_point;
 
-		boost::mutex important_mutex;
+		std::mutex important_mutex;
 		std::stack<playable_location_impl> important_queue;
 
 		pfc::string cache_filename;
-		boost::mutex cache_mutex;
-		std::list<boost::thread*> work_threads;
-		std::list<boost::function<void()>> work_functions;
+		std::mutex cache_mutex;
+		std::list<std::thread*> work_threads;
+		std::list<std::function<void()>> work_functions;
 		typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
 		abort_callback_impl flush_callback;
 		std::deque<service_ptr_t<waveform_query> > job_flush_queue;

@@ -1,6 +1,6 @@
 #pragma once
 #include "frontend_sdk/VisualFrontend.h"
-#include <boost/smart_ptr/shared_ptr.hpp>
+#include <memory>
 #include <vector>
 
 namespace wave
@@ -21,5 +21,5 @@ namespace wave
 	};
 
 	void wait_for_frontend_module_load();
-	std::vector<boost::shared_ptr<frontend_module>> list_frontend_modules();
+	std::vector<std::shared_ptr<frontend_module>> list_frontend_modules();
 }

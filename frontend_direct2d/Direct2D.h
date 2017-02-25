@@ -22,9 +22,10 @@ using std::min; using std::max;
 #include <wincodec.h>
 #include <atlbase.h>
 #include <atlcom.h>
-#include <boost/atomic.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 #include "../waveform_sdk/RefPointer.h"
 
@@ -63,11 +64,11 @@ namespace wave
 		};
 
 		CComPtr<ID2D1Factory> factory;
-		boost::mutex mutex;
-		boost::condition_variable pump_alert;
-		boost::thread* pump_thread;
+		std::mutex mutex;
+		std::condition_variable pump_alert;
+		std::thread* pump_thread;
 		std::deque<task_data> tasks;
-		boost::atomic<bool> should_terminate;
+		std::atomic<bool> should_terminate;
 
 		CComPtr<IWICImagingFactory> wic_factory;
 		CComPtr<IWICBitmap> last_bitmap;

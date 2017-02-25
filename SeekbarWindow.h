@@ -13,10 +13,11 @@
 #include "SeekCallback.h"
 #include "Player.h"
 #include "Cache.h"
-#include <boost/thread/recursive_mutex.hpp>
+#include <mutex>
 
 namespace wave
 {
+  using recursive_lock = std::unique_lock<std::recursive_mutex>;
 	struct frontend_data
 	{
 		frontend_data() : auto_get_serial(0), valid_buckets(0) {}
@@ -25,7 +26,7 @@ namespace wave
 			callback.reset();
 			frontend.reset();
 		}
-		boost::recursive_mutex mutex;
+		std::recursive_mutex mutex;
 		std::unique_ptr<frontend_callback_impl> callback;
 		std::unique_ptr<frontend_config_impl> conf;
 		ref_ptr<visual_frontend> frontend;

@@ -32,8 +32,6 @@ namespace wave
 
 		void insert_remaining_channels();
 	};
-
-	void read_s11n_xml(std::string xml, persistent_settings& settings);
 }
 
 #if defined(SEEKBAR_USE_S11N)
