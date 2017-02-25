@@ -9,6 +9,8 @@
 #include "../frontend_sdk/FrontendHelpers.h"
 #include "resource.h"
 
+#include <algorithm>
+
 namespace wave
 {
 	template <typename T>
@@ -35,12 +37,36 @@ namespace wave
 		}
 	};
 
+  std::wstring get_own_module() {
+    HMODULE mod{};
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&get_own_module, &mod);
+    std::vector<wchar_t> path((1 << 16) + 1);
+    GetModuleFileNameW(mod, path.data(), path.size());
+    wchar_t backslash = L'\\';
+    auto I = std::find_end(path.begin(), path.end(), &backslash, &backslash + 1);
+    return std::wstring(path.begin(), std::next(I));
+  }
+
 	namespace direct3d9
 	{
 		frontend_impl::frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf)
 			: mip_count(4), callback(callback), conf(conf), floating_point_texture(true)
 		{
 			HRESULT hr = S_OK;
+
+      std::wstring directory = get_own_module();
+
+      std::wstring deps[] = {
+        L"d3dx9_42.dll",
+        L"d3dcompiler_42.dll",
+      };
+
+      for (auto const& dep : deps) {
+        HMODULE mod = LoadLibraryW((directory + dep).c_str());
+        if (mod) {
+          preloaded_dependencies.push_back(mod);
+        }
+      }
 
 			d3d.Attach(create_d3d9_func()());
 
@@ -107,6 +133,13 @@ namespace wave
 			create_vertex_resources();
 			create_default_resources();
 		}
+
+    frontend_impl::~frontend_impl()
+    {
+      for (auto mod : preloaded_dependencies) {
+        FreeLibrary(mod);
+      }
+    }
 
 		void frontend_impl::clear()
 		{

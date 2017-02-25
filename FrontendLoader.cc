@@ -80,8 +80,11 @@ static void load_frontend_modules()
 					if (find_data.cFileName == candidate.filename) {
 						for (auto I = candidate.requirements.begin(); I != candidate.requirements.end(); ++I) {
 							HMODULE lib = LoadLibraryW(I->c_str());
-							if (!lib)
-								return;
+              if (!lib) {
+                lib = LoadLibraryW((directory + *I).c_str());
+                if (!lib)
+                  return;
+              }
 							FreeLibrary(lib);
 						}
 					}

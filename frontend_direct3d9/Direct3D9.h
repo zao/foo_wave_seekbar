@@ -92,6 +92,7 @@ namespace wave
       friend config_dialog;
 
       frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
+      ~frontend_impl();
       virtual void clear();
       virtual void draw();
       virtual void present();
@@ -116,6 +117,7 @@ namespace wave
     private: // Misc state
       CComPtr<IDirect3D9> d3d;
       CComPtr<IDirect3DDevice9> dev;
+      std::vector<HMODULE> preloaded_dependencies;
     duration_query real_time;
 
       std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
