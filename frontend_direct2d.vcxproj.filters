@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="frontend_direct2d">
+      <UniqueIdentifier>{755F22FC-E175-2092-2AED-ABB39642F119}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="frontend_direct2d\Direct2D.h">
+      <Filter>frontend_direct2d</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="frontend_direct2d\Direct2D1.cc">
+      <Filter>frontend_direct2d</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct2d\EntrypointD2D.cc">
+      <Filter>frontend_direct2d</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

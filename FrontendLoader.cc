@@ -1,27 +1,26 @@
 #include "PchSeekbar.h"
 #include "FrontendLoader.h"
 #include "GdiFallback.h"
+#include "util/Barrier.h"
 #include "util/Filesystem.h"
-#include <boost/atomic/atomic.hpp>
-#include <boost/smart_ptr/make_shared.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/thread/barrier.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include <vector>
 
 namespace wave
 {
-static boost::atomic<unsigned> modules_loaded;
-static boost::mutex module_load_mutex;
-static std::vector<boost::shared_ptr<frontend_module>> frontend_modules;
-static boost::thread* load_thread;
-static boost::barrier load_barrier(2);
+static std::atomic<unsigned> modules_loaded;
+static std::mutex module_load_mutex;
+static std::vector<std::shared_ptr<frontend_module>> frontend_modules;
+static std::thread* load_thread;
+static util::barrier load_barrier(2);
 
 void wait_for_frontend_module_load()
 {
 	if (!modules_loaded) {
-		boost::unique_lock<boost::mutex> lk(module_load_mutex);
+		std::unique_lock<std::mutex> lk(module_load_mutex);
 		if (load_thread) {
 			load_thread->join();
 			delete load_thread;
@@ -30,7 +29,7 @@ void wait_for_frontend_module_load()
 	}
 }
 
-std::vector<boost::shared_ptr<frontend_module>> list_frontend_modules()
+std::vector<std::shared_ptr<frontend_module>> list_frontend_modules()
 {
 	wait_for_frontend_module_load();
 	return frontend_modules;
@@ -56,12 +55,12 @@ struct Candidate {
 static void load_frontend_modules()
 {
 	// TODO(zao): Load frontend modules and all that jazz
-	load_thread = new boost::thread([]
+	load_thread = new std::thread([]
 	{
 		modules_loaded = false;
-		boost::unique_lock<boost::mutex> lk(module_load_mutex);
+		std::unique_lock<std::mutex> lk(module_load_mutex);
 		load_barrier.wait();
-		frontend_modules.push_back(boost::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
+		frontend_modules.push_back(std::make_shared<frontend_module>((HMODULE)0, g_gdi_entrypoint()));
 		wchar_t const* filenames[] = { L"frontend_direct3d9.dll", L"frontend_direct2d.dll" };
 		wchar_t const* dependencies[] = { L"d3d9.dll", L"d3dx9_42.dll", L"D3DCompiler_42.dll", L"d2d1.dll" };
 		Candidate candidates[2];
@@ -91,7 +90,7 @@ static void load_frontend_modules()
 				if (lib) {
 					frontend_entrypoint_t entry = (frontend_entrypoint_t)GetProcAddress(lib, "g_seekbar_frontend_entrypoint");
 					if (entry) {
-						auto mod = boost::make_shared<frontend_module>(lib, entry());
+						auto mod = std::make_shared<frontend_module>(lib, entry());
 						frontend_modules.push_back(mod);
 					}
 					else {

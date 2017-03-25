@@ -1,0 +1,4 @@
+BasedOnStyle: Mozilla
+IndentWidth: 2
+SortIncludes: false
+UseTab: ForIndentation

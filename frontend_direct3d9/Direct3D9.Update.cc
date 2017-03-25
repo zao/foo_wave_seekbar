@@ -22,7 +22,7 @@ namespace wave
 	template <typename T>
 	T clamp(T v, T a, T b)
 	{
-		return std::max(a, std::min(b, v));
+		return (std::max)(a, (std::min)(b, v));
 	}
 
 	namespace direct3d9

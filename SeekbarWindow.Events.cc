@@ -1,4 +1,4 @@
-//          Copyright Lars Viklund 2008 - 2011.
+﻿//          Copyright Lars Viklund 2008 - 2011.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -49,7 +49,7 @@ static bool is_outside(CPoint point, CRect r, int N, bool horizontal)
 		std::swap(r.left, r.top);
 	}
 	return point.y < -2 * N || point.y > r.bottom - r.top + 2 * N ||
-		point.x < -N     || point.x > r.right - r.left + N;
+		point.x < -N || point.x > r.right - r.left + N;
 }
 
 struct menu_item_info
@@ -103,7 +103,7 @@ namespace wave
 			? config::orientation_horizontal
 			: config::orientation_vertical);
 
-		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->callback->set_size(wave::size(size.cx, size.cy));
 		if (fe->frontend)
 			fe->frontend->on_state_changed((visual_frontend::state)(visual_frontend::state_size | visual_frontend::state_orientation));
@@ -148,7 +148,7 @@ namespace wave
 			KillTimer(repaint_timer_id);
 		repaint_timer_id = 0;
 
-		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		fe->clear();
 	}
 
@@ -170,7 +170,7 @@ namespace wave
 			seek_callbacks.push_back(tooltip);
 		}
 
-		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		if (drag_state == MouseDragSeeking)
 		{
 			fe->callback->set_seeking(true);
@@ -195,7 +195,7 @@ namespace wave
 
 	void seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 	{
-		boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
+		std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 		ReleaseCapture();
 		if (drag_state == MouseDragSeeking)
 		{
@@ -220,8 +220,8 @@ namespace wave
 			{
 				drag_data.to = compute_position(point);
 
-				auto from = std::min(drag_data.from, drag_data.to);
-				auto to = std::max(drag_data.from, drag_data.to);
+				auto from = (std::min)(drag_data.from, drag_data.to);
+				auto to = (std::max)(drag_data.from, drag_data.to);
 			
 				if (clipboard::render_audio(source, from, to)) {
 					console::formatter() << "seekbar: rendered waveform from " <<
@@ -245,7 +245,7 @@ namespace wave
 
 			last_seek_point = point;
 
-			boost::unique_lock<boost::recursive_mutex> lk(fe->mutex);
+			std::unique_lock<std::recursive_mutex> lk(fe->mutex);
 			CRect r;
 			GetWindowRect(r);
 			int const N = 40;

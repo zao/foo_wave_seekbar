@@ -4,7 +4,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#include "../../../pfc/list.h"
+#include <pfc/list.h>
 
 template <typename T>
 void get_downmix_coefficients(t_size n, pfc::list_hybrid_t<T, 18>& left, pfc::list_hybrid_t<T, 18>& right)

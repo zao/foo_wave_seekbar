@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{DE9C880B-4AA6-887C-D321-9F7C3F2A947C}</ProjectGuid>
+    <RootNamespace>pfc</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>bin\</OutDir>
+    <IntDir>obj\x32\Debug\pfc\</IntDir>
+    <TargetName>pfc</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>bin\</OutDir>
+    <IntDir>obj\x32\Release\pfc\</IntDir>
+    <TargetName>pfc</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/wd4005 /wd4996  %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <ProgramDataBaseFileName>$(OutDir)pfc.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)pfc.lib</OutputFile>
+      <AdditionalOptions>/SUBSYSTEM:CONSOLE,5.01 %(AdditionalOptions)</AdditionalOptions>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/wd4005 /wd4996  %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <ProgramDataBaseFileName>$(OutDir)pfc.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)pfc.lib</OutputFile>
+      <AdditionalOptions>/SUBSYSTEM:CONSOLE,5.01 %(AdditionalOptions)</AdditionalOptions>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\foobar2000_sdk\pfc\alloc.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\array.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\avltree.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\base64.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\binary_search.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\bit_array.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\bit_array_impl.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\bit_array_impl_part2.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\bsearch.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\bsearch_inline.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\byte_order_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\chain_list_v2.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\com_ptr_t.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\guid.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\instance_tracker.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\int_types.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\iterators.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\list.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\map.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\mem_block_mgr.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\order_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\other.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\pathUtils.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\pfc.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\primitives.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\profiler.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\ptr_list.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\rcptr.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\ref_counter.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\sort.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\string.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\string8_impl.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\stringNew.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\string_conv.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\string_list.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\threads.h" />
+    <ClInclude Include="..\foobar2000_sdk\pfc\traits.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\foobar2000_sdk\pfc\base64.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\bsearch.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\guid.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\other.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\pathUtils.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\printf.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\profiler.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\selftest.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\sort.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\stdafx.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\string.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\stringNew.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\string_conv.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\threads.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\utf8.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\pfc\</ObjectFileName>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

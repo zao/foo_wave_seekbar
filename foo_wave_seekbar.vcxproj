@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -11,236 +11,183 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DEA61D87-28CC-4D1E-A026-73EECE6A0B7D}</ProjectGuid>
+    <ProjectGuid>{579817DB-4391-362D-6CC3-1BB2581B1639}</ProjectGuid>
     <RootNamespace>foo_wave_seekbar</RootNamespace>
+    <WindowsTargetPlatformVersion>7.0</WindowsTargetPlatformVersion>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
-    <Import Project="..\Output to devel.props" />
-    <Import Project="..\Shared.props" />
-    <Import Project="..\Local.props" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
-    <Import Project="..\Output to devel.props" />
-    <Import Project="..\Shared.props" />
-    <Import Project="..\Local.props" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.21006.1</_ProjectFileVersion>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_FEB10)Include;$(IncludePath)</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_FEB10)Lib\x86;$(LibraryPath)</LibraryPath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Program Files (x86)\nt2\include;$(DXSDK_FEB10)Include;$(TBBROOT)include;$(IncludePath)</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Program Files (x86)\nt2\lib;$(DXSDK_FEB10)Lib\x86;$(TBBROOT)lib\ia32\vc10;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</RunCodeAnalysis>
-    <CodeAnalysisIgnoreGeneratedCode Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</CodeAnalysisIgnoreGeneratedCode>
-    <RunCodeAnalysis Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</RunCodeAnalysis>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)portable\user-components\foo_wave_seekbar\</OutDir>
+    <IntDir>obj\x32\Debug\foo_wave_seekbar\</IntDir>
+    <TargetName>foo_wave_seekbar</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)portable\user-components\foo_wave_seekbar\</OutDir>
+    <IntDir>obj\x32\Release\foo_wave_seekbar\</IntDir>
+    <TargetName>foo_wave_seekbar</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalOptions>/Zm300 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4005 /wd4996  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_WAVE_SEEKBAR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\source\boost_1_63_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>PchSeekbar.h</PrecompiledHeaderFile>
-      <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <DisableSpecificWarnings>4996;4180</DisableSpecificWarnings>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <EnablePREfast>false</EnablePREfast>
-      <ProgramDataBaseFileName>$(IntDir)$(ProjectName)-$(Configuration)-vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <ProgramDataBaseFileName>$(OutDir)foo_wave_seekbar.pdb</ProgramDataBaseFileName>
     </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
     <Link>
-      <AdditionalDependencies>rpcrt4.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>shared.lib;rpcrt4.lib;ws2_32.lib;userenv.lib;shell32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)foo_wave_seekbar.dll</OutputFile>
+      <AdditionalLibraryDirectories>..\foobar2000_sdk\foobar2000\shared;X:\libs\dxsdk-10.02\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>obj\x32\Debug\foo_wave_seekbar\foo_wave_seekbar.dll</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalOptions>/SUBSYSTEM:CONSOLE,5.01 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalOptions>/Zm300 %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>Full</Optimization>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_WAVE_SEEKBAR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>PchSeekbar.h</PrecompiledHeaderFile>
-      <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4996;4180</DisableSpecificWarnings>
+      <AdditionalOptions>/wd4005 /wd4996  %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\source\boost_1_63_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <EnablePREfast>false</EnablePREfast>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ProgramDataBaseFileName>$(IntDir)$(ProjectName)-$(Configuration)-vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <ProgramDataBaseFileName>$(OutDir)foo_wave_seekbar.pdb</ProgramDataBaseFileName>
     </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
     <Link>
-      <AdditionalDependencies>rpcrt4.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>shared.lib;rpcrt4.lib;ws2_32.lib;userenv.lib;shell32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)foo_wave_seekbar.dll</OutputFile>
+      <AdditionalLibraryDirectories>..\foobar2000_sdk\foobar2000\shared;X:\libs\dxsdk-10.02\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>obj\x32\Release\foo_wave_seekbar\foo_wave_seekbar.dll</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalOptions>/SUBSYSTEM:CONSOLE,5.01 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BackingStore.cc" />
-    <ClCompile Include="Clipboard.cc" />
-    <ClCompile Include="GdiFallback.cc" />
-    <ClCompile Include="lzma\LzFind.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="lzma\LzFindMt.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="lzma\Lzma2Dec.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="lzma\Lzma2Enc.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="lzma\LzmaDec.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="lzma\LzmaEnc.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="lzma\MtCoder.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="lzma\Threads.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="MainSeekbar.cc" />
-    <ClCompile Include="Pack.cc" />
-    <ClCompile Include="PchSeekbar.cc">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="PersistentSettings.cc" />
-    <ClCompile Include="SeekbarWindow.cc" />
-    <ClCompile Include="SeekbarWindow.ConfigDialog.cc" />
-    <ClCompile Include="SeekbarCui.cc" />
-    <ClCompile Include="SeekbarDui.cc" />
-    <ClCompile Include="CacheImpl.cc" />
-    <ClCompile Include="CacheImpl.ProcessFile.cc" />
-    <ClCompile Include="MainCache.cc" />
-    <ClCompile Include="MenuCommands.cc" />
-    <ClCompile Include="ProcessingContext.cc" />
-    <ClCompile Include="SeekbarWindow.Callbacks.cc" />
-    <ClCompile Include="SeekbarWindow.Events.cc" />
-    <ClCompile Include="sqlite3.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="utf8_codecvt_facet.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\adler32.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\compress.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\crc32.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\deflate.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\infback.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\inffast.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\inflate.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\inftrees.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\trees.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\uncompr.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zlib\zutil.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="BackingStore.h" />
+    <ClInclude Include="Cache.h" />
+    <ClInclude Include="CacheImpl.h" />
     <ClInclude Include="Clipboard.h" />
     <ClInclude Include="FrontendCallbackImpl.h" />
     <ClInclude Include="FrontendConfigImpl.h" />
+    <ClInclude Include="FrontendLoader.h" />
     <ClInclude Include="GdiFallback.h" />
     <ClInclude Include="Helpers.h" />
-    <ClInclude Include="InstanceTracker.h" />
     <ClInclude Include="Job.h" />
     <ClInclude Include="Pack.h" />
     <ClInclude Include="PchSeekbar.h" />
     <ClInclude Include="PersistentSettings.h" />
-    <ClInclude Include="PfcSpirit.h" />
-    <ClInclude Include="SeekbarState.h" />
-    <ClInclude Include="SeekbarWindow.h" />
-    <ClInclude Include="SeekCallback.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="ProcessingContext.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SeekbarCui.h" />
     <ClInclude Include="SeekbarDui.h" />
-    <ClInclude Include="Cache.h" />
-    <ClInclude Include="CacheImpl.h" />
-    <ClInclude Include="ProcessingContext.h" />
+    <ClInclude Include="SeekbarWindow.h" />
+    <ClInclude Include="SeekCallback.h" />
     <ClInclude Include="SeekTooltip.h" />
     <ClInclude Include="sqlite3.h" />
-    <ClInclude Include="resource.h" />
+    <ClInclude Include="frontend_direct2d\Direct2D.h" />
+    <ClInclude Include="frontend_direct3d9\Direct3D9.Effects.h" />
+    <ClInclude Include="frontend_direct3d9\Direct3D9.h" />
+    <ClInclude Include="frontend_direct3d9\PchDirect3D9.h" />
+    <ClInclude Include="frontend_direct3d9\resource.h" />
+    <ClInclude Include="frontend_direct3d9\Scintilla.h" />
+    <ClInclude Include="frontend_sdk\FrontendHelpers.h" />
+    <ClInclude Include="frontend_sdk\VisualFrontend.h" />
+    <ClInclude Include="json\json-forwards.h" />
+    <ClInclude Include="json\json.h" />
+    <ClInclude Include="lzma\7z.h" />
+    <ClInclude Include="lzma\7zAlloc.h" />
+    <ClInclude Include="lzma\7zBuf.h" />
+    <ClInclude Include="lzma\7zCrc.h" />
+    <ClInclude Include="lzma\7zFile.h" />
+    <ClInclude Include="lzma\7zVersion.h" />
+    <ClInclude Include="lzma\Alloc.h" />
+    <ClInclude Include="lzma\Bcj2.h" />
+    <ClInclude Include="lzma\Bra.h" />
+    <ClInclude Include="lzma\CpuArch.h" />
+    <ClInclude Include="lzma\Delta.h" />
+    <ClInclude Include="lzma\LzFind.h" />
+    <ClInclude Include="lzma\LzFindMt.h" />
+    <ClInclude Include="lzma\LzHash.h" />
+    <ClInclude Include="lzma\Lzma2Dec.h" />
+    <ClInclude Include="lzma\Lzma2Enc.h" />
+    <ClInclude Include="lzma\Lzma86.h" />
+    <ClInclude Include="lzma\LzmaDec.h" />
+    <ClInclude Include="lzma\LzmaEnc.h" />
+    <ClInclude Include="lzma\LzmaLib.h" />
+    <ClInclude Include="lzma\MtCoder.h" />
+    <ClInclude Include="lzma\Ppmd.h" />
+    <ClInclude Include="lzma\Ppmd7.h" />
+    <ClInclude Include="lzma\RotateDefs.h" />
+    <ClInclude Include="lzma\Sha256.h" />
+    <ClInclude Include="lzma\Threads.h" />
+    <ClInclude Include="lzma\Types.h" />
+    <ClInclude Include="lzma\Xz.h" />
+    <ClInclude Include="lzma\XzCrc64.h" />
+    <ClInclude Include="lzma\XzEnc.h" />
+    <ClInclude Include="util\Asio.h" />
+    <ClInclude Include="util\Barrier.h" />
+    <ClInclude Include="util\Filesystem.h" />
+    <ClInclude Include="waveform_sdk\Downmix.h" />
+    <ClInclude Include="waveform_sdk\Optional.h" />
+    <ClInclude Include="waveform_sdk\RefPointer.h" />
+    <ClInclude Include="waveform_sdk\Waveform.h" />
+    <ClInclude Include="waveform_sdk\WaveformImpl.h" />
     <ClInclude Include="zlib\crc32.h" />
     <ClInclude Include="zlib\deflate.h" />
     <ClInclude Include="zlib\inffast.h" />
@@ -253,41 +200,303 @@
     <ClInclude Include="zlib\zutil.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="sqlite3.c">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zAlloc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zBuf.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zBuf2.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zCrc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zCrcOpt.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zDec.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zFile.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zIn.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\7zStream.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Alloc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Bcj2.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Bra.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Bra86.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\BraIA64.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\CpuArch.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Delta.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\LzFind.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\LzFindMt.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma2Dec.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma2Enc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma86Dec.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma86Enc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaDec.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaEnc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaLib.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\MtCoder.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Ppmd7.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Ppmd7Dec.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Ppmd7Enc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Sha256.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Threads.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Xz.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\XzCrc64.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\XzDec.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\XzEnc.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\XzIn.c">
+      <ObjectFileName>$(IntDir)lzma\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Util\7z\7zMain.c">
+      <ObjectFileName>$(IntDir)lzma\Util\7z\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="lzma\Util\Lzma\LzmaUtil.c">
+      <ObjectFileName>$(IntDir)lzma\Util\Lzma\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="lzma\Util\LzmaLib\LzmaLibExports.c">
+      <ObjectFileName>$(IntDir)lzma\Util\LzmaLib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="lzma\Util\SfxSetup\SfxSetup.c">
+      <ObjectFileName>$(IntDir)lzma\Util\SfxSetup\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\adler32.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\compress.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\crc32.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\deflate.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\infback.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\inffast.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\inflate.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\inftrees.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\trees.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\uncompr.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="zlib\zutil.c">
+      <ObjectFileName>$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="BackingStore.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="CacheImpl.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="CacheImpl.ProcessFile.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Clipboard.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="FrontendLoader.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="GdiFallback.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="MainCache.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="MainSeekbar.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="MenuCommands.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Pack.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="PchSeekbar.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="PersistentSettings.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Player.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="ProcessingContext.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="SeekbarCui.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="SeekbarDui.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.Callbacks.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.ConfigDialog.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.Events.cc">
+      <ObjectFileName>$(IntDir).\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="frontend_direct2d\Direct2D1.cc">
+      <ObjectFileName>$(IntDir)frontend_direct2d\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct2d\EntrypointD2D.cc">
+      <ObjectFileName>$(IntDir)frontend_direct2d\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.cc">
+      <ObjectFileName>$(IntDir)frontend_direct3d9\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.ConfigDialog.cc">
+      <ObjectFileName>$(IntDir)frontend_direct3d9\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Effects.cc">
+      <ObjectFileName>$(IntDir)frontend_direct3d9\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Resources.cc">
+      <ObjectFileName>$(IntDir)frontend_direct3d9\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Update.cc">
+      <ObjectFileName>$(IntDir)frontend_direct3d9\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\EntrypointD3D9.cc">
+      <ObjectFileName>$(IntDir)frontend_direct3d9\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\PchDirect3D9.cc">
+      <ObjectFileName>$(IntDir)frontend_direct3d9\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="waveform_sdk\Waveform.cc">
+      <ObjectFileName>$(IntDir)waveform_sdk\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="waveform_sdk\WaveformImpl.cc">
+      <ObjectFileName>$(IntDir)waveform_sdk\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ResourceCompile Include="foo_wave_seekbar.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\pfc\pfc.vcxproj">
-      <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="component.vcxproj">
+      <Project>{18DEAB42-8448-60B9-CD86-115F39303E0E}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\ATLHelpers\foobar2000_ATL_helpers.vcxproj">
-      <Project>{622e8b19-8109-4717-bd4d-9657aa78363e}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="pfc.vcxproj">
+      <Project>{DE9C880B-4AA6-887C-D321-9F7C3F2A947C}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\foobar2000_component_client\foobar2000_component_client.vcxproj">
-      <Project>{71ad2674-065b-48f5-b8b0-e1f9d3892081}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="waveform_sdk.vcxproj">
+      <Project>{4D136D08-3976-FCAC-E2FB-3463CE3DC82F}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\helpers\foobar2000_sdk_helpers.vcxproj">
-      <Project>{ee47764e-a202-4f85-a767-abdab4aff35f}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\SDK\foobar2000_SDK.vcxproj">
-      <Project>{e8091321-d79d-4575-86ef-064ea1a4a20d}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\vc9\columns_ui-sdk.vcxproj">
-      <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="waveform_sdk\waveform_sdk.vcxproj">
-      <Project>{83bce727-32c9-42b7-9d51-bb50b85b039b}</Project>
+    <ProjectReference Include="columns_ui_sdk.vcxproj">
+      <Project>{C4D0708B-B09E-6491-9932-D5B7859F40F6}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="seekbar_body.fx" />
-    <None Include="seekbar_footer.fx" />
-    <None Include="seekbar_header.fx" />
+    <FxCompile Include="seekbar_body.fx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

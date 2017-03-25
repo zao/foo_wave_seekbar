@@ -21,10 +21,10 @@ using std::max;
 #include <comdef.h>
 #include <tchar.h>
 
-#include "../ATLHelpers/ATLHelpers.h"
+#include <ATLHelpers/ATLHelpers.h>
 #include <atlframe.h>
 #include <atlcrack.h>
-#include "../columns_ui-sdk/ui_extension.h"
+#include <columns_ui-sdk/ui_extension.h>
 #include <dwmapi.h>
 
 #include <delayimp.h>

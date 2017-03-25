@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="foobar2000_sdk">
+      <UniqueIdentifier>{C17BF9C7-AD49-EDCD-96DD-5DF4824AC932}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="foobar2000_sdk\pfc">
+      <UniqueIdentifier>{16D117DC-02B5-D831-6B15-D3845718C3B3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\foobar2000_sdk\pfc\alloc.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\array.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\avltree.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\base64.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\binary_search.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\bit_array.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\bit_array_impl.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\bit_array_impl_part2.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\bsearch.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\bsearch_inline.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\byte_order_helper.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\chain_list_v2.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\com_ptr_t.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\guid.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\instance_tracker.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\int_types.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\iterators.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\list.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\map.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\mem_block_mgr.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\order_helper.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\other.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\pathUtils.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\pfc.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\primitives.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\profiler.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\ptr_list.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\rcptr.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\ref_counter.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\sort.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\string.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\string8_impl.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\stringNew.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\string_conv.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\string_list.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\threads.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\pfc\traits.h">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\foobar2000_sdk\pfc\base64.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\bsearch.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\guid.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\other.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\pathUtils.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\printf.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\profiler.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\selftest.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\sort.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\stdafx.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\string.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\stringNew.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\string_conv.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\threads.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\pfc\utf8.cpp">
+      <Filter>foobar2000_sdk\pfc</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

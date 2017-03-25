@@ -1,4 +1,4 @@
-//          Copyright Lars Viklund 2008 - 2011.
+﻿//          Copyright Lars Viklund 2008 - 2011.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -28,7 +28,7 @@ namespace wave
 	int map_normalized_float_to_unsigned_range(unsigned dst_low, unsigned dst_high, float value)
 	{
 		unsigned dst_delta = dst_high - dst_low;
-		return dst_low + std::min(dst_delta-1, (unsigned)(dst_delta * value));
+		return dst_low + (std::min)(dst_delta-1, (unsigned)(dst_delta * value));
 	}
 
 	CRect reorient_rect(CRect rect, CSize canvas_size, bool vertical, bool reverse_major_axis) {
@@ -88,8 +88,8 @@ namespace wave
 	cursor_info make_cursor_info(visual_frontend_callback const& callback)
 	{
 		auto track_length = callback.get_track_length();
-		auto seek_pos = std::min(track_length, callback.get_seek_position());
-		auto playback_pos = std::min(track_length, callback.get_playback_position());
+		auto seek_pos = (std::min)(track_length, callback.get_seek_position());
+		auto playback_pos = (std::min)(track_length, callback.get_playback_position());
 		cursor_info info = {
 			(float)(seek_pos / track_length),
 			(float)(playback_pos / track_length),
@@ -138,13 +138,13 @@ namespace wave
 		if (flip) x = 1.0f - x;
 		if (vertical) {
 			return CPoint(
-				std::min(screen_w-1, (size_t)(screen_w * y)),
-				std::min(screen_h-1, (size_t)(screen_h * x)));
+				(std::min)(screen_w-1, (size_t)(screen_w * y)),
+				(std::min)(screen_h-1, (size_t)(screen_h * x)));
 		}
 		else {
 			return CPoint(
-				std::min(screen_w-1, (size_t)(screen_w * x)),
-				std::min(screen_h-1, (size_t)(screen_h * y)));
+				(std::min)(screen_w-1, (size_t)(screen_w * x)),
+				(std::min)(screen_h-1, (size_t)(screen_h * y)));
 		}
 	}
 
@@ -275,10 +275,10 @@ namespace wave
 
 	float4* saturate(float4* in)
 	{
-		in->x = std::max(0.0f, std::min(1.0f, in->x));
-		in->y = std::max(0.0f, std::min(1.0f, in->y));
-		in->z = std::max(0.0f, std::min(1.0f, in->z));
-		in->w = std::max(0.0f, std::min(1.0f, in->w));
+		in->x = (std::max)(0.0f, (std::min)(1.0f, in->x));
+		in->y = (std::max)(0.0f, (std::min)(1.0f, in->y));
+		in->z = (std::max)(0.0f, (std::min)(1.0f, in->z));
+		in->w = (std::max)(0.0f, (std::min)(1.0f, in->w));
 		return in;
 	}
 
@@ -398,7 +398,7 @@ namespace wave
 						auto sample = samples[tc_x];
 						float below = tc_y - sample.x;
 						float above = tc_y - sample.y;
-						float factor = std::min(fabs(below), fabs(above));
+						float factor = (std::min)(fabs(below), fabs(above));
 						bool outside = (below < 0 || above > 0);
 						bool inside_rms = fabs(tc_y) <= sample.z;
 

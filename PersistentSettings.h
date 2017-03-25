@@ -35,7 +35,3 @@ namespace wave
 
 	void read_s11n_xml(std::string xml, persistent_settings& settings);
 }
-
-#if defined(SEEKBAR_USE_S11N)
-BOOST_CLASS_VERSION(wave::persistent_settings, 11)
-#endif

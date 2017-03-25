@@ -10,7 +10,9 @@
 #include "waveform_sdk/Downmix.h"
 #include "waveform_sdk/Optional.h"
 #include "Helpers.h"
+#include <chrono>
 #include <regex>
+#include <sstream>
 
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
 static const GUID guid_downmix_in_analysis = { 0x1d06b944, 0x342d, 0x44ff, { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
@@ -139,7 +141,7 @@ namespace wave
 			{
 				unsigned nch = track_channel_count.valid() ? *track_channel_count : 1;
 				chunk.set_channels(nch);
-				int64_t n = std::max(0LL, std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames));
+				int64_t n = (std::max)(0LL, std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames));
 				chunk.set_silence((t_size)n);
 				exhausted = true;
 			}
@@ -258,11 +260,11 @@ namespace wave
 
 		virtual void consume_input(audio_chunk const& chunk) override
 		{
-			t_int64 n = std::min(samples_remaining(), (t_int64)chunk.get_sample_count());
+			t_int64 n = (std::min)(samples_remaining(), (t_int64)chunk.get_sample_count());
 			audio_sample const* data = chunk.get_data();
 			for (t_int64 i = 0; i < n;)
 			{
-				t_int64 const to_process = std::min(bucket_ends() - samples_processed, n - i);
+				t_int64 const to_process = (std::min)(bucket_ends() - samples_processed, n - i);
 				process(data + i*channel_count, to_process);
 				i += to_process;
 				if (bucket_boundary())
@@ -290,8 +292,8 @@ namespace wave
 				audio_sample& min = minimum[target_offset];
 				audio_sample& max = maximum[target_offset];
 				audio_sample sample = *data++;
-				min = std::min(min, sample);
-				max = std::max(max, sample);
+				min = (std::min)(min, sample);
+				max = (std::max)(max, sample);
 				rms[target_offset] += sample * sample;
 			}
 			samples_processed += frames;
@@ -405,7 +407,7 @@ namespace wave
 				}
 
 				{
-					boost::lock_guard<boost::mutex> lk(cache_mutex);
+					std::lock_guard<std::mutex> lk(cache_mutex);
 					if (!store || flush_callback.is_aborting())
 					{
 						return process_result::aborted;
@@ -422,7 +424,7 @@ namespace wave
 				// Test whether tracks are in the Media Library or not
 				if (!g_analyse_tracks_outside_library.get())
 				{
-					boost::promise<bool> promise;
+					std::promise<bool> promise;
 
 					in_main_thread([loc, &promise]()
 					{
@@ -436,8 +438,8 @@ namespace wave
 					auto res = promise.get_future();
 					while (!flush_callback.is_aborting())
 					{
-						auto rc = res.wait_for(boost::chrono::milliseconds(200));
-						if (rc == boost::future_status::ready)
+						auto rc = res.wait_for(std::chrono::milliseconds(200));
+						if (rc == std::future_status::ready)
 						{
 							bool in_library = res.get();
 							if (!in_library)
@@ -503,7 +505,7 @@ namespace wave
 					state->wf = state->builder->finalize_waveform();
 
 					console::formatter() << "Wave cache: finished analysis of " << loc;
-					boost::lock_guard<boost::mutex> lk(cache_mutex);
+					std::lock_guard<std::mutex> lk(cache_mutex);
 					open_store();
 					if (store)
 						store->put(state->wf, loc);

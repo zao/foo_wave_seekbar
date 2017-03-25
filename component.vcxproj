@@ -1,0 +1,518 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{18DEAB42-8448-60B9-CD86-115F39303E0E}</ProjectGuid>
+    <RootNamespace>component</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>bin\</OutDir>
+    <IntDir>obj\x32\Debug\component\</IntDir>
+    <TargetName>component</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>bin\</OutDir>
+    <IntDir>obj\x32\Release\component\</IntDir>
+    <TargetName>component</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/wd4005 /wd4996  %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <ProgramDataBaseFileName>$(OutDir)component.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)component.lib</OutputFile>
+      <AdditionalOptions>/SUBSYSTEM:CONSOLE,5.01 %(AdditionalOptions)</AdditionalOptions>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/wd4005 /wd4996  %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <ProgramDataBaseFileName>$(OutDir)component.pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\foobar2000_sdk;..\foobar2000_sdk\foobar2000;..\foobar2000_sdk\wtl;X:\libs\dxsdk-10.02\include;X:\libs\vc14-x64-release\include\boost-1_62;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)component.lib</OutputFile>
+      <AdditionalOptions>/SUBSYSTEM:CONSOLE,5.01 %(AdditionalOptions)</AdditionalOptions>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\ATLHelpers.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\AutoComplete.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\BumpableElem.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\CDialogResizeHelper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\GDIUtils.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\inplace_edit.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\inplace_edit_v2.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\misc.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\stdafx.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\ATLHelpers\WindowPositionUtils.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\album_art_helpers.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\bitreader_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\CallForwarder.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\cfg_guidlist.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\clipboard.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\COM_utils.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\create_directory_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\cuesheet_index_list.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\cue_creator.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\cue_parser.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\dialog_resize_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\dropdown_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\dynamic_bitrate_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\filetimetools.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\file_cached.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\file_info_const_impl.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\file_list_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\file_move_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\file_win32_wrapper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\file_wrapper_simple.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\helpers.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\icon_remapping_wildcard.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\IDataObjectUtils.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\input_helpers.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\listview_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\metadb_io_hintlist.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\meta_table_builder.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\mp3_utils.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\playlist_position_reference_tracker.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\ProfileCache.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\seekabilizer.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\StdAfx.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\stream_buffer_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\string_filter.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\text_file_loader.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\ThreadUtils.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\VisUtils.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\wildcard.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\win32_dialog.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\win32_misc.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\helpers\window_placement_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\abort_callback.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\advconfig.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\album_art.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\app_close_blocker.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\audio_chunk.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\audio_postprocessor.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\autoplaylist.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\cfg_var.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\chapterizer.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\commandline.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\completion_notify.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\component.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\components_menu.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\componentversion.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\component_client.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\config_io_callback.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\config_object.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\config_object_impl.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\console.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\contextmenu.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\contextmenu_manager.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\coreversion.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\core_api.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\decode_postprocessor.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\dsp.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\dsp_manager.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\event_logger.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\exceptions.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\filesystem.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\filesystem_helper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\file_info.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\file_info_impl.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\file_operation_callback.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\foobar2000.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\genrand.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\hasher_md5.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\http_client.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\icon_remap.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\info_lookup_handler.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\initquit.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\input.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\input_file_type.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\input_impl.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\library_manager.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\link_resolver.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\main_thread_callback.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\mem_block_container.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\menu.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\menu_helpers.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\message_loop.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\metadb.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\metadb_handle.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\modeless_dialog.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\ole_interaction.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\packet_decoder.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\playable_location.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\playback_control.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\playback_stream_capture.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\playlist.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\playlist_loader.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\play_callback.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\popup_message.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\preferences_page.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\progress_meter.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\replaygain.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\replaygain_scanner.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\resampler.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\search_tools.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\service.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\service_impl.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\shortcut_actions.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\system_time_keeper.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\tag_processor.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\threaded_process.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\titleformat.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\track_property.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\ui.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\ui_edit_context.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\ui_element.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\unpack.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\SDK\vis.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\shared\audio_math.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\shared\filedialogs.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\shared\shared.h" />
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\shared\win32_misc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\ATLHelpers\AutoComplete.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\ATLHelpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\ATLHelpers\CDialogResizeHelper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\ATLHelpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\ATLHelpers\inplace_edit.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\ATLHelpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\ATLHelpers\inplace_edit_v2.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\ATLHelpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\ATLHelpers\misc.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\ATLHelpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\ATLHelpers\stdafx.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\ATLHelpers\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\foobar2000_component_client\component_client.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\foobar2000_component_client\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\clipboard.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\create_directory_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\cuesheet_index_list.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\cue_creator.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\cue_parser.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\cue_parser_embedding.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\dialog_resize_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\dropdown_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\dynamic_bitrate_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\filetimetools.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\file_info_const_impl.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\file_list_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\file_move_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\file_wrapper_simple.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\IDataObjectUtils.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\input_helpers.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\listview_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\metadb_io_hintlist.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\mp3_utils.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\seekabilizer.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\StdAfx.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\stream_buffer_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\text_file_loader.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\VisUtils.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\wildcard.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\win32_dialog.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\win32_misc.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\helpers\window_placement_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\helpers\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\abort_callback.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\advconfig.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\album_art.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\app_close_blocker.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\audio_chunk.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\audio_chunk_channel_config.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\cfg_var.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\chapterizer.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\commandline.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\completion_notify.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\config_object.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\console.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\dsp.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\dsp_manager.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\filesystem.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\filesystem_helper.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\file_info.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\file_info_impl.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\file_info_merge.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\file_operation_callback.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\guids.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\hasher_md5.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\input.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\input_file_type.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\link_resolver.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\mainmenu.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\mem_block_container.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\menu_helpers.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\menu_item.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\menu_manager.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\metadb.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\metadb_handle.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\metadb_handle_list.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\packet_decoder.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\playable_location.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\playback_control.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\playlist.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\playlist_loader.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\popup_message.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\preferences_page.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\replaygain.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\replaygain_info.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\service.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\stdafx.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\tag_processor.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\tag_processor_id3v2.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\threaded_process.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\titleformat.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\ui.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\SDK\ui_element.cpp">
+      <ObjectFileName>$(IntDir)foobar2000_sdk\foobar2000\SDK\</ObjectFileName>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -4,8 +4,8 @@
 #include "Helpers.h"
 
 #include <set>
-#include <boost/bind.hpp>
-#include <boost/thread/mutex.hpp>
+#include <functional>
+#include <mutex>
 
 namespace wave
 {
@@ -16,26 +16,26 @@ struct player_impl : player
 
 	virtual void register_waveform_listener(waveform_listener* p) override
 	{
-		boost::unique_lock<boost::mutex> lk(_m);
+		std::unique_lock<std::mutex> lk(_m);
 		_listeners.insert(p);
 	}
 
 	virtual void deregister_waveform_listener(waveform_listener* p) override
 	{
-		boost::unique_lock<boost::mutex> lk(_m);
+		std::unique_lock<std::mutex> lk(_m);
 		_listeners.erase(p);
 	}
 
 	virtual void enumerate_listeners(std::function<void (waveform_listener*)> f) const override
 	{
-		boost::unique_lock<boost::mutex> lk(_m);
+		std::unique_lock<std::mutex> lk(_m);
 		for (auto I = _listeners.begin(); I != _listeners.end(); ++I)
 		{
 			f(*I);
 		}
 	}
 
-	mutable boost::mutex _m;
+	mutable std::mutex _m;
 	std::set<waveform_listener*> _listeners;
 };
 
@@ -61,7 +61,7 @@ struct callbacks : play_callback_impl_base, playlist_callback_impl_base
 			static_api_ptr_t<playback_control_v2> pc;
 			service_ptr_t<metadb_handle> meta;
 			if (pc->get_now_playing(meta) && meta->get_location() == loc) {
-				p->enumerate_listeners(boost::bind(&invoke_on_waveform, _1, wf));
+				p->enumerate_listeners(std::bind(&invoke_on_waveform, std::placeholders::_1, wf));
 			}
 		});
 	}

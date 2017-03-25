@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="foobar2000_sdk">
+      <UniqueIdentifier>{C17BF9C7-AD49-EDCD-96DD-5DF4824AC932}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="foobar2000_sdk\foobar2000">
+      <UniqueIdentifier>{7812F2ED-E4D4-2578-2D85-B4049986FE55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="foobar2000_sdk\foobar2000\columns_ui-sdk">
+      <UniqueIdentifier>{E170E0BD-CDED-D300-F66A-D414E2467094}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\base.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\buttons.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\columns_ui.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\columns_ui_appearance.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\helpers.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\imp_helper.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\menu.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\splitter.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\ui_extension.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\visualisation.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\win32_helpers.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\window.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\window_helper.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\window_host.h">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\columns_ui.cpp">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\ui_extension.cpp">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\win32_helpers.cpp">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\foobar2000_sdk\foobar2000\columns_ui-sdk\window_helper.cpp">
+      <Filter>foobar2000_sdk\foobar2000\columns_ui-sdk</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

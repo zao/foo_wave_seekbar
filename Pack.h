@@ -99,7 +99,7 @@ namespace pack
 				auto self = (source*)p;
 				auto dst = (uint8_t*)buf;
 
-				size_t n = std::min(2048u, std::min(*size, self->cb));
+				size_t n = (std::min)(2048u, (std::min)(*size, self->cb));
 				std::memcpy(dst, self->src, n);
 
 				self->cb -= n;

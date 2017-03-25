@@ -10,10 +10,10 @@
 #include <regex>
 #include <stdint.h>
 
-#include <boost/atomic.hpp>
-#include <boost/thread/barrier.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/thread.hpp>
+#include <atomic>
+#include <condition_variable>
+#include <thread>
+#include "util/Barrier.h"
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
 const GUID guid_seekbar_branch = { 0xebeaba3f, 0x7a8e, 0x4a54, { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
@@ -29,6 +29,10 @@ static const GUID guid_always_rescan_user =
 static advconfig_integer_factory g_max_concurrent_jobs("Number of concurrent scanning threads (capped by virtual processor count)", guid_max_concurrent_jobs, guid_seekbar_branch, 0.0, 3, 1, 16);
 static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if requested by user", guid_always_rescan_user, guid_seekbar_branch, 0.0, false);
 
+extern "C" {
+uint32_t foo(char const* s);
+}
+
 namespace wave
 {
 	struct cache_run_state
@@ -37,11 +41,11 @@ namespace wave
 			: init_sync(2)
 		{}
 
-		boost::thread* thread;
-		boost::barrier init_sync;
-		boost::mutex mutex;
-		boost::condition_variable bump;
-		boost::atomic<bool> should_shutdown;
+		std::thread* thread;
+		util::barrier init_sync;
+		std::mutex mutex;
+		std::condition_variable bump;
+		std::atomic<bool> should_shutdown;
 	};
 	static cache_run_state run_state;
 
@@ -213,7 +217,7 @@ namespace wave
 		}
 		else
 		{
-			boost::unique_lock<boost::mutex> lk(worker_mutex);
+			std::unique_lock<std::mutex> lk(worker_mutex);
 			switch (request->get_urgency()) {
 			case waveform_query::needed_urgency: {
 				requests_by_urgency[waveform_query::needed_urgency].push_front(request);
@@ -312,7 +316,7 @@ namespace wave
 	void cache_impl::start()
 	{
 		OutputDebugStringA("Starting cache.\n");
-		run_state.thread = new boost::thread(boost::bind(&cache_impl::cache_main, this));
+		run_state.thread = new std::thread(std::bind(&cache_impl::cache_main, this));
 		run_state.init_sync.wait();
 	}
 
@@ -320,7 +324,7 @@ namespace wave
 	{
 		OutputDebugStringA("Stopping cache.\n");
 		{
-			boost::unique_lock<boost::mutex> lk(cache_mutex);
+			std::unique_lock<std::mutex> lk(cache_mutex);
 			run_state.should_shutdown = true;
 			run_state.bump.notify_one();
 		}
@@ -349,7 +353,7 @@ namespace wave
 		};
 		while (1) {
 			{
-				boost::unique_lock<boost::mutex> lk(worker_mutex);
+				std::unique_lock<std::mutex> lk(worker_mutex);
 				worker_bump.wait(lk, is_ready);
 				if (should_workers_terminate) {
 					break;
@@ -394,7 +398,7 @@ namespace wave
 						store->get(wf, q->get_location());
 					} break;
 					case process_result::aborted: {
-						boost::unique_lock<boost::mutex> lk(run_state.mutex);
+						std::unique_lock<std::mutex> lk(run_state.mutex);
 						job_flush_queue.push_back(q);
 					} break;
 					case process_result::failed: {
@@ -425,20 +429,20 @@ namespace wave
 		load_data();
 		run_state.init_sync.wait();
 
-		std::vector<boost::thread*> worker_threads;
+		std::vector<std::thread*> worker_threads;
 
-		size_t n_cores = boost::thread::hardware_concurrency();
+		size_t n_cores = std::thread::hardware_concurrency();
 		size_t n_cap = (size_t)g_max_concurrent_jobs.get();
-		size_t n = std::min(n_cores, n_cap);
+		size_t n = (std::min)(n_cores, n_cap);
 
 		for (size_t i = 0; i < n; ++i) {
-			boost::thread* t = new boost::thread(with_idle_priority(boost::bind(&cache_impl::worker_main, this, i, n)));
+			std::thread* t = new std::thread(with_idle_priority(std::bind(&cache_impl::worker_main, this, i, n)));
 			worker_threads.push_back(t);
 		}
 
 		OutputDebugStringA("Cache ready.\n");
 		{
-			boost::unique_lock<boost::mutex> lk(run_state.mutex);
+			std::unique_lock<std::mutex> lk(run_state.mutex);
 			auto is_ready = [&]() -> bool { return run_state.should_shutdown || worker_results.size(); };
 			while (1) {
 				run_state.bump.wait(lk, is_ready);

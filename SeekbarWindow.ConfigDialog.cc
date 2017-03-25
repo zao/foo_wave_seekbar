@@ -87,7 +87,7 @@ namespace wave
 			item.mask = LVIF_PARAM | LVIF_TEXT;
 			item.pszText = const_cast<LPWSTR>(text.c_str());
 			item.lParam = data;
-			item.iItem = std::numeric_limits<int>::max();
+			item.iItem = (std::numeric_limits<int>::max)();
 			int idx = this->channels.InsertItem(&item);
 			if (checked)
 				this->channels.SetCheckState(idx, checked ? TRUE : FALSE);

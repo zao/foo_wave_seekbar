@@ -1,4 +1,4 @@
-//          Copyright Lars Viklund 2008 - 2011.
+﻿//          Copyright Lars Viklund 2008 - 2011.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -8,6 +8,9 @@
 #include "Direct3D9.Effects.h"
 #include "../frontend_sdk/FrontendHelpers.h"
 #include "resource.h"
+
+#include <sstream>
+#include <comdef.h>
 
 namespace wave
 {
@@ -34,6 +37,14 @@ namespace wave
 			return true;
 		}
 	};
+
+	std::string narrow_string(std::wstring const& s) {
+		auto cb = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), s.size() + 1, nullptr, 0, nullptr, nullptr);
+		auto buf = std::make_unique<char[]>(cb);
+		buf[0] = '\0';
+		WideCharToMultiByte(CP_UTF8, 0, s.c_str(), s.size() + 1, buf.get(), cb, nullptr, nullptr);
+		return buf.get();
+	}
 
 	namespace direct3d9
 	{
@@ -80,11 +91,15 @@ namespace wave
 			hr = d3d->CreateDevice(0, D3DDEVTYPE_HAL, wnd, D3DCREATE_FPU_PRESERVE | D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp, &dev);
 			if (!SUCCEEDED(hr))
 			{
+				std::ostringstream error_stream;
+				error_stream << "Direct3D9: multisampled device create failed: " << narrow_string(_com_error{ hr }.ErrorMessage()) << ".";
+
 				pp.MultiSampleType = D3DMULTISAMPLE_NONE;
 				pp.MultiSampleQuality = 0;
 				hr = d3d->CreateDevice(0, D3DDEVTYPE_HAL, wnd, D3DCREATE_FPU_PRESERVE | D3DCREATE_SOFTWARE_VERTEXPROCESSING, &pp, &dev);
 				if (!SUCCEEDED(hr))
-					throw std::exception("Direct3D9: could not create device.");
+					error_stream << "\nDirect3D9: could not create unsampled device: " << narrow_string(_com_error{ hr }.ErrorMessage()) << ".";
+					throw std::exception(error_stream.str().c_str());
 			}
 
 			auto query_texture_format = [this](D3DFORMAT fmt) -> bool

@@ -109,7 +109,7 @@ namespace clipboard
 
 			char* dst = static_cast<char*>(GlobalLock(mem)) + data_offset + frames_written * nch * sizeof(float);
 			float const* src = chunk.get_data();
-			size_t n = std::min(chunk.get_sample_count(), (size_t)(frame_count - frames_written));
+			size_t n = (std::min)(chunk.get_sample_count(), (size_t)(frame_count - frames_written));
 			std::memcpy(dst, src, nch*n*sizeof(float));
 			GlobalUnlock(mem);
 			frames_written += n;
