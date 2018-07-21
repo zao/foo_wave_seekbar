@@ -1,0 +1,310 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="zlib">
+      <UniqueIdentifier>{74ce34bb-d821-4e69-b073-c2f222e3b290}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{1ea06002-915c-4e01-b627-d7ee2d07b0d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="json">
+      <UniqueIdentifier>{8213a056-bcf7-4a2a-b494-5d0927a272dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lzma">
+      <UniqueIdentifier>{875d7825-fc5d-4ff9-bd80-6781e6ae86e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="waveform_sdk">
+      <UniqueIdentifier>{887ee0e1-3539-4bc8-8da1-97081815c1d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="frontend_direct2d">
+      <UniqueIdentifier>{d686a690-164c-4f08-903e-b2ae67eefe7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="frontend_direct3d9">
+      <UniqueIdentifier>{b68121d9-063f-4a12-aa49-34de05b8df53}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackingStore.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CacheImpl.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CacheImpl.ProcessFile.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Clipboard.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FrontendLoader.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GdiFallback.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainCache.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainSeekbar.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MenuCommands.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Pack.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PchSeekbar.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PersistentSettings.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessingContext.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarCui.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarDui.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.Callbacks.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.ConfigDialog.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SeekbarWindow.Events.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlite3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="util\xpatl.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="json\jsoncpp.cpp">
+      <Filter>json</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\crc32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inffast.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\zutil.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\adler32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inftrees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma2Enc.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\Lzma2Dec.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaDec.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaEnc.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\MtCoder.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\Threads.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzFind.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma\LzFindMt.c">
+      <Filter>lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="waveform_sdk\Waveform.cc">
+      <Filter>waveform_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="waveform_sdk\WaveformImpl.cc">
+      <Filter>waveform_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.cc">
+      <Filter>frontend_direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.ConfigDialog.cc">
+      <Filter>frontend_direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Effects.cc">
+      <Filter>frontend_direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Resources.cc">
+      <Filter>frontend_direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Update.cc">
+      <Filter>frontend_direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\EntrypointD3D9.cc">
+      <Filter>frontend_direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct3d9\PchDirect3D9.cc">
+      <Filter>frontend_direct3d9</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct2d\Direct2D1.cc">
+      <Filter>frontend_direct2d</Filter>
+    </ClCompile>
+    <ClCompile Include="frontend_direct2d\EntrypointD2D.cc">
+      <Filter>frontend_direct2d</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackingStore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CacheImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Clipboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FrontendCallbackImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FrontendConfigImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FrontendLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GdiFallback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Job.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PchSeekbar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PersistentSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessingContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekbarCui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekbarDui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekbarWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekCallback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SeekTooltip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlite3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="util\Barrier.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\Filesystem.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\Asio.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="json\json-forwards.h">
+      <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="json\json.h">
+      <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="waveform_sdk\Downmix.h">
+      <Filter>waveform_sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="waveform_sdk\Optional.h">
+      <Filter>waveform_sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="waveform_sdk\RefPointer.h">
+      <Filter>waveform_sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="waveform_sdk\Waveform.h">
+      <Filter>waveform_sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="waveform_sdk\WaveformImpl.h">
+      <Filter>waveform_sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="frontend_direct3d9\Direct3D9.Effects.h">
+      <Filter>frontend_direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="frontend_direct3d9\Direct3D9.h">
+      <Filter>frontend_direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="frontend_direct3d9\PchDirect3D9.h">
+      <Filter>frontend_direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="frontend_direct3d9\Scintilla.h">
+      <Filter>frontend_direct3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="frontend_direct2d\Direct2D.h">
+      <Filter>frontend_direct2d</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_wave_seekbar.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="util\xpatlwrap.asm">
+      <Filter>util</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\shared\shared.lib" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{8AE2F7A7-A207-4A4B-B255-24E09054A231}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>foowaveseekbar</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141_xp</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\wtl\WTL.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\wtl\WTL.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\wtl\WTL.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\wtl\WTL.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)portable\user-components\$(ProjectName)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)portable\user-components\$(ProjectName)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;FOOWAVESEEKBAR_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)..\boost_1_67_0\;$(SolutionDir)..\dxsdk-10.02\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\dxsdk-10.02\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;FOOWAVESEEKBAR_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)..\boost_1_67_0\;$(SolutionDir)..\dxsdk-10.02\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\dxsdk-10.02\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;FOOWAVESEEKBAR_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;FOOWAVESEEKBAR_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="BackingStore.cc" />
+    <ClCompile Include="CacheImpl.cc" />
+    <ClCompile Include="CacheImpl.ProcessFile.cc" />
+    <ClCompile Include="Clipboard.cc" />
+    <ClCompile Include="FrontendLoader.cc" />
+    <ClCompile Include="frontend_direct2d\Direct2D1.cc" />
+    <ClCompile Include="frontend_direct2d\EntrypointD2D.cc" />
+    <ClCompile Include="frontend_direct3d9\Direct3D9.cc" />
+    <ClCompile Include="frontend_direct3d9\Direct3D9.ConfigDialog.cc" />
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Effects.cc" />
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Resources.cc" />
+    <ClCompile Include="frontend_direct3d9\Direct3D9.Update.cc" />
+    <ClCompile Include="frontend_direct3d9\EntrypointD3D9.cc" />
+    <ClCompile Include="frontend_direct3d9\PchDirect3D9.cc" />
+    <ClCompile Include="GdiFallback.cc" />
+    <ClCompile Include="json\jsoncpp.cpp" />
+    <ClCompile Include="lzma\LzFind.c" />
+    <ClCompile Include="lzma\LzFindMt.c" />
+    <ClCompile Include="lzma\Lzma2Dec.c" />
+    <ClCompile Include="lzma\Lzma2Enc.c" />
+    <ClCompile Include="lzma\LzmaDec.c" />
+    <ClCompile Include="lzma\LzmaEnc.c" />
+    <ClCompile Include="lzma\MtCoder.c" />
+    <ClCompile Include="lzma\Threads.c" />
+    <ClCompile Include="MainCache.cc" />
+    <ClCompile Include="MainSeekbar.cc" />
+    <ClCompile Include="MenuCommands.cc" />
+    <ClCompile Include="Pack.cc" />
+    <ClCompile Include="PchSeekbar.cc" />
+    <ClCompile Include="PersistentSettings.cc" />
+    <ClCompile Include="Player.cc" />
+    <ClCompile Include="ProcessingContext.cc" />
+    <ClCompile Include="SeekbarCui.cc" />
+    <ClCompile Include="SeekbarDui.cc" />
+    <ClCompile Include="SeekbarWindow.Callbacks.cc" />
+    <ClCompile Include="SeekbarWindow.cc" />
+    <ClCompile Include="SeekbarWindow.ConfigDialog.cc" />
+    <ClCompile Include="SeekbarWindow.Events.cc" />
+    <ClCompile Include="sqlite3.c" />
+    <ClCompile Include="util\xpatl.cpp" />
+    <ClCompile Include="waveform_sdk\Waveform.cc" />
+    <ClCompile Include="waveform_sdk\WaveformImpl.cc" />
+    <ClCompile Include="zlib\adler32.c" />
+    <ClCompile Include="zlib\crc32.c" />
+    <ClCompile Include="zlib\inffast.c" />
+    <ClCompile Include="zlib\inflate.c" />
+    <ClCompile Include="zlib\inftrees.c" />
+    <ClCompile Include="zlib\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackingStore.h" />
+    <ClInclude Include="Cache.h" />
+    <ClInclude Include="CacheImpl.h" />
+    <ClInclude Include="Clipboard.h" />
+    <ClInclude Include="FrontendCallbackImpl.h" />
+    <ClInclude Include="FrontendConfigImpl.h" />
+    <ClInclude Include="FrontendLoader.h" />
+    <ClInclude Include="frontend_direct2d\Direct2D.h" />
+    <ClInclude Include="frontend_direct3d9\Direct3D9.Effects.h" />
+    <ClInclude Include="frontend_direct3d9\Direct3D9.h" />
+    <ClInclude Include="frontend_direct3d9\PchDirect3D9.h" />
+    <ClInclude Include="frontend_direct3d9\Scintilla.h" />
+    <ClInclude Include="GdiFallback.h" />
+    <ClInclude Include="Helpers.h" />
+    <ClInclude Include="Job.h" />
+    <ClInclude Include="json\json-forwards.h" />
+    <ClInclude Include="json\json.h" />
+    <ClInclude Include="Pack.h" />
+    <ClInclude Include="PchSeekbar.h" />
+    <ClInclude Include="PersistentSettings.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="ProcessingContext.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SeekbarCui.h" />
+    <ClInclude Include="SeekbarDui.h" />
+    <ClInclude Include="SeekbarWindow.h" />
+    <ClInclude Include="SeekCallback.h" />
+    <ClInclude Include="SeekTooltip.h" />
+    <ClInclude Include="sqlite3.h" />
+    <ClInclude Include="util\Asio.h" />
+    <ClInclude Include="util\Barrier.h" />
+    <ClInclude Include="util\Filesystem.h" />
+    <ClInclude Include="waveform_sdk\Downmix.h" />
+    <ClInclude Include="waveform_sdk\Optional.h" />
+    <ClInclude Include="waveform_sdk\RefPointer.h" />
+    <ClInclude Include="waveform_sdk\Waveform.h" />
+    <ClInclude Include="waveform_sdk\WaveformImpl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_wave_seekbar.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="util\xpatlwrap.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\pfc\pfc.vcxproj">
+      <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\vc14\columns_ui-sdk.vcxproj">
+      <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ATLHelpers\foobar2000_ATL_helpers.vcxproj">
+      <Project>{622e8b19-8109-4717-bd4d-9657aa78363e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\foobar2000_component_client\foobar2000_component_client.vcxproj">
+      <Project>{71ad2674-065b-48f5-b8b0-e1f9d3892081}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\helpers\foobar2000_sdk_helpers.vcxproj">
+      <Project>{ee47764e-a202-4f85-a767-abdab4aff35f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\SDK\foobar2000_SDK.vcxproj">
+      <Project>{e8091321-d79d-4575-86ef-064ea1a4a20d}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\shared\shared.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

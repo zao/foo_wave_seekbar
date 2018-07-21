@@ -1,8 +1,11 @@
-/Debug/
-/Release/
+.vs/
 *.aps
-/bin/
-/obj/
-/.vs/
-/portable/
+*.sdf
+*.suo
 *.VC.db
+boost_*/
+Debug/
+dxsdk-*/
+ipch/
+portable/
+Release/
