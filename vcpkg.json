@@ -1,0 +1,17 @@
+{
+  "name": "foo-wave-seekbar",
+  "version": "0.3.0",
+  "dependencies": [
+    "7zip",
+    "boost-property-tree",
+    "boost-serialization",
+    "columns-ui-sdk",
+    "fmt",
+    "foobar2000-sdk",
+    "jsoncpp",
+    "nlohmann-json",
+    "sqlite3",
+    "wtl",
+    "zlib"
+  ]
+}
