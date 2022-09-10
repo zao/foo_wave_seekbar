@@ -19,21 +19,21 @@ static util::barrier load_barrier(2);
 void
 wait_for_frontend_module_load()
 {
-  if (!modules_loaded) {
-    std::unique_lock<std::mutex> lk(module_load_mutex);
-    if (load_thread) {
-      load_thread->join();
-      delete load_thread;
-      load_thread = 0;
+    if (!modules_loaded) {
+        std::unique_lock<std::mutex> lk(module_load_mutex);
+        if (load_thread) {
+            load_thread->join();
+            delete load_thread;
+            load_thread = 0;
+        }
     }
-  }
 }
 
 std::vector<std::shared_ptr<frontend_module>>
 list_frontend_modules()
 {
-  wait_for_frontend_module_load();
-  return frontend_modules;
+    wait_for_frontend_module_load();
+    return frontend_modules;
 }
 
 frontend_module::frontend_module(HMODULE module, frontend_entrypoint* entry)
@@ -43,73 +43,74 @@ frontend_module::frontend_module(HMODULE module, frontend_entrypoint* entry)
 
 frontend_module::~frontend_module()
 {
-  if (module) {
-    FreeLibrary(module);
-  }
+    if (module) {
+        FreeLibrary(module);
+    }
 }
 
 struct Candidate
 {
-  std::wstring filename;
-  std::vector<std::wstring> requirements;
+    std::wstring filename;
+    std::vector<std::wstring> requirements;
 };
 
 static void
 load_frontend_modules()
 {
-  // TODO(zao): Load frontend modules and all that jazz
-  load_thread = new std::thread([] {
-    modules_loaded = false;
-    std::unique_lock<std::mutex> lk(module_load_mutex);
+    // TODO(zao): Load frontend modules and all that jazz
+    load_thread = new std::thread([] {
+        modules_loaded = false;
+        std::unique_lock<std::mutex> lk(module_load_mutex);
+        load_barrier.wait();
+        HMODULE own_module;
+        GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                             GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           (LPCWSTR)load_frontend_modules,
+                           &own_module);
+        {
+            frontend_entrypoint_t gdi_entrypoint =
+              (frontend_entrypoint_t)GetProcAddress(own_module,
+                                                    "g_gdi_entrypoint");
+            frontend_entrypoint* gdi_impl = gdi_entrypoint();
+            frontend_modules.push_back(
+              std::make_shared<frontend_module>((HMODULE)0, gdi_impl));
+        }
+
+        {
+            frontend_entrypoint_t d3d9_entrypoint =
+              (frontend_entrypoint_t)GetProcAddress(own_module,
+                                                    "g_direct3d9_entrypoint");
+            if (d3d9_entrypoint) {
+                frontend_entrypoint* d3d9_impl = d3d9_entrypoint();
+                frontend_modules.push_back(
+                  std::make_shared<frontend_module>((HMODULE)0, d3d9_impl));
+            }
+        }
+
+        {
+            frontend_entrypoint_t d2d_entrypoint =
+              (frontend_entrypoint_t)GetProcAddress(own_module,
+                                                    "g_direct2d_entrypoint");
+            if (d2d_entrypoint) {
+                frontend_entrypoint* d2d_impl = d2d_entrypoint();
+                frontend_modules.push_back(
+                  std::make_shared<frontend_module>((HMODULE)0, d2d_impl));
+            }
+        }
+        modules_loaded = true;
+    });
     load_barrier.wait();
-    HMODULE own_module;
-    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                         GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                       (LPCWSTR)load_frontend_modules,
-                       &own_module);
-    {
-      frontend_entrypoint_t gdi_entrypoint =
-        (frontend_entrypoint_t)GetProcAddress(own_module, "g_gdi_entrypoint");
-      frontend_entrypoint* gdi_impl = gdi_entrypoint();
-      frontend_modules.push_back(
-        std::make_shared<frontend_module>((HMODULE)0, gdi_impl));
-    }
-
-    {
-      frontend_entrypoint_t d3d9_entrypoint =
-        (frontend_entrypoint_t)GetProcAddress(own_module,
-                                              "g_direct3d9_entrypoint");
-      if (d3d9_entrypoint) {
-      	frontend_entrypoint* d3d9_impl = d3d9_entrypoint();
-		frontend_modules.push_back(
-		  std::make_shared<frontend_module>((HMODULE)0, d3d9_impl));
-	  }
-    }
-
-    {
-      frontend_entrypoint_t d2d_entrypoint =
-        (frontend_entrypoint_t)GetProcAddress(own_module,
-                                              "g_direct2d_entrypoint");
-	  if (d2d_entrypoint) {
-        frontend_entrypoint* d2d_impl = d2d_entrypoint();
-        frontend_modules.push_back(
-          std::make_shared<frontend_module>((HMODULE)0, d2d_impl));
-      }
-    }
-    modules_loaded = true;
-  });
-  load_barrier.wait();
 }
 
 struct frontend_module_init_stage : init_stage_callback
 {
-  void on_init_stage(t_uint32 stage) override
-  {
-    if (!core_api::is_quiet_mode_enabled()) {
-      if (stage == init_stages::before_config_read)
-	load_frontend_modules();
+    void on_init_stage(t_uint32 stage) override
+    {
+        if (!core_api::is_quiet_mode_enabled()) {
+            if (stage == init_stages::before_config_read)
+                load_frontend_modules();
+        }
     }
-  }
 };
 }
 

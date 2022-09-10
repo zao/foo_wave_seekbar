@@ -5,4 +5,7 @@
 
 #include "Direct2D.h"
 
-FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT(g_direct2d_entrypoint, wave::config::frontend_direct2d1, wave::direct2d1_frontend)
+FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT(
+  g_direct2d_entrypoint,
+  wave::config::frontend_direct2d1,
+  wave::direct2d1_frontend)

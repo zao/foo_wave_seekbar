@@ -4,12 +4,12 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
-#pragma warning(disable: 4005)
+#pragma warning(disable : 4005)
 #define D3D_DEBUG_INFO
 
 #include <algorithm>
-using std::min;
 using std::max;
+using std::min;
 #include <stdint.h>
 #include <functional>
 #include <map>

@@ -9,14 +9,17 @@
 #include "Xz.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-SRes Xz_Encode(ISeqOutStream *outStream, ISeqInStream *inStream,
-    const CLzma2EncProps *lzma2Props, Bool useSubblock,
-    ICompressProgress *progress);
+    SRes Xz_Encode(ISeqOutStream* outStream,
+                   ISeqInStream* inStream,
+                   const CLzma2EncProps* lzma2Props,
+                   Bool useSubblock,
+                   ICompressProgress* progress);
 
-SRes Xz_EncodeEmpty(ISeqOutStream *outStream);
+    SRes Xz_EncodeEmpty(ISeqOutStream* outStream);
 
 #ifdef __cplusplus
 }

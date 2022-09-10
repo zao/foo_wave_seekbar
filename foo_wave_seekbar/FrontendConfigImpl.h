@@ -7,33 +7,30 @@
 
 #include "frontend_sdk/VisualFrontend.h"
 
-namespace wave
+namespace wave {
+struct frontend_config_impl : visual_frontend_config
 {
-	struct frontend_config_impl : visual_frontend_config
-	{
-		explicit frontend_config_impl(persistent_settings& settings)
-			: settings(settings)
-		{
-		}
+    explicit frontend_config_impl(persistent_settings& settings)
+      : settings(settings)
+    {}
 
-		virtual bool get_configuration_string(GUID key, text_sink const& out) const
-		{
-			auto& gs = settings.generic_strings;
-			auto I = gs.find(key);
-			if (gs.end() != I)
-			{
-				out.set(I->second.c_str());
-				return true;
-			}
-			return false;
-		}
-		
-		virtual void set_configuration_string(GUID key, char const* value)
-		{
-			settings.generic_strings[key] = value;
-		}
+    virtual bool get_configuration_string(GUID key, text_sink const& out) const
+    {
+        auto& gs = settings.generic_strings;
+        auto I = gs.find(key);
+        if (gs.end() != I) {
+            out.set(I->second.c_str());
+            return true;
+        }
+        return false;
+    }
 
-	private:
-		persistent_settings& settings;
-	};
+    virtual void set_configuration_string(GUID key, char const* value)
+    {
+        settings.generic_strings[key] = value;
+    }
+
+  private:
+    persistent_settings& settings;
+};
 }

@@ -5,17 +5,17 @@
 
 #pragma once
 
-namespace wave
+namespace wave {
+struct job
 {
-	struct job
-	{
-		playable_location_impl loc;
-		bool user;
-	};
+    playable_location_impl loc;
+    bool user;
+};
 
-	inline job make_job(playable_location_impl loc, bool user)
-	{
-		job ret = { loc, user };
-		return ret;
-	}
+inline job
+make_job(playable_location_impl loc, bool user)
+{
+    job ret = { loc, user };
+    return ret;
+}
 }

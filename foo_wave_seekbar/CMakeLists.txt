@@ -111,6 +111,7 @@ target_link_libraries(foo_wave_seekbar
 	"iphlpapi.lib"
 	7zip::7zip
 	Boost::boost
+	fmt::fmt-header-only
 	unofficial::columns-ui-sdk::columns_ui_sdk
 	unofficial::foobar2000-sdk::foobar2000_component_client
 	unofficial::foobar2000-sdk::helpers
@@ -123,3 +124,22 @@ target_link_libraries(foo_wave_seekbar
 
 add_subdirectory(frontend_direct2d)
 # add_subdirectory(frontend_direct3d9)
+
+macro(deploy_component target dir)
+	if(DEFINED FB2K_PROFILE_DIR)
+		if (CMAKE_VS_PLATFORM_NAME MATCHES "Win32")
+			set(FB2K_COMPONENT_SUBDIR ${FB2K_PROFILE_DIR}/user-components/${dir})
+		else()
+			STRING(TOLOWER ${CMAKE_VS_PLATFORM_NAME} FB2K_LOWERCASE_PLATFORM)
+			set(FB2K_COMPONENT_SUBDIR ${FB2K_PROFILE_DIR}/user-components-${FB2K_LOWERCASE_PLATFORM}/${dir})
+		endif()
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_directory
+			$<TARGET_FILE_DIR:${target}>
+			${FB2K_COMPONENT_SUBDIR}
+	#		COMMENT "Copying to output directory"
+		)
+	endif()
+endmacro()
+
+deploy_component(foo_wave_seekbar foo_wave_seekbar)

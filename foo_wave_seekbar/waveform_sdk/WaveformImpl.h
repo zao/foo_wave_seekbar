@@ -6,19 +6,20 @@
 #pragma once
 #include "Waveform.h"
 
-namespace wave
+namespace wave {
+struct waveform_impl : waveform
 {
-	struct waveform_impl : waveform
-	{
-		virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out) override;
-		virtual unsigned get_channel_count() const override;
-		virtual unsigned get_channel_map() const override;
-		virtual ref_ptr<waveform> clone() const override;
+    virtual bool get_field(char const* what,
+                           unsigned index,
+                           array_sink<float> const& out) override;
+    virtual unsigned get_channel_count() const override;
+    virtual unsigned get_channel_map() const override;
+    virtual ref_ptr<waveform> clone() const override;
 
-		typedef pfc::list_t<float> signal;
-		typedef pfc::list_t<signal> bundle;
+    typedef pfc::list_t<float> signal;
+    typedef pfc::list_t<signal> bundle;
 
-		pfc::map_t<pfc::string, bundle> fields;
-		unsigned channel_map;
-	};
+    pfc::map_t<pfc::string, bundle> fields;
+    unsigned channel_map;
+};
 }

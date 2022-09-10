@@ -11,7 +11,8 @@
 #if !defined(NOMINMAX)
 #define NOMINMAX
 #endif
-using std::min; using std::max;
+using std::max;
+using std::min;
 
 #include <atlbase.h>
 #include <atlapp.h>
@@ -23,4 +24,3 @@ using std::min; using std::max;
 
 #include <d3d9.h>
 #include <d3dx9.h>
-

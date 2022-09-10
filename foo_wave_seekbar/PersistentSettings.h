@@ -10,28 +10,30 @@
 #include <array>
 #include <boost/property_tree/ptree.hpp>
 
-namespace wave
+namespace wave {
+struct persistent_settings
 {
-	struct persistent_settings
-	{
-		persistent_settings();
+    persistent_settings();
 
-		config::frontend active_frontend_kind;
-		bool has_border;
-		std::array<color, config::color_count> colors;
-		std::array<bool, config::color_count> override_colors;
-		bool shade_played;
-		config::display_mode display_mode;
-		bool flip_display;
-		config::downmix downmix_display;
-		std::vector<std::pair<int, bool>> channel_order; // int is unnamed channel enum from audio_chunk, contains the channels used
-		std::map<GUID, std::string, decltype(&less_guid)> generic_strings;
+    config::frontend active_frontend_kind;
+    bool has_border;
+    std::array<color, config::color_count> colors;
+    std::array<bool, config::color_count> override_colors;
+    bool shade_played;
+    config::display_mode display_mode;
+    bool flip_display;
+    config::downmix downmix_display;
+    std::vector<std::pair<int, bool>>
+      channel_order; // int is unnamed channel enum from audio_chunk, contains
+                     // the channels used
+    std::map<GUID, std::string, decltype(&less_guid)> generic_strings;
 
-		void from_ptree(boost::property_tree::ptree const& src);
-		void to_ptree(boost::property_tree::ptree& out) const;
+    void from_ptree(boost::property_tree::ptree const& src);
+    void to_ptree(boost::property_tree::ptree& out) const;
 
-		void insert_remaining_channels();
-	};
+    void insert_remaining_channels();
+};
 
-	void read_s11n_xml(std::string xml, persistent_settings& settings);
+void
+read_s11n_xml(std::string xml, persistent_settings& settings);
 }

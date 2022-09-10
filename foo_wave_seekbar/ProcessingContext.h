@@ -5,22 +5,25 @@
 
 #pragma once
 
-namespace wave
+namespace wave {
+struct processing_contextmenu_item : contextmenu_item_simple
 {
-	struct processing_contextmenu_item : contextmenu_item_simple
-	{
-		virtual unsigned get_num_items();
-		virtual void get_item_name(unsigned p_index, pfc::string_base& p_out);
-		virtual void get_item_default_path(unsigned p_index, pfc::string_base& p_out);
-		virtual void context_command(unsigned p_index, metadb_handle_list_cref p_data, const GUID& p_caller);
-		virtual GUID get_item_guid(unsigned p_index);
-		virtual bool get_item_description(unsigned p_index, pfc::string_base& p_out);
+    virtual unsigned get_num_items();
+    virtual void get_item_name(unsigned p_index, pfc::string_base& p_out);
+    virtual void get_item_default_path(unsigned p_index,
+                                       pfc::string_base& p_out);
+    virtual void context_command(unsigned p_index,
+                                 metadb_handle_list_cref p_data,
+                                 const GUID& p_caller);
+    virtual GUID get_item_guid(unsigned p_index);
+    virtual bool get_item_description(unsigned p_index,
+                                      pfc::string_base& p_out);
 
-		virtual GUID get_parent();
+    virtual GUID get_parent();
 
-		static const GUID extract_guid;
-		static const GUID force_extract_guid;
-		static const GUID remove_guid;
-		static const GUID test_guid;
-	};
+    static const GUID extract_guid;
+    static const GUID force_extract_guid;
+    static const GUID remove_guid;
+    static const GUID test_guid;
+};
 }

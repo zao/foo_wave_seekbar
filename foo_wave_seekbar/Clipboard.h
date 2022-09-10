@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace clipboard
-{
-	bool render_audio(metadb_handle_ptr source, double beginning, double end);
+namespace clipboard {
+bool
+render_audio(metadb_handle_ptr source, double beginning, double end);
 }
