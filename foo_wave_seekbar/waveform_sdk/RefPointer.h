@@ -29,7 +29,7 @@ struct ref_ptr
     T* p;
 
     ref_ptr()
-      : p(0)
+      : p(nullptr)
     {}
 
     explicit ref_ptr(T* p, bool add_ref = true)
@@ -72,7 +72,7 @@ struct ref_ptr
             p->release();
     }
 
-    void reset(T* p = 0, bool add_ref = true)
+    void reset(T* p = nullptr, bool add_ref = true)
     {
         if (p && add_ref)
             p->add_ref();
@@ -89,7 +89,7 @@ struct ref_ptr
     typedef void (ref_ptr::*operator_bool_type)();
     operator operator_bool_type() const
     {
-        return (p ? &ref_ptr::operator_bool_dummy : 0);
+        return (p ? &ref_ptr::operator_bool_dummy : nullptr);
     }
 
   private:

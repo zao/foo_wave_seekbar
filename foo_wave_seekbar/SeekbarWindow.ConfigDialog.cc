@@ -3,7 +3,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
+#include <atlstr.h>
+
 #include "SeekbarWindow.h"
 
 namespace wave {
@@ -23,7 +24,7 @@ seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus,
     };
 
     // add_frontend_string(config::frontend_direct3d9);
-    // add_frontend_string(config::frontend_direct2d1);
+    add_frontend_string(config::frontend_direct2d1);
     add_frontend_string(config::frontend_gdi);
 
     auto select_frontend_string = [&](config::frontend frontend) {
@@ -121,7 +122,7 @@ seekbar_window::configuration_dialog::on_frontend_select(UINT code,
                                                          CWindow control)
 {
     CComboBox cb{ control };
-    config::frontend fe = (config::frontend)cb.GetItemData(cb.GetCurSel());
+    config::frontend fe = static_cast<config::frontend>(cb.GetItemData(cb.GetCurSel()));
 
     CButton config_button{ GetDlgItem(IDC_CONFIGURE) };
     bool has_conf = config::frontend_has_configuration[fe];
@@ -164,15 +165,15 @@ seekbar_window::configuration_dialog::on_wm_ctl_color_static(WTL::CDCHandle dc,
                                                              ATL::CWindow wnd)
 {
     if (initializing)
-        return 0;
+        return nullptr;
     for (int i = 0; i < config::color_count; ++i)
         if (wnd == colors[i].box) {
             bool enabled = !!colors[i].box.IsWindowEnabled();
             dc.SetDCBrushColor(colors[i].color_ref);
-            return enabled ? (HBRUSH)GetStockObject(DC_BRUSH)
+            return enabled ? static_cast<HBRUSH>(GetStockObject(DC_BRUSH))
                            : GetSysColorBrush(COLOR_BTNFACE);
         }
-    return 0;
+    return nullptr;
 }
 
 void
@@ -205,7 +206,7 @@ seekbar_window::configuration_dialog::on_color_click(UINT code,
     COLORREF arr[16] = {};
     CHOOSECOLOR cc = { sizeof(CHOOSECOLOR),
                        *this,
-                       0,
+                       nullptr,
                        c,
                        arr,
                        CC_ANYCOLOR | CC_FULLOPEN | CC_RGBINIT };
@@ -214,7 +215,7 @@ seekbar_window::configuration_dialog::on_color_click(UINT code,
         ci.color = xbgr_to_color(cc.rgbResult);
         ci.color_ref = cc.rgbResult;
         sw.set_color(idx, ci.color, true);
-        ci.box.InvalidateRect(0);
+        ci.box.InvalidateRect(nullptr);
     }
 }
 
@@ -257,7 +258,7 @@ seekbar_window::configuration_dialog::on_display_select(UINT code,
         return;
     CComboBox cb{ control };
     config::display_mode mode =
-      (config::display_mode)cb.GetItemData(cb.GetCurSel());
+      static_cast<config::display_mode>(cb.GetItemData(cb.GetCurSel()));
     if (mode != sw.settings.display_mode) {
         sw.set_display_mode(mode);
     }
@@ -271,7 +272,7 @@ seekbar_window::configuration_dialog::on_downmix_select(UINT code,
     if (initializing)
         return;
     CComboBox cb{ control };
-    config::downmix mode = (config::downmix)cb.GetItemData(cb.GetCurSel());
+    config::downmix mode = static_cast<config::downmix>(cb.GetItemData(cb.GetCurSel()));
     if (mode != sw.settings.downmix_display) {
         sw.set_downmix_display(mode);
     }
@@ -301,7 +302,7 @@ seekbar_window::configuration_dialog::on_channel_changed(NMHDR* hdr)
         }
         if (int state = (nm->uNewState >> 12 & 0xF)) // has checkbox state
         {
-            int ch = (int)channels.GetItemData(nm->iItem);
+            int ch = static_cast<int>(channels.GetItemData(nm->iItem));
             // bool checked = !!channels.GetCheckState(nm->iItem);
             sw.set_channel_enabled(ch, !!(state >> 1));
         }
@@ -328,7 +329,7 @@ seekbar_window::configuration_dialog::swap_channels(int i1, int i2)
         explicit item(int idx)
         {
             UINT mask = LVIF_PARAM | LVIF_STATE | LVIF_TEXT;
-            LVITEMW i = { mask, idx, 0, 0, (UINT)-1, buf, 80 };
+            LVITEMW i = { mask, idx, 0, 0, static_cast<UINT>(-1), buf, 80 };
             lvitem = i;
         }
         operator LVITEMW*() { return &lvitem; }
@@ -353,8 +354,8 @@ seekbar_window::configuration_dialog::on_channel_up(UINT code,
     int idx = channels.GetSelectedIndex();
     if (idx == 0)
         return;
-    int ch1 = (int)channels.GetItemData(idx - 1);
-    int ch2 = (int)channels.GetItemData(idx);
+    int ch1 = static_cast<int>(channels.GetItemData(idx - 1));
+    int ch2 = static_cast<int>(channels.GetItemData(idx));
     sw.swap_channel_order(ch1, ch2);
     swap_channels(idx - 1, idx);
     channels.SelectItem(idx - 1);
@@ -371,8 +372,8 @@ seekbar_window::configuration_dialog::on_channel_down(UINT code,
     int count = channels.GetItemCount();
     if (idx + 1 == count)
         return;
-    int ch1 = (int)channels.GetItemData(idx);
-    int ch2 = (int)channels.GetItemData(idx + 1);
+    int ch1 = static_cast<int>(channels.GetItemData(idx));
+    int ch2 = static_cast<int>(channels.GetItemData(idx + 1));
     sw.swap_channel_order(ch1, ch2);
     swap_channels(idx, idx + 1);
     channels.SelectItem(idx + 1);
@@ -431,7 +432,7 @@ seekbar_window::configuration_dialog::channel_info
 seekbar_window::configuration_dialog::get_item(int idx, CListBox& box)
 {
     channel_info ret;
-    ret.data = (int)box.GetItemData(idx);
+    ret.data = static_cast<int>(box.GetItemData(idx));
     CString s;
     box.GetText(idx, s);
     ret.text = s;

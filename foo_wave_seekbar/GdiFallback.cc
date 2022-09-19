@@ -3,10 +3,10 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "GdiFallback.h"
 #include "Helpers.h"
 #include "frontend_sdk/FrontendHelpers.h"
+#include <optional>
 
 namespace wave {
 gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd,
@@ -18,7 +18,7 @@ gdi_fallback_frontend::gdi_fallback_frontend(HWND wnd,
   , cached_rects_valid(false)
 {
     create_objects();
-    on_state_changed((state)~0);
+    on_state_changed(static_cast<state>(~0));
 }
 
 gdi_fallback_frontend::~gdi_fallback_frontend()
@@ -36,7 +36,7 @@ map_normalized_float_to_unsigned_range(unsigned dst_low,
                                        float value)
 {
     unsigned dst_delta = dst_high - dst_low;
-    return dst_low + (std::min)(dst_delta - 1, (unsigned)(dst_delta * value));
+    return dst_low + (std::min)(dst_delta - 1, static_cast<unsigned>(dst_delta * value));
 }
 
 CRect
@@ -123,8 +123,8 @@ make_cursor_info(visual_frontend_callback const& callback)
     auto seek_pos = (std::min)(track_length, callback.get_seek_position());
     auto playback_pos =
       (std::min)(track_length, callback.get_playback_position());
-    cursor_info info = { (float)(seek_pos / track_length),
-                         (float)(playback_pos / track_length),
+    cursor_info info = { static_cast<float>(seek_pos / track_length),
+                         static_cast<float>(playback_pos / track_length),
                          callback.is_seeking(),
                          callback.is_cursor_visible() };
     return info;
@@ -183,11 +183,11 @@ derive_point(float x,
     if (flip)
         x = 1.0f - x;
     if (vertical) {
-        return CPoint((std::min)((int)screen_w - 1, (int)((float)screen_w * y)),
-                      (std::min)((int)screen_h - 1, (int)((float)screen_h * x)));
+        return CPoint((std::min)(static_cast<int>(screen_w) - 1, static_cast<int>((float)screen_w * y)),
+                      (std::min)(static_cast<int>(screen_h) - 1, static_cast<int>((float)screen_h * x)));
     } else {
-        return CPoint((std::min)((int)screen_w - 1, (int)((float)screen_w * x)),
-                      (std::min)((int)screen_h - 1, (int)((float)screen_h * y)));
+        return CPoint((std::min)(static_cast<int>(screen_w) - 1, static_cast<int>((float)screen_w * x)),
+                      (std::min)(static_cast<int>(screen_h) - 1, static_cast<int>((float)screen_h * y)));
     }
 }
 
@@ -411,7 +411,7 @@ gdi_fallback_frontend::update_data()
                   channel_numbers.begin(), channel_numbers.end(), info.channel);
                 decltype(I) first = channel_numbers.begin();
                 if (I != channel_numbers.end()) {
-                    channel_indices.add_item((int)std::distance(first, I));
+                    channel_indices.add_item(static_cast<int>(std::distance(first, I)));
                 }
             }
         }
@@ -444,7 +444,7 @@ gdi_fallback_frontend::update_data()
             float4 hilightColor(hi.r, hi.g, hi.b, hi.a);
 
             size_t major_extent =
-              (size_t)(vertical ? bitmap_size.cy : bitmap_size.cx);
+              static_cast<size_t>(vertical ? bitmap_size.cy : bitmap_size.cx);
             std::vector<float4> samples(major_extent);
             for (size_t x = 0; x < major_extent; ++x) {
                 size_t ix = (x * 2048ul / major_extent);
@@ -454,7 +454,7 @@ gdi_fallback_frontend::update_data()
             {
                 auto& h = bmi.bmiHeader;
                 h.biSize = sizeof(h);
-                h.biWidth = (LONG)channel_width;
+                h.biWidth = static_cast<LONG>(channel_width);
                 h.biHeight = 1;
                 h.biPlanes = 1;
                 h.biBitCount = 32;
@@ -471,11 +471,11 @@ gdi_fallback_frontend::update_data()
                         tc_x =
                           flip ? (channel_height - target_y - 1) : target_y;
                         tc_y =
-                          1.0f - 2.0f * target_x / (float)(channel_width - 1);
+                          1.0f - 2.0f * target_x / static_cast<float>(channel_width - 1);
                     } else {
                         tc_x = flip ? (channel_width - target_x - 1) : target_x;
                         tc_y =
-                          1.0f - 2.0f * target_y / (float)(channel_height - 1);
+                          1.0f - 2.0f * target_y / static_cast<float>(channel_height - 1);
                     }
                     float4 c;
                     auto sample = samples[tc_x];
@@ -499,9 +499,9 @@ gdi_fallback_frontend::update_data()
                     unshaded_row[target_x] = color_to_xrgb(cc);
                     shaded_row[target_x] = color_to_xrgb(ac);
                 }
-                wave_dc->SetDIBitsToDevice((int)channel_x_offset,
-                                           (int)(target_y + channel_y_offset),
-                                           (DWORD)unshaded_row.size(),
+                wave_dc->SetDIBitsToDevice(static_cast<int>(channel_x_offset),
+                                           static_cast<int>(target_y + channel_y_offset),
+                                           static_cast<DWORD>(unshaded_row.size()),
                                            1,
                                            0,
                                            0,
@@ -510,9 +510,9 @@ gdi_fallback_frontend::update_data()
                                            unshaded_row.data(),
                                            &bmi,
                                            DIB_RGB_COLORS);
-                shaded_wave_dc->SetDIBitsToDevice((int)channel_x_offset,
-                                                  (int)(target_y + channel_y_offset),
-                                                  (DWORD)shaded_row.size(),
+                shaded_wave_dc->SetDIBitsToDevice(static_cast<int>(channel_x_offset),
+                                                  static_cast<int>(target_y + channel_y_offset),
+                                                  static_cast<DWORD>(shaded_row.size()),
                                                   1,
                                                   0,
                                                   0,
@@ -537,8 +537,8 @@ gdi_fallback_frontend::update_positions()
     auto flip = callback.get_flip_display();
     auto shade_played = callback.get_shade_played();
     auto cursors = make_cursor_info(callback);
-    wave::optional<CRect> play_rect;
-    wave::optional<CRect> seek_rect;
+    std::optional<CRect> play_rect;
+    std::optional<CRect> seek_rect;
     if (cursors.has_position) {
         auto from = derive_point(cursors.position_fraction,
                                  0.0f,
@@ -553,7 +553,7 @@ gdi_fallback_frontend::update_positions()
                                vertical,
                                flip);
         play_rect = CRect(from, to);
-        (*play_rect).InflateRect(0, 0, 1, 1);
+        play_rect->InflateRect(0, 0, 1, 1);
     }
     if (cursors.has_seeking) {
         auto from = derive_point(cursors.seeking_fraction,
@@ -569,14 +569,14 @@ gdi_fallback_frontend::update_positions()
                                vertical,
                                flip);
         seek_rect = CRect(from, to);
-        (*seek_rect).InflateRect(0, 0, 1, 1);
+        seek_rect->InflateRect(0, 0, 1, 1);
         // CRect r(cursors.seeking_offset, 0, cursors.seeking_offset+1,
         // size.cy); seek_rect = reorient_rect(r, canvas_size, vertical, flip);
     }
     if (last_play_rect != play_rect) {
-        if (shade_played && last_play_rect.valid()) {
+        if (shade_played && last_play_rect.has_value()) {
             CRect extent =
-              play_rect.valid()
+              play_rect.has_value()
                 ? *play_rect
                 : reorient_rect(
                     CRect(0, 0, 1, size.cy), canvas_size, vertical, flip);
@@ -584,15 +584,15 @@ gdi_fallback_frontend::update_positions()
             combined_play_rect.UnionRect(extent, &*last_play_rect);
             InvalidateRect(wnd, &combined_play_rect, FALSE);
         } else {
-            if (play_rect.valid())
+            if (play_rect.has_value())
                 InvalidateRect(wnd, &*play_rect, FALSE);
-            if (last_play_rect.valid())
+            if (last_play_rect.has_value())
                 InvalidateRect(wnd, &*last_play_rect, FALSE);
         }
     }
-    if (seek_rect.valid())
+    if (seek_rect.has_value())
         InvalidateRect(wnd, &*seek_rect, FALSE);
-    if (last_seek_rect.valid())
+    if (last_seek_rect.has_value())
         InvalidateRect(wnd, &*last_seek_rect, FALSE);
     last_play_rect = play_rect;
     last_seek_rect = seek_rect;

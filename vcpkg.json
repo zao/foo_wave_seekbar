@@ -8,10 +8,15 @@
     "columns-ui-sdk",
     "fmt",
     "foobar2000-sdk",
+    {
+      "name": "imgui",
+      "features": ["docking-experimental", "dx11-binding", "win32-binding"]
+    },
     "jsoncpp",
     "nlohmann-json",
     "sqlite3",
     "wtl",
+    "zstd",
     "zlib"
   ]
 }

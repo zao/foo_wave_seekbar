@@ -3,8 +3,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "CacheImpl.h"
+#include <SDK/advconfig_impl.h>
 #include "BackingStore.h"
 #include "Helpers.h"
 #include <fmt/format.h>
@@ -16,16 +16,8 @@
 #include <thread>
 #include "util/Barrier.h"
 
-// {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
-const GUID guid_seekbar_branch = {
-    0xebeaba3f,
-    0x7a8e,
-    0x4a54,
-    { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 }
-};
-
 // {1E01E2F7-79CE-4F3F-95FE-86986236670C}
-static const GUID guid_max_concurrent_jobs = {
+static GUID const guid_max_concurrent_jobs = {
     0x1e01e2f7,
     0x79ce,
     0x4f3f,
@@ -33,7 +25,7 @@ static const GUID guid_max_concurrent_jobs = {
 };
 
 // {44AA5DAB-F35E-4E21-8033-80087B2550FD}
-static const GUID guid_always_rescan_user = {
+static GUID constexpr guid_always_rescan_user = {
     0x44aa5dab,
     0xf35e,
     0x4e21,
@@ -63,16 +55,11 @@ extern "C"
 namespace wave {
 struct cache_run_state
 {
-    cache_run_state()
-      : init_sync(2)
-    {
-    }
-
-    std::thread* thread;
-    util::barrier init_sync;
+    std::thread* thread{};
+    util::barrier init_sync{ 2 };
     std::mutex mutex;
     std::condition_variable bump;
-    std::atomic<bool> should_shutdown;
+    std::atomic<bool> should_shutdown{ false };
 };
 static cache_run_state run_state;
 
@@ -93,6 +80,7 @@ cache_impl::cache_impl()
 
 cache_impl::~cache_impl() {}
 
+// ReSharper disable once CppPolymorphicClassWithNonVirtualPublicDestructor
 struct waveform_query_shared : waveform_query
 {
     waveform_query_shared()
@@ -108,8 +96,8 @@ struct waveform_query_shared : waveform_query
     virtual query_urgency get_urgency() const override { return urgency; }
     virtual query_force get_forced() const override { return forced; }
     virtual float get_progress() const override { return progress; }
-    virtual ref_ptr<waveform> get_waveform() const { return wf; }
-    virtual void abort() { aborted = true; }
+    virtual ref_ptr<waveform> get_waveform() const override { return wf; }
+    virtual void abort() override { aborted = true; }
 
   public:
     playable_location_impl loc;
@@ -122,17 +110,21 @@ struct waveform_query_shared : waveform_query
 
 struct plain_query : waveform_query_shared
 {
-    virtual void set_waveform(ref_ptr<waveform> wf, float progress) override
+    virtual void set_waveform(ref_ptr<waveform> new_waveform,
+                              float new_progress) override
     {
-        this->wf = wf;
+        this->wf = new_waveform;
+        this->progress = new_progress;
     }
 };
 
 struct callback_query : waveform_query_shared
 {
-    virtual void set_waveform(ref_ptr<waveform> wf, float progress) override
+    virtual void set_waveform(ref_ptr<waveform> new_waveform,
+                              float new_progress) override
     {
-        this->wf = wf;
+        this->wf = new_waveform;
+        this->progress = new_progress;
         service_ptr_t<waveform_query> self;
         service_query_t(self);
         callback(self);
@@ -248,7 +240,6 @@ cache_impl::get_waveform(service_ptr_t<waveform_query> request)
     if (!store)
         return;
 
-    bool force_rescan = g_always_rescan_user.get();
     bool should_rescan = request->get_forced() || !store->has(loc);
 
     auto response = std::make_shared<get_response>();
@@ -522,10 +513,10 @@ cache_impl::cache_main()
     }
 
     auto make_bulk_job = [](service_ptr_t<waveform_query> const& q) -> job {
-        job j = {};
-        j.loc = q->get_location();
-        j.user = q->get_forced() == waveform_query::forced_query;
-        return j;
+        return job{
+            .loc = q->get_location(),
+            .user = q->get_forced() == waveform_query::forced_query,
+        };
     };
 
     // NOTE(zao): We degrade all jobs to bulk on restart, while they may be
@@ -544,6 +535,7 @@ cache_impl::cache_main()
     store.reset();
 }
 
+// ReSharper disable once CppPolymorphicClassWithNonVirtualPublicDestructor
 struct cache_init_stage : init_stage_callback
 {
     void on_init_stage(t_uint32 stage) override
@@ -559,4 +551,5 @@ struct cache_init_stage : init_stage_callback
 };
 }
 
+// ReSharper disable once CppDeclaratorNeverUsed
 static service_factory_single_t<wave::cache_init_stage> g_cache_init_stage;

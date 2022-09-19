@@ -143,24 +143,24 @@ xbgr_to_color(DWORD c, BYTE a = 0xFFU)
 inline COLORREF
 color_to_xrgb(color c)
 {
-    return RGB((BYTE)(c.a * c.b * 255),
-               (BYTE)(c.a * c.g * 255),
-               (BYTE)(c.a * c.r * 255));
+    return RGB(static_cast<BYTE>(c.a * c.b * 255),
+               static_cast<BYTE>(c.a * c.g * 255),
+               static_cast<BYTE>(c.a * c.r * 255));
 }
 
 inline COLORREF
 color_to_xbgr(color c)
 {
-    return RGB((BYTE)(c.a * c.r * 255),
-               (BYTE)(c.a * c.g * 255),
-               (BYTE)(c.a * c.b * 255));
+    return RGB(static_cast<BYTE>(c.a * c.r * 255),
+               static_cast<BYTE>(c.a * c.g * 255),
+               static_cast<BYTE>(c.a * c.b * 255));
 }
 
 inline COLORREF
 color_to_abgr(color c)
 {
     color pc(c.r * c.a, c.g * c.a, c.b * c.a, c.a);
-    return color_to_xbgr(pc) | (((BYTE)(c.a * 255)) << 24);
+    return color_to_xbgr(pc) | (static_cast<BYTE>(c.a * 255) << 24);
 }
 
 struct channel_info
@@ -315,13 +315,17 @@ extern "C"
         }                                                                      \
     } g_frontend_entrypoint_impl;                                              \
     }                                                                          \
-    extern "C" __declspec(dllexport) frontend_entrypoint* _cdecl Name()        \
+    extern "C" frontend_entrypoint* _cdecl Name()        \
     {                                                                          \
         {                                                                      \
             Hook();                                                            \
         }                                                                      \
         return &g_frontend_entrypoint_impl;                                    \
     }
+//
+
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_DECL(Name)           \
+    extern "C" frontend_entrypoint* _cdecl Name()
 //
 
 #define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT(Name, Id, Class)     \

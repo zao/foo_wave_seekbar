@@ -5,6 +5,7 @@
 
 #pragma once
 #include "SeekbarWindow.h"
+#include <ui_extension.h>
 
 namespace uie {
 template<typename W, typename T = window>
@@ -19,7 +20,7 @@ struct container_atl_window
       const window_host_ptr& new_host,
       const ui_helpers::window_position_t& position)
     {
-        if ((HWND) * this) {
+        if (static_cast<HWND>(*this)) {
             this->ShowWindow(SW_HIDE);
             this->SetParent(parent);
             host->relinquish_ownership(*this);

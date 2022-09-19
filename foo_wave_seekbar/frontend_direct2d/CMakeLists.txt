@@ -4,7 +4,7 @@ set(D2D_SOURCES
 	"Direct2D.h"
 )
 
-add_library(frontend_direct2d SHARED
+add_library(frontend_direct2d STATIC
 	${D2D_SOURCES}
 )
 

@@ -3,11 +3,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "ProcessingContext.h"
 #include "Cache.h"
-#include <list>
-#include <map>
 
 namespace wave {
 unsigned

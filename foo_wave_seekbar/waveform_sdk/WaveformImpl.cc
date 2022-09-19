@@ -31,7 +31,7 @@ waveform_impl::get_channel_count() const
 {
     if (fields.get_count() == 0)
         throw std::runtime_error("channel count query on empty waveform");
-    return (unsigned)fields.first()->m_value.get_count();
+    return static_cast<unsigned>(fields.first()->m_value.get_count());
 }
 
 unsigned

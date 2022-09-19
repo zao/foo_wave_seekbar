@@ -5,10 +5,14 @@
 
 #pragma once
 #include "frontend_sdk/VisualFrontend.h"
-#include "waveform_sdk/Optional.h"
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atlgdi.h>
+#include <atltypes.h>
+#include <optional>
 
 namespace wave {
-struct mem_dc : CDC
+struct mem_dc : WTL::CDC
 {
     CBitmap bmp;
     CBitmapHandle old_bmp;
@@ -48,8 +52,8 @@ struct gdi_fallback_frontend : visual_frontend
 
     CWindow wnd;
     bool cached_rects_valid;
-    wave::optional<CRect> last_play_rect;
-    wave::optional<CRect> last_seek_rect;
+    std::optional<CRect> last_play_rect;
+    std::optional<CRect> last_seek_rect;
 
     std::unique_ptr<mem_dc> wave_dc, shaded_wave_dc;
     std::unique_ptr<CPen> pen_foreground, pen_highlight, pen_selection;
@@ -59,4 +63,4 @@ struct gdi_fallback_frontend : visual_frontend
 };
 }
 
-extern "C" __declspec(dllexport) frontend_entrypoint* _cdecl g_gdi_entrypoint();
+extern "C" frontend_entrypoint* _cdecl g_gdi_entrypoint();

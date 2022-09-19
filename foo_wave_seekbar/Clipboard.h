@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <SDK/foobar2000-lite.h>
+
 namespace clipboard {
 bool
 render_audio(metadb_handle_ptr source, double beginning, double end);

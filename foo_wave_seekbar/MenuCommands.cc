@@ -3,8 +3,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "Cache.h"
+#include <SDK/menu.h>
 
 // {64482E5D-6DF6-4A80-BD0A-25B06F2BE585}
 static GUID const guid_cache_group = {

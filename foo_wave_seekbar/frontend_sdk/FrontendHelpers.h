@@ -35,7 +35,7 @@ get_resource_contents(Cont& out, WORD id)
         return;
 
     auto size = SizeofResource(module, res_info);
-    auto p = (char*)LockResource(res);
+    auto p = static_cast<char*>(LockResource(res));
     if (!p)
         return;
 

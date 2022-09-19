@@ -4,6 +4,13 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atlcrack.h>
+#include <atlctrls.h>
+#include <atlframe.h>
+#include <atltypes.h>
+
 #include "frontend_sdk/VisualFrontend.h"
 #include "resource.h"
 #include "PersistentSettings.h"

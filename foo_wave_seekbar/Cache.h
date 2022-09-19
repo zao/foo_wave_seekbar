@@ -33,26 +33,17 @@ struct waveform_query : service_base
 
     virtual void set_waveform(ref_ptr<waveform>, float progress) = 0;
 
-    FB2K_MAKE_SERVICE_INTERFACE(waveform_query, service_base);
+    FB2K_MAKE_SERVICE_INTERFACE(waveform_query, service_base)
 };
 
 struct get_response
 {
     get_response()
       : valid_bucket_count(2048)
-    {}
+    {
+    }
     ref_ptr<waveform> waveform;
     size_t valid_bucket_count;
-};
-
-struct get_request
-{
-    get_request()
-      : completion_handler([](std::shared_ptr<get_response>) {})
-    {}
-    playable_location_impl location;
-    bool user_requested;
-    std::function<void(std::shared_ptr<get_response>)> completion_handler;
 };
 
 struct cache : service_base
@@ -66,19 +57,19 @@ struct cache : service_base
       waveform_query::query_urgency urgency,
       waveform_query::query_force forced,
       std::function<void(service_ptr_t<waveform_query>)> callback) = 0;
-    virtual void get_waveform(service_ptr_t<waveform_query> request) abstract;
-    virtual void remove_dead_waveforms() abstract;
-    virtual void compact_storage() abstract;
-    virtual void rescan_waveforms() abstract;
+    virtual void get_waveform(service_ptr_t<waveform_query> request) = 0;
+    virtual void remove_dead_waveforms() = 0;
+    virtual void compact_storage() = 0;
+    virtual void rescan_waveforms() = 0;
 
-    virtual bool has_waveform(playable_location const& loc) abstract;
-    virtual void remove_waveform(playable_location const& loc) abstract;
+    virtual bool has_waveform(playable_location const& loc) = 0;
+    virtual void remove_waveform(playable_location const& loc) = 0;
 
-    virtual void defer_action(std::function<void()> fun) abstract;
+    virtual void defer_action(std::function<void()> fun) = 0;
 
-    virtual bool is_location_forbidden(playable_location const& loc) abstract;
+    virtual bool is_location_forbidden(playable_location const& loc) = 0;
     virtual bool get_waveform_sync(playable_location const& loc,
-                                   ref_ptr<waveform>& out) abstract;
+                                   ref_ptr<waveform>& out) = 0;
 
     FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(cache)
 };

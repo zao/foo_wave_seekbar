@@ -4,6 +4,8 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <SDK/foobar2000-lite.h>
+#include <SDK/playable_location.h>
 
 namespace wave {
 struct job

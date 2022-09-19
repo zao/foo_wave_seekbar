@@ -1,5 +1,10 @@
-#include "PchSeekbar.h"
 #include "Player.h"
+#include <SDK/foobar2000-lite.h>
+#include <SDK/initquit.h>
+#include <SDK/playback_control.h>
+#include <SDK/play_callback.h>
+#include <SDK/playlist.h>
+
 #include "Cache.h"
 #include "Helpers.h"
 

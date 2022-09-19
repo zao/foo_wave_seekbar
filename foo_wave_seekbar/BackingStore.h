@@ -7,11 +7,13 @@
 #include "Job.h"
 #include "waveform_sdk/Waveform.h"
 
+struct sqlite3_stmt;
+struct sqlite3;
+
 namespace wave {
 struct backing_store
 {
     explicit backing_store(pfc::string const& cache_filename);
-    ~backing_store();
 
     bool has(playable_location const& file);
     void remove(playable_location const& file);

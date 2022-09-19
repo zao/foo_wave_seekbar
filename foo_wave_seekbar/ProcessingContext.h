@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <SDK/foobar2000-lite.h>
+#include <SDK/contextmenu.h>
+
 namespace wave {
 struct processing_contextmenu_item : contextmenu_item_simple
 {

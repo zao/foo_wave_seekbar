@@ -15,6 +15,12 @@ cmake_minimum_required(VERSION 3.23)
 #     find_package(fmt CONFIG REQUIRED)
 #     target_link_libraries(main PRIVATE fmt::fmt-header-only)
 # 
+# imgui provides CMake targets:
+# 
+#     # this is heuristically generated, and may not be correct
+#     find_package(imgui CONFIG REQUIRED)
+#     target_link_libraries(main PRIVATE imgui::imgui)
+#
 # jsoncpp provides CMake targets:
 # 
 #     # this is heuristically generated, and may not be correct
@@ -59,6 +65,11 @@ cmake_minimum_required(VERSION 3.23)
 # 
 #     find_package(ZLIB REQUIRED)
 #     target_link_libraries(main PRIVATE ZLIB::ZLIB)
+#
+# The package zstd provides CMake targets:
+# 
+#     find_package(zstd CONFIG REQUIRED)
+#     target_link_libraries(main PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
 
 # 7-zip
 find_package(7zip CONFIG REQUIRED)
@@ -75,6 +86,9 @@ find_package(fmt CONFIG REQUIRED)
 # foobar2000
 find_package(unofficial-foobar2000-sdk CONFIG REQUIRED)
 
+# Dear ImGui
+find_package(imgui CONFIG REQUIRED)
+
 # jsoncpp
 find_package(jsoncpp CONFIG REQUIRED)
 
@@ -89,6 +103,11 @@ find_path(WTL_INCLUDE_DIRS "atlapp.h")
 
 # zlib 
 find_package(ZLIB REQUIRED)
+
+# zstd
+find_package(zstd CONFIG REQUIRED)
+
+add_compile_options(-MP)
 
 add_compile_definitions(UNICODE _UNICODE)
 

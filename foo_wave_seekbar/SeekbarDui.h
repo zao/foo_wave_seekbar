@@ -5,6 +5,7 @@
 
 #pragma once
 #include "SeekbarWindow.h"
+#include <SDK/ui_element.h>
 
 namespace wave {
 struct seekbar_dui
@@ -29,8 +30,8 @@ struct seekbar_dui
     void initialize_window(HWND parent)
     {
         Create(parent,
-               0,
-               0,
+               nullptr,
+               nullptr,
                WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
                settings.has_border ? WS_EX_STATICEDGE : 0);
     }

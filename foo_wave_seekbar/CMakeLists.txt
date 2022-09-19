@@ -67,8 +67,6 @@ source_group(cache FILES ${CACHE_SOURCES})
 source_group(resource FILES ${RESOURCE_SOURCES})
 source_group(contrib\\sqlite3 FILES ${SQLITE_SOURCES})
 source_group(contrib\\lzma FILES ${LZMA_SOURCES})
-source_group(contrib\\zlib FILES ${ZLIB_SOURCES})
-source_group(contrib\\json FILES ${JSON_SOURCES})
 source_group(util FILES ${UTIL_SOURCES})
 
 add_library(foo_wave_seekbar SHARED
@@ -77,8 +75,6 @@ add_library(foo_wave_seekbar SHARED
 	${SEEKBAR_SOURCES}
 	${SQLITE_SOURCES}
 	${LZMA_SOURCES}
-	${ZLIB_SOURCES}
-	${JSON_SOURCES}
 	${UTIL_SOURCES}
 )
 
@@ -100,8 +96,13 @@ target_include_directories(foo_wave_seekbar
 # 	"${DXSDK_LIBRARY_DIRS}"
 # )
 
+add_subdirectory(frontend_direct2d)
+# add_subdirectory(frontend_direct3d9)
+
 target_link_libraries(foo_wave_seekbar
 	PRIVATE
+	frontend_direct2d
+	imgui::imgui
 	waveform_sdk
 	"comdlg32.lib"
 	"rpcrt4.lib"
@@ -120,24 +121,26 @@ target_link_libraries(foo_wave_seekbar
 	unofficial::foobar2000-sdk::shared
 	unofficial::sqlite3::sqlite3
 	ZLIB::ZLIB
+	$<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
 )
-
-add_subdirectory(frontend_direct2d)
-# add_subdirectory(frontend_direct3d9)
 
 macro(deploy_component target dir)
 	if(DEFINED FB2K_PROFILE_DIR)
-		if (CMAKE_VS_PLATFORM_NAME MATCHES "Win32")
+		if(VCPKG_TARGET_TRIPLET MATCHES "x86-*")
 			set(FB2K_COMPONENT_SUBDIR ${FB2K_PROFILE_DIR}/user-components/${dir})
+		elseif(VCPKG_TARGET_TRIPLET MATCHES "x64-*")
+			set(FB2K_COMPONENT_SUBDIR ${FB2K_PROFILE_DIR}/user-components-x64/${dir})
+		elseif(VCPKG_TARGET_TRIPLET MATCHES "arm64-")
+			set(FB2K_COMPONENT_SUBDIR ${FB2K_PROFILE_DIR}/user-components-arm64/${dir})
 		else()
-			STRING(TOLOWER ${CMAKE_VS_PLATFORM_NAME} FB2K_LOWERCASE_PLATFORM)
-			set(FB2K_COMPONENT_SUBDIR ${FB2K_PROFILE_DIR}/user-components-${FB2K_LOWERCASE_PLATFORM}/${dir})
+			message(FATAL_ERROR "Unhandled VCPKG_TARGET_TRIPLET \"${VCPKG_TARGET_TRIPLET}\"")
 		endif()
+		message("Deploying to ${FB2K_COMPONENT_SUBDIR}")
 		add_custom_command(TARGET ${target} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_directory
 			$<TARGET_FILE_DIR:${target}>
 			${FB2K_COMPONENT_SUBDIR}
-	#		COMMENT "Copying to output directory"
+			COMMENT "Copying to output directory ${FB2K_COMPONENT_SUBDIR}"
 		)
 	endif()
 endmacro()

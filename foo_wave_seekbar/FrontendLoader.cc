@@ -1,5 +1,5 @@
-#include "PchSeekbar.h"
 #include "FrontendLoader.h"
+#include <SDK/initquit.h>
 #include "GdiFallback.h"
 #include "util/Barrier.h"
 #include "util/Filesystem.h"
@@ -24,7 +24,7 @@ wait_for_frontend_module_load()
         if (load_thread) {
             load_thread->join();
             delete load_thread;
-            load_thread = 0;
+            load_thread = nullptr;
         }
     }
 }
@@ -54,6 +54,10 @@ struct Candidate
     std::vector<std::wstring> requirements;
 };
 
+FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_DECL(g_gdi_entrypoint);
+FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_DECL(g_direct2d_entrypoint);
+// FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_DECL(g_direct3d9_entrypoint);
+
 static void
 load_frontend_modules()
 {
@@ -68,12 +72,9 @@ load_frontend_modules()
                            (LPCWSTR)load_frontend_modules,
                            &own_module);
         {
-            frontend_entrypoint_t gdi_entrypoint =
-              (frontend_entrypoint_t)GetProcAddress(own_module,
-                                                    "g_gdi_entrypoint");
-            frontend_entrypoint* gdi_impl = gdi_entrypoint();
+            frontend_entrypoint* gdi_impl = g_gdi_entrypoint();
             frontend_modules.push_back(
-              std::make_shared<frontend_module>((HMODULE)0, gdi_impl));
+              std::make_shared<frontend_module>(static_cast<HMODULE>(nullptr), gdi_impl));
         }
 
         {
@@ -83,18 +84,16 @@ load_frontend_modules()
             if (d3d9_entrypoint) {
                 frontend_entrypoint* d3d9_impl = d3d9_entrypoint();
                 frontend_modules.push_back(
-                  std::make_shared<frontend_module>((HMODULE)0, d3d9_impl));
+                  std::make_shared<frontend_module>(static_cast<HMODULE>(nullptr), d3d9_impl));
             }
         }
 
         {
-            frontend_entrypoint_t d2d_entrypoint =
-              (frontend_entrypoint_t)GetProcAddress(own_module,
-                                                    "g_direct2d_entrypoint");
-            if (d2d_entrypoint) {
-                frontend_entrypoint* d2d_impl = d2d_entrypoint();
+            auto ep = g_direct2d_entrypoint;
+            if (ep) {
+                frontend_entrypoint* d2d_impl = ep();
                 frontend_modules.push_back(
-                  std::make_shared<frontend_module>((HMODULE)0, d2d_impl));
+                  std::make_shared<frontend_module>(static_cast<HMODULE>(nullptr), d2d_impl));
             }
         }
         modules_loaded = true;

@@ -3,11 +3,11 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "PersistentSettings.h"
 
 #pragma comment(lib, "rpcrt4.lib")
 
+#include <regex>
 #include <set>
 #include <sstream>
 #include <fstream>
@@ -30,7 +30,7 @@ as_guid(std::string s)
 static std::string
 as_string(GUID const& g)
 {
-    RPC_CSTR guid_string = NULL;
+    RPC_CSTR guid_string = nullptr;
     UuidToStringA(&g, &guid_string);
     std::string ret = (char const*)guid_string;
     RpcStringFreeA(&guid_string);
@@ -52,7 +52,7 @@ scan_int(T& out, char const* from, size_t n)
     std::istringstream iss(std::string(from, from + n));
     uint64_t v = 0u;
     iss >> v;
-    out = (T)v;
+    out = static_cast<T>(v);
 }
 
 template<typename T>
@@ -62,7 +62,7 @@ scan_int(T& out, char const* from, size_t n)
     std::istringstream iss(std::string(from, from + n));
     int64_t v = 0;
     iss >> v;
-    out = (T)v;
+    out = static_cast<T>(v);
 }
 
 template<typename T>
@@ -94,7 +94,7 @@ extract_float(rxml::xml_node<>* node, T& out)
         throw std::runtime_error("Usable float element not found.");
     char* first = node->value();
     char* last = first + node->value_size();
-    out = (T)strtod(first, &last);
+    out = static_cast<T>(strtod(first, &last));
 }
 
 template<typename T, typename F>
@@ -282,7 +282,7 @@ persistent_settings::insert_remaining_channels()
 #undef INSERT_CHANNEL
     for (auto I = all_channels.begin(); I != all_channels.end(); ++I) {
         int ch = *I;
-        auto pred = [ch](decltype(channel_order[0]) const& a) {
+        auto pred = [ch](decltype(channel_order[0]) a) {
             return a.first == ch;
         };
         if (std::find_if(channel_order.begin(), channel_order.end(), pred) ==
@@ -352,7 +352,7 @@ void
 persistent_settings::from_ptree(boost::property_tree::ptree const& src)
 {
     active_frontend_kind =
-      (config::frontend)src.get<int>("active_frontend_kind");
+      static_cast<config::frontend>(src.get<int>("active_frontend_kind"));
     has_border = src.get<bool>("has_border");
 
     {
@@ -370,9 +370,9 @@ persistent_settings::from_ptree(boost::property_tree::ptree const& src)
     }
 
     shade_played = src.get<bool>("shade_played");
-    display_mode = (config::display_mode)src.get<int>("display_mode");
+    display_mode = static_cast<config::display_mode>(src.get<int>("display_mode"));
     try {
-        downmix_display = (config::downmix)src.get<int>("downmix_display");
+        downmix_display = static_cast<config::downmix>(src.get<int>("downmix_display"));
     } catch (boost::property_tree::ptree_bad_data e) {
         // fallback to old to-mono boolean flag
         bool to_mono = src.get<bool>("downmix_display");
@@ -410,7 +410,7 @@ void
 persistent_settings::to_ptree(boost::property_tree::ptree& out) const
 {
     using boost::property_tree::ptree;
-    out.put("active_frontend_kind", (int)active_frontend_kind);
+    out.put("active_frontend_kind", static_cast<int>(active_frontend_kind));
     out.put("has_border", has_border);
 
     ptree& colors_pt = out.add("colors", "");
@@ -446,18 +446,6 @@ persistent_settings::to_ptree(boost::property_tree::ptree& out) const
     }
 }
 
-static std::string
-slurp_file(std::string filename)
-{
-    std::ifstream is(filename.c_str(), std::ios::binary);
-    is.seekg(0, std::ios::end);
-    auto cb = is.tellg();
-    is.seekg(0, std::ios::beg);
-    std::string ret((int)cb, '\0');
-    is.read(&ret[0], cb);
-    return ret;
-}
-
 template<typename Iterator>
 static std::pair<Iterator, Iterator>
 find_first_regex(Iterator begin, Iterator end, std::regex const& re)
@@ -467,18 +455,6 @@ find_first_regex(Iterator begin, Iterator end, std::regex const& re)
         return std::make_pair(m[0].first, m[0].second);
     }
     return std::make_pair(end, end);
-}
-
-static std::string
-extract_xml_part(std::string const& contents)
-{
-    auto first_tag = find_first_regex(std::begin(contents),
-                                      std::end(contents),
-                                      std::regex("(<\\?xml version=)"));
-    auto last_tag = find_first_regex(first_tag.second,
-                                     std::end(contents),
-                                     std::regex("</boost_serialization>"));
-    return std::string(first_tag.first, last_tag.second);
 }
 
 void

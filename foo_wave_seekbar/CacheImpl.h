@@ -5,6 +5,11 @@
 
 #pragma once
 
+#include <SDK/foobar2000-lite.h>
+#include <SDK/initquit.h>
+#include <SDK/input.h>
+#include <SDK/main_thread_callback.h>
+
 #include "Cache.h"
 #include "waveform_sdk/Waveform.h"
 #include "Job.h"
@@ -19,7 +24,12 @@
 #include <thread>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
-extern const GUID guid_seekbar_branch;
+static constexpr GUID guid_seekbar_branch = {
+    0xebeaba3f,
+    0x7a8e,
+    0x4a54,
+    { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 }
+};
 
 namespace wave {
 inline bool

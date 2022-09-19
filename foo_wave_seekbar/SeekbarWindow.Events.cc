@@ -3,8 +3,11 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
+#include <windowsx.h>
+
 #include "SeekbarWindow.h"
+#include <SDK/advconfig_impl.h>
+#include <SDK/playback_control.h>
 #include "SeekTooltip.h"
 #include "Clipboard.h"
 #include "FrontendLoader.h"
@@ -111,11 +114,11 @@ struct menu_item_info
                    UINT f_state,
                    LPTSTR dw_type_data,
                    UINT w_id,
-                   HMENU h_submenu = 0,
-                   HBITMAP hbmp_checked = 0,
-                   HBITMAP hbmp_unchecked = 0,
+                   HMENU h_submenu = nullptr,
+                   HBITMAP hbmp_checked = nullptr,
+                   HBITMAP hbmp_unchecked = nullptr,
                    ULONG_PTR dw_item_data = 0,
-                   HBITMAP hbmp_item = 0)
+                   HBITMAP hbmp_item = nullptr)
     {
         MENUITEMINFO mi = { sizeof(mi),
                             f_mask | MIIM_TYPE | MIIM_STATE | MIIM_ID,
@@ -127,7 +130,7 @@ struct menu_item_info
                             hbmp_unchecked,
                             dw_item_data,
                             dw_type_data,
-                            (UINT)_tcslen(dw_type_data),
+                            static_cast<UINT>(_tcslen(dw_type_data)),
                             hbmp_item };
         this->mi = mi;
     }
@@ -141,7 +144,7 @@ seekbar_window::on_wm_paint(HDC dc)
 {
     GetClientRect(client_rect);
     if (!(client_rect.right > 1 && client_rect.bottom > 1)) {
-        ValidateRect(0);
+        ValidateRect(nullptr);
         return;
     }
 
@@ -155,7 +158,7 @@ seekbar_window::on_wm_paint(HDC dc)
         fe->frontend->present();
     }
 
-    ValidateRect(0);
+    ValidateRect(nullptr);
 }
 
 void
@@ -169,8 +172,8 @@ seekbar_window::on_wm_size(UINT wparam, CSize size)
     std::unique_lock<std::recursive_mutex> lk(fe->mutex);
     fe->callback->set_size(wave::size(size.cx, size.cy));
     if (fe->frontend)
-        fe->frontend->on_state_changed((visual_frontend::state)(
-          visual_frontend::state_size | visual_frontend::state_orientation));
+        fe->frontend->on_state_changed(static_cast<visual_frontend::state>(
+            visual_frontend::state_size | visual_frontend::state_orientation));
 }
 
 void
@@ -362,7 +365,7 @@ seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
     auto length = pc->playback_get_length();
     double skip_size = 1 * 60 * 60;
     for (size_t i = 0; i < num_entries; ++i) {
-        if ((int64_t)length < skip_durations[i]) {
+        if (static_cast<int64_t>(length) < skip_durations[i]) {
             skip_size = skip_amount[i];
             break;
         }
@@ -385,7 +388,7 @@ seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
     m.InsertMenu(-1, MF_BYPOSITION | MF_STRING, 3, L"Configure");
     ClientToScreen(&point);
     BOOL ans = m.TrackPopupMenu(
-      TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, *this, 0);
+      TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, *this, nullptr);
     config::frontend old_kind = settings.active_frontend_kind;
     switch (ans) {
         case 3:

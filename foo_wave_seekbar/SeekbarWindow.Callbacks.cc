@@ -3,8 +3,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "SeekbarWindow.h"
+#include <SDK/playlist.h>
 
 namespace wave {
 void
@@ -41,8 +41,8 @@ seekbar_window::on_duration(double t)
     fe->callback->set_playback_position(0.0);
     fe->callback->set_track_length(t);
     if (fe->frontend)
-        fe->frontend->on_state_changed(visual_frontend::state(
-          visual_frontend::state_position | visual_frontend::state_track));
+        fe->frontend->on_state_changed(static_cast<visual_frontend::state>(
+            visual_frontend::state_position | visual_frontend::state_track));
 }
 
 void
@@ -71,9 +71,9 @@ seekbar_window::on_location(playable_location const& loc)
     fe->callback->set_playable_location(loc);
     fe->callback->set_cursor_visible(true);
     if (fe->frontend)
-        fe->frontend->on_state_changed(visual_frontend::state(
-          visual_frontend::state_replaygain | visual_frontend::state_position |
-          visual_frontend::state_track));
+        fe->frontend->on_state_changed(static_cast<visual_frontend::state>(
+            visual_frontend::state_replaygain | visual_frontend::state_position |
+            visual_frontend::state_track));
 }
 
 void
@@ -84,9 +84,9 @@ seekbar_window::on_play()
     fe->callback->set_playback_position(0.0);
     if (fe->frontend) {
         repaint_timer_id =
-          SetTimer(REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
+          SetTimer(REPAINT_TIMER_ID, static_cast<DWORD>(present_interval / present_scale));
         fe->frontend->on_state_changed(
-          visual_frontend::state(visual_frontend::state_position));
+          static_cast<visual_frontend::state>(visual_frontend::state_position));
     }
 }
 
@@ -100,7 +100,7 @@ seekbar_window::on_stop()
         KillTimer(repaint_timer_id);
         repaint_timer_id = 0;
         fe->frontend->on_state_changed(
-          visual_frontend::state(visual_frontend::state_position));
+          static_cast<visual_frontend::state>(visual_frontend::state_position));
     }
 }
 

@@ -3,7 +3,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "SeekbarDui.h"
 #include "Cache.h"
 #include <strstream>
@@ -60,7 +59,7 @@ GUID const seekbar_dui::s_guid = {
 void
 seekbar_dui::set_configuration(ui_element_config::ptr data)
 {
-    uint8_t const* p = (uint8_t const*)data->get_data();
+    uint8_t const* p = static_cast<uint8_t const*>(data->get_data());
     try {
         load_settings(settings,
                       std::vector<char>(p, p + data->get_data_size()));

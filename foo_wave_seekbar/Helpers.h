@@ -4,7 +4,11 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #pragma once
+#include <SDK/foobar2000-lite.h>
+#include <SDK/main_thread_callback.h>
+
 #include <windows.h>
+#include <delayimp.h>
 
 template<typename F>
 auto
@@ -113,7 +117,7 @@ get_program_directory()
 {
     char* filename;
     _get_pgmptr(&filename);
-    pfc::string exe_name = (const char*)filename;
+    pfc::string exe_name = static_cast<const char*>(filename);
     return pfc::string("file://") +
            exe_name.subString(0, exe_name.lastIndexOf('\\'));
 }

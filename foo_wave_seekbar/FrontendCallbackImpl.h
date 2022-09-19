@@ -5,13 +5,15 @@
 
 #pragma once
 
+#include <algorithm>
+
 namespace wave {
 struct frontend_callback_impl
   : visual_frontend_callback
   , visual_frontend_callback_setter
 {
     // Getters
-    virtual double get_track_length() const { return max(0.001, track_length); }
+    virtual double get_track_length() const { return (std::max)(0.001, track_length); }
     virtual double get_playback_position() const { return playback_position; }
     virtual bool is_cursor_visible() const { return cursor_visible; }
     virtual bool is_seeking() const { return seeking; }

@@ -1,6 +1,5 @@
 set(WAVE_SDK_SOURCES
 	"Downmix.h"
-	"Optional.h"
 	"RefPointer.h"
 	"Waveform.cc"
 	"Waveform.h"

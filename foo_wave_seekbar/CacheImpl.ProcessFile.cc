@@ -8,7 +8,7 @@
 #include "BackingStore.h"
 #include "waveform_sdk/WaveformImpl.h"
 #include "waveform_sdk/Downmix.h"
-#include "waveform_sdk/Optional.h"
+#include <optional>
 #include "Helpers.h"
 #include <chrono>
 #include <regex>
@@ -82,7 +82,7 @@ struct duration_query
         LARGE_INTEGER now, freq;
         QueryPerformanceCounter(&now);
         QueryPerformanceFrequency(&freq);
-        return (double)(now.QuadPart - then.QuadPart) / (double)freq.QuadPart;
+        return static_cast<double>(now.QuadPart - then.QuadPart) / static_cast<double>(freq.QuadPart);
     }
 };
 
@@ -131,7 +131,7 @@ transpose(C1& out, C2 const& in, size_t width, size_t valid_input_rows)
     for (size_t out_row = 0; out_row < out_rows; ++out_row) {
         out[out_row].set_size(out_cols);
         for (size_t out_col = 0; out_col < valid_input_rows; ++out_col) {
-            out[out_row][out_col] = (float)in[out_col * width + out_row];
+            out[out_row][out_col] = static_cast<float>(in[out_col * width + out_row]);
         }
         for (size_t out_col = valid_input_rows; out_col < out_cols; ++out_col) {
             out[out_row][out_col] = 0.0f;
@@ -149,7 +149,7 @@ class audio_source
     bool exhausted;
     int64_t sample_count;
     int64_t generated_samples;
-    wave::optional<unsigned> track_channel_count;
+    std::optional<unsigned> track_channel_count;
 
     enum
     {
@@ -171,20 +171,20 @@ class audio_source
     {
         if (exhausted || !decoder->run(chunk, abort_cb)) {
             unsigned nch =
-              track_channel_count.valid() ? *track_channel_count : 1;
+              track_channel_count.has_value() ? *track_channel_count : 1;
             chunk.set_channels(nch);
             int64_t n =
               (std::max)(0LL,
                          std::min<int64_t>(sample_count - generated_samples,
                                            SilenceChunkFrames));
-            chunk.set_silence((t_size)n);
+            chunk.set_silence(static_cast<t_size>(n));
             exhausted = true;
         }
 
         generated_samples += chunk.get_sample_count();
 
         unsigned channel_count = chunk.get_channels();
-        if (!track_channel_count.valid())
+        if (!track_channel_count.has_value())
             track_channel_count = channel_count;
 
         if (*track_channel_count != channel_count)
@@ -193,7 +193,7 @@ class audio_source
 
     unsigned channel_count() const
     {
-        assert(track_channel_count.valid());
+        assert(track_channel_count.has_value());
         return *track_channel_count;
     }
 };
@@ -251,7 +251,7 @@ struct waveform_builder : analysis_pass
       , incremental_output(incremental_output)
       , last_update(0.0)
       , last_update_bucket(~0)
-      , update_interval(0.5f)
+      , update_interval(0.5)
     {}
 
     bool uninitialized() const { return !initialized; }
@@ -288,7 +288,7 @@ struct waveform_builder : analysis_pass
     virtual void consume_input(audio_chunk const& chunk) override
     {
         t_int64 n =
-          (std::min)(samples_remaining(), (t_int64)chunk.get_sample_count());
+          (std::min)(samples_remaining(), static_cast<t_int64>(chunk.get_sample_count()));
         audio_sample const* data = chunk.get_data();
         for (t_int64 i = 0; i < n;) {
             t_int64 const to_process =
@@ -357,7 +357,7 @@ struct waveform_builder : analysis_pass
             }
             channel_count = 1;
             channel_map = audio_chunk::channel_config_mono;
-            auto new_list_size = (t_size)(bucket_count * channel_count);
+            auto new_list_size = static_cast<t_size>(bucket_count * channel_count);
             minimum.set_count(new_list_size);
             maximum.set_count(new_list_size);
             rms.set_count(new_list_size);
@@ -496,7 +496,7 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
                 return process_result::failed;
 
             input_entry::g_open_for_decoding(
-              state->decoder, 0, loc.get_path(), *state->abort_cb);
+              state->decoder, nullptr, loc.get_path(), *state->abort_cb);
 
             t_uint32 subsong = loc.get_subsong();
             {
@@ -579,7 +579,7 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
 float
 cache_impl::render_progress(process_state* state)
 {
-    return state->buckets_filled / (float)bucket_count;
+    return static_cast<float>(state->buckets_filled) / static_cast<float>(bucket_count);
 }
 
 ref_ptr<waveform>
@@ -596,8 +596,8 @@ cache_impl::is_refresh_due(process_state* state)
     }
     uint64_t time_count;
     QueryPerformanceCounter((LARGE_INTEGER*)&time_count);
-    if ((float)(time_count - state->last_update_time_count) /
-          (float)state->time_frequency >
+    if (static_cast<float>(time_count - state->last_update_time_count) /
+          static_cast<float>(state->time_frequency) >
         0.1f) {
         state->last_update_time_count = time_count;
         return true;

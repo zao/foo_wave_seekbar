@@ -32,7 +32,7 @@ struct create_d2d1_factory_func
 
     ID2D1Factory* operator()() const
     {
-        ID2D1Factory* p = 0;
+        ID2D1Factory* p = nullptr;
         D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, opts, &p);
         return p;
     }
@@ -52,7 +52,7 @@ image_cache::image_cache(d2d_api const& api)
                           &opts,
                           (void**)&factory);
     CoCreateInstance(CLSID_WICImagingFactory,
-                     0,
+                     nullptr,
                      CLSCTX_ALL,
                      __uuidof(IWICImagingFactory),
                      (void**)&wic_factory);
@@ -85,7 +85,7 @@ worker_task_ready(image_cache* self)
 void
 image_cache::thread_func(void* data)
 {
-    auto self = (image_cache*)data;
+    auto self = static_cast<image_cache*>(data);
     while (1) {
         std::deque<task_data> ts;
         {
@@ -182,10 +182,10 @@ direct2d1_frontend::draw()
 
         rt->BeginDraw();
         rt->Clear(color_to_d2d1_color(colors.background));
-        float seek_x = (float)(size.width * callback.get_seek_position() /
-                               callback.get_track_length());
-        float play_x = (float)(size.width * callback.get_playback_position() /
-                               callback.get_track_length());
+        float seek_x = static_cast<float>(size.width * callback.get_seek_position() /
+                                          callback.get_track_length());
+        float play_x = static_cast<float>(size.width * callback.get_playback_position() /
+                                          callback.get_track_length());
 
         if (flip) {
             seek_x = size.width - seek_x;
@@ -286,7 +286,7 @@ direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf,
     image_cache::task_data t;
     t.waveform = wf;
     t.infos = infos;
-    t.size = D2D1::SizeF((float)size.cx, (float)size.cy);
+    t.size = D2D1::SizeF(static_cast<float>(size.cx), static_cast<float>(size.cy));
     t.vertical = callback.get_orientation() == config::orientation_vertical;
     t.flipped = callback.get_flip_display();
     t.serial = serial;
@@ -342,7 +342,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
               channel_numbers.begin(), channel_numbers.end(), info.channel);
             decltype(I) first = channel_numbers.begin();
             if (I != channel_numbers.end()) {
-                channel_indices.add_item((int)std::distance(first, I));
+                channel_indices.add_item(static_cast<int>(std::distance(first, I)));
             }
         }
     }
@@ -354,11 +354,11 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
 
     auto index_count = channel_indices.get_count();
     D2D1::Matrix3x2F scale =
-      D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.5f / (float)index_count);
+      D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.5f / static_cast<float>(index_count));
 
     CComPtr<IWICBitmap> bm;
-    wic_factory->CreateBitmap((UINT)target_size.width,
-                              (UINT)target_size.height,
+    wic_factory->CreateBitmap(static_cast<UINT>(target_size.width),
+                              static_cast<UINT>(target_size.height),
                               GUID_WICPixelFormat32bppPBGRA,
                               WICBitmapCacheOnDemand,
                               &bm);
@@ -401,7 +401,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
                     x = n - i - 1;
                 else
                     x = i;
-                D2D1_POINT_2F p = D2D1::Point2(x / (float)n, maxi[x]);
+                D2D1_POINT_2F p = D2D1::Point2(x / static_cast<float>(n), maxi[x]);
                 if (flip)
                     p.x = 1.0f - p.x;
                 gs->AddLine(scale.TransformPoint(p));
@@ -411,7 +411,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
                     x = i;
                 else
                     x = n - i - 1;
-                D2D1_POINT_2F p = D2D1::Point2(x / (float)n, mini[x]);
+                D2D1_POINT_2F p = D2D1::Point2(x / static_cast<float>(n), mini[x]);
                 if (flip)
                     p.x = 1.0f - p.x;
                 gs->AddLine(scale.TransformPoint(p));
@@ -427,7 +427,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
                     x = n - i - 1;
                 else
                     x = i;
-                D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
+                D2D1_POINT_2F p = D2D1::Point2(x / static_cast<float>(n), rms[x]);
                 if (flip)
                     p.x = 1.0f - p.x;
                 rms_gs->AddLine(scale.TransformPoint(p));
@@ -437,7 +437,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
                     x = i;
                 else
                     x = n - i - 1;
-                D2D1_POINT_2F p = D2D1::Point2(x / (float)n, rms[x]);
+                D2D1_POINT_2F p = D2D1::Point2(x / static_cast<float>(n), rms[x]);
                 if (flip)
                     p.x = 1.0f - p.x;
                 rms_gs->AddLine(scale.TransformPoint(p));
@@ -452,7 +452,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
         rt->Clear(color_to_d2d1_color(colors.background));
         int x = 0;
         for (pfc::com_ptr_t<ID2D1PathGeometry> const& geom : wave_geometries) {
-            float offset = (float)(2 * x + 1) / (float)(2 * index_count);
+            float offset = static_cast<float>(2 * x + 1) / static_cast<float>(2 * index_count);
             D2D1::Matrix3x2F centered =
               D2D1::Matrix3x2F::Translation(0.0f, round(offset * size.height));
             ++x;

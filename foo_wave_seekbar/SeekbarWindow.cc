@@ -3,8 +3,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "SeekbarWindow.h"
+#include <SDK/advconfig_impl.h>
+#include <SDK/playback_control.h>
 //#include "Direct3D9.h"
 //#include "Direct2D.h"
 #include "GdiFallback.h"
@@ -17,7 +18,12 @@
 namespace pt = boost::property_tree;
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
-extern const GUID guid_seekbar_branch;
+static constexpr GUID guid_seekbar_branch = {
+    0xebeaba3f,
+    0x7a8e,
+    0x4a54,
+    { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 }
+};
 
 // {F76A694E-CB85-45A6-A9C6-269877A0AAA4}
 static const GUID guid_presentation_scale = {
@@ -44,7 +50,8 @@ seekbar_window::seekbar_window()
   , drag_state(MouseDragNone)
   , possible_next_enqueued(false)
   , repaint_timer_id(0)
-{}
+{
+}
 
 seekbar_window::~seekbar_window() {}
 
@@ -64,7 +71,7 @@ seekbar_window::apply_settings()
 {
     auto& cb = *fe->callback;
     for (size_t i = 0; i < config::color_count; ++i) {
-        cb.set_color((config::color)i,
+        cb.set_color(static_cast<config::color>(i),
                      settings.override_colors[i] ? settings.colors[i]
                                                  : global_colors[i]);
     }
@@ -177,11 +184,12 @@ seekbar_window::initialize_frontend()
             repaint_timer_id = 0;
         }
         try_get_data();
-        fe->frontend->on_state_changed((visual_frontend::state)~0);
+        fe->frontend->on_state_changed(static_cast<visual_frontend::state>(~0));
         static_api_ptr_t<playback_control> pc;
         if (pc->is_playing()) {
-            repaint_timer_id = SetTimer(
-              REPAINT_TIMER_ID, (DWORD)(present_interval / present_scale));
+            repaint_timer_id =
+              SetTimer(REPAINT_TIMER_ID,
+                       static_cast<DWORD>(present_interval / present_scale));
         }
     }
 }

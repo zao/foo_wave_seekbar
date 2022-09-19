@@ -3,12 +3,11 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#include "PchSeekbar.h"
 #include "Clipboard.h"
+#include <SDK/input.h>
 
 #include <mmreg.h>
 #include <deque>
-#include <fstream>
 #include <span>
 
 // TODO(zao): Audit this file, may be completely broken
@@ -26,7 +25,8 @@ struct data_chunk
 {
     data_chunk()
       : cb(0)
-    {}
+    {
+    }
     size_t cb;
 };
 
@@ -53,7 +53,7 @@ struct chunk_traits<data_chunk>
     static char const* tag() { return "data"; }
     static uint32_t size(data_chunk const& t)
     {
-        return self_size(t) + (uint32_t)t.cb;
+        return self_size(t) + static_cast<uint32_t>(t.cb);
     }
 
     static uint32_t self_size(data_chunk const&) { return 0; }
@@ -81,9 +81,10 @@ struct storage
     riff_chunk framing;
 
     storage()
-      : mem(0)
+      : mem(nullptr)
       , frames_written(0)
-    {}
+    {
+    }
 
     ~storage()
     {
@@ -95,15 +96,16 @@ struct storage
     {
         if (is_full())
             return false;
-        auto nch = framing.fmt.wfex.Format.nChannels;
+        const auto nch = framing.fmt.wfex.Format.nChannels;
 
         char* dst = static_cast<char*>(GlobalLock(mem)) + data_offset +
                     frames_written * nch * sizeof(float);
         audio_sample const* src = chunk.get_data();
-        size_t n = (std::min)(chunk.get_sample_count(),
-                              (size_t)(frame_count - frames_written));
-        for (auto sample : std::span(src, n * nch)) {
-            auto val = (float)sample;
+        const size_t n =
+          (std::min)(chunk.get_sample_count(),
+                     static_cast<size_t>(frame_count - frames_written));
+        for (const auto sample : std::span(src, n * nch)) {
+            auto val = static_cast<float>(sample);
             std::memcpy(dst, &val, sizeof(float));
             dst += sizeof(float);
         }
@@ -116,7 +118,7 @@ struct storage
 
     HGLOBAL transfer()
     {
-        HGLOBAL ret = 0;
+        HGLOBAL ret = nullptr;
         std::swap(ret, mem);
         return ret;
     }
@@ -127,10 +129,10 @@ void*
 write_chunk(Chunk const& chunk, void* dst)
 {
     typedef chunk_traits<Chunk> traits;
-    char* buf = (char*)dst;
+    char* buf = static_cast<char*>(dst);
     auto chunk_id = traits::tag();
-    uint32_t chunk_size = traits::size(chunk);
-    uint32_t self_size = traits::self_size(chunk);
+    const uint32_t chunk_size = traits::size(chunk);
+    const uint32_t self_size = traits::self_size(chunk);
     std::memcpy(buf, chunk_id, 4);
     buf += 4;
     std::memcpy(buf, &chunk_size, 4);
@@ -147,17 +149,18 @@ make_storage(unsigned channel_count,
              double sample_length)
 {
     auto ret = std::make_shared<storage>();
-    ret->frame_count = (t_int64)(sample_rate * sample_length);
+    ret->frame_count = static_cast<t_int64>(sample_rate * sample_length);
     ret->data_offset = 8 + chunk_traits<riff_chunk>::size(ret->framing);
 
-    ret->framing.data.cb = (size_t)(ret->frame_count * 4 * channel_count);
-    size_t total_bytes = chunk_traits<riff_chunk>::size(ret->framing);
+    ret->framing.data.cb =
+      static_cast<size_t>(ret->frame_count * 4 * channel_count);
+    const size_t total_bytes = chunk_traits<riff_chunk>::size(ret->framing);
     WAVEFORMATEXTENSIBLE& wf = ret->framing.fmt.wfex;
     wf.Samples.wValidBitsPerSample = 32;
     wf.dwChannelMask = channel_config;
     wf.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
 
-    auto block_align = channel_count * 4;
+    const auto block_align = channel_count * 4;
 
     WAVEFORMATEX& f = wf.Format;
     f.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
@@ -178,7 +181,7 @@ make_storage(unsigned channel_count,
     return ret;
 }
 
-static double const MaxCopyDuration = 600.0;
+static double constexpr MaxCopyDuration = 600.0;
 bool
 render_audio(metadb_handle_ptr source, double beginning, double end)
 {
@@ -191,7 +194,8 @@ render_audio(metadb_handle_ptr source, double beginning, double end)
     service_ptr_t<input_decoder> decoder;
     abort_callback_impl abort_cb;
 
-    input_entry::g_open_for_decoding(decoder, 0, source->get_path(), abort_cb);
+    input_entry::g_open_for_decoding(
+      decoder, nullptr, source->get_path(), abort_cb);
 
     {
         decoder->initialize(
@@ -213,9 +217,9 @@ render_audio(metadb_handle_ptr source, double beginning, double end)
             }
 
             if (!clip_storage) {
-                auto channel_count = chunk.get_channels();
-                auto channel_config = chunk.get_channel_config();
-                auto sample_rate = chunk.get_sample_rate();
+                const auto channel_count = chunk.get_channels();
+                const auto channel_config = chunk.get_channel_config();
+                const auto sample_rate = chunk.get_sample_rate();
                 clip_storage = make_storage(
                   channel_count, channel_config, sample_rate, end - beginning);
             }
@@ -227,10 +231,10 @@ render_audio(metadb_handle_ptr source, double beginning, double end)
             return false;
         }
 
-        HGLOBAL mem = clip_storage->transfer();
-        bool opened = !!OpenClipboard(0);
+        const HGLOBAL mem = clip_storage->transfer();
+        bool opened = !!OpenClipboard(nullptr);
         bool emptied = !!EmptyClipboard();
-        bool success = !!SetClipboardData(CF_WAVE, mem);
+        const bool success = !!SetClipboardData(CF_WAVE, mem);
         if (!success)
             GlobalFree(mem);
         bool closed = !!CloseClipboard();
