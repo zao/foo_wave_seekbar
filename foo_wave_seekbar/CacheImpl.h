@@ -24,17 +24,14 @@
 #include <thread>
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
-static constexpr GUID guid_seekbar_branch = {
-    0xebeaba3f,
-    0x7a8e,
-    0x4a54,
-    { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 }
-};
+static constexpr GUID guid_seekbar_branch = { 0xebeaba3f,
+                                              0x7a8e,
+                                              0x4a54,
+                                              { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
 
 namespace wave {
 inline bool
-LocationLessThan(const playable_location_impl& x,
-                 const playable_location_impl& y)
+LocationLessThan(const playable_location_impl& x, const playable_location_impl& y)
 {
     int cmp = strcmp(x.get_path(), y.get_path());
     if (cmp == 0)
@@ -65,10 +62,9 @@ struct cache_impl : cache
     cache_impl();
     ~cache_impl();
 
-    virtual service_ptr_t<waveform_query> create_query(
-      playable_location const& loc,
-      waveform_query::query_urgency urgency,
-      waveform_query::query_force forced) override;
+    virtual service_ptr_t<waveform_query> create_query(playable_location const& loc,
+                                                       waveform_query::query_urgency urgency,
+                                                       waveform_query::query_force forced) override;
     virtual service_ptr_t<waveform_query> create_callback_query(
       playable_location const& loc,
       waveform_query::query_urgency urgency,
@@ -86,11 +82,9 @@ struct cache_impl : cache
     void defer_action(std::function<void()> fun) override;
 
     bool is_location_forbidden(playable_location const& loc) override;
-    bool get_waveform_sync(playable_location const& loc,
-                           ref_ptr<waveform>& out) override;
+    bool get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out) override;
 
-    typedef std::function<void(ref_ptr<waveform>, size_t)>
-      incremental_result_sink;
+    typedef std::function<void(ref_ptr<waveform>, size_t)> incremental_result_sink;
 
     void start();
     void shutdown();
@@ -100,8 +94,7 @@ struct cache_impl : cache
     void worker_main(size_t i, size_t n);
     void open_store();
     void load_data();
-    process_result::type process_file(service_ptr_t<waveform_query> q,
-                                      std::shared_ptr<process_state>& state);
+    process_result::type process_file(service_ptr_t<waveform_query> q, std::shared_ptr<process_state>& state);
     float render_progress(process_state* state);
     ref_ptr<waveform> render_waveform(process_state* state);
     bool is_refresh_due(process_state* state);
@@ -121,8 +114,7 @@ struct cache_impl : cache
     std::mutex cache_mutex;
     std::list<std::thread*> work_threads;
     std::list<std::function<void()>> work_functions;
-    typedef bool (*playable_compare_pointer)(const playable_location_impl&,
-                                             const playable_location_impl&);
+    typedef bool (*playable_compare_pointer)(const playable_location_impl&, const playable_location_impl&);
     abort_callback_impl flush_callback;
     std::deque<service_ptr_t<waveform_query>> job_flush_queue;
     std::shared_ptr<backing_store> store;

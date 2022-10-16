@@ -64,9 +64,7 @@ struct pointer_array_sink : array_sink<T>
 
 struct waveform : ref_base
 {
-    virtual bool get_field(char const* what,
-                           unsigned index,
-                           array_sink<float> const& out) = 0;
+    virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out) = 0;
     virtual unsigned get_channel_count() const = 0;
     virtual unsigned get_channel_map() const = 0;
     virtual ref_ptr<waveform> clone() const = 0;

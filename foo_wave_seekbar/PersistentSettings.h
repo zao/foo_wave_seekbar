@@ -23,9 +23,8 @@ struct persistent_settings
     config::display_mode display_mode;
     bool flip_display;
     config::downmix downmix_display;
-    std::vector<std::pair<int, bool>>
-      channel_order; // int is unnamed channel enum from audio_chunk, contains
-                     // the channels used
+    std::vector<std::pair<int, bool>> channel_order; // int is unnamed channel enum from
+                                                     // audio_chunk, contains the channels used
     std::map<GUID, std::string, decltype(&less_guid)> generic_strings;
 
     void from_ptree(boost::property_tree::ptree const& src);

@@ -7,10 +7,46 @@
 
 #include "SeekbarWindow.h"
 
+#include <imgui_impl_win32.h>
+#include <imgui_impl_dx11.h>
+
 namespace wave {
+struct bar_profile_dialog
+{
+    bar_profile_dialog() = default;
+
+    void run() {}
+
+    void ui_proc()
+    {
+        while (true) {
+            MSG msg{};
+            while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+                if (msg.message == WM_QUIT) {
+                    should_close = true;
+                }
+            }
+            if (should_close) {
+                break;
+            }
+
+            ImGui_ImplWin32_NewFrame();
+            ImGui_ImplDX11_NewFrame();
+            ImGui::NewFrame();
+
+            ImGui::Render();
+
+            // bind/clear RT
+            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+        }
+    }
+
+    std::thread ui_proc_thread;
+    std::atomic<bool> should_close{ false };
+};
+
 LRESULT
-seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus,
-                                                        LPARAM lparam)
+seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM lparam)
 {
     // Fill frontend combobox
     CComboBox cb{ GetDlgItem(IDC_FRONTEND) };
@@ -19,11 +55,10 @@ seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus,
     std::wstring gdi = L"GDI";
 
     auto add_frontend_string = [&cb](config::frontend frontend) {
-        cb.SetItemData(cb.AddString(config::strings::frontend[frontend]),
-                       frontend);
+        cb.SetItemData(cb.AddString(config::strings::frontend[frontend]), frontend);
     };
 
-    // add_frontend_string(config::frontend_direct3d9);
+    add_frontend_string(config::frontend_direct3d9);
     add_frontend_string(config::frontend_direct2d1);
     add_frontend_string(config::frontend_gdi);
 
@@ -38,50 +73,34 @@ seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus,
     select_frontend_string(sw.settings.active_frontend_kind);
 
     // Initialize colour pickers
-    mk_color_info(
-      config::color_background, IDC_COLOR_BACKGROUND, IDC_USE_BACKGROUND);
-    mk_color_info(
-      config::color_foreground, IDC_COLOR_FOREGROUND, IDC_USE_FOREGROUND);
-    mk_color_info(
-      config::color_highlight, IDC_COLOR_HIGHLIGHT, IDC_USE_HIGHLIGHT);
-    mk_color_info(
-      config::color_selection, IDC_COLOR_SELECTION, IDC_USE_SELECTION);
+    mk_color_info(config::color_background, IDC_COLOR_BACKGROUND, IDC_USE_BACKGROUND);
+    mk_color_info(config::color_foreground, IDC_COLOR_FOREGROUND, IDC_USE_FOREGROUND);
+    mk_color_info(config::color_highlight, IDC_COLOR_HIGHLIGHT, IDC_USE_HIGHLIGHT);
+    mk_color_info(config::color_selection, IDC_COLOR_SELECTION, IDC_USE_SELECTION);
 
     for (size_t i = 0; i < config::color_count; ++i) {
         bool override = sw.settings.override_colors[i];
-        CheckDlgButton(colors[i].use_id,
-                       override ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(colors[i].use_id, override ? BST_CHECKED : BST_UNCHECKED);
         colors[i].box.EnableWindow(override);
     }
 
     // Set up misc settings
-    CheckDlgButton(IDC_NOBORDER,
-                   !sw.settings.has_border ? BST_CHECKED : BST_UNCHECKED);
-    CheckDlgButton(IDC_SHADEPLAYED,
-                   sw.settings.shade_played ? BST_CHECKED : BST_UNCHECKED);
-    CheckDlgButton(IDC_MIRRORDISPLAY,
-                   sw.settings.flip_display ? BST_CHECKED : BST_UNCHECKED);
+    CheckDlgButton(IDC_NOBORDER, !sw.settings.has_border ? BST_CHECKED : BST_UNCHECKED);
+    CheckDlgButton(IDC_SHADEPLAYED, sw.settings.shade_played ? BST_CHECKED : BST_UNCHECKED);
+    CheckDlgButton(IDC_MIRRORDISPLAY, sw.settings.flip_display ? BST_CHECKED : BST_UNCHECKED);
 
     CComboBox downmix{ GetDlgItem(IDC_DOWNMIX) };
-    for (int i = 0;
-         i < sizeof(config::strings::downmix) / sizeof(wchar_t const*);
-         ++i) {
-        downmix.SetItemData(downmix.AddString(config::strings::downmix[i]),
-                            (config::downmix)i);
+    for (int i = 0; i < sizeof(config::strings::downmix) / sizeof(wchar_t const*); ++i) {
+        downmix.SetItemData(downmix.AddString(config::strings::downmix[i]), (config::downmix)i);
     }
-    downmix.SelectString(0,
-                         config::strings::downmix[sw.settings.downmix_display]);
+    downmix.SelectString(0, config::strings::downmix[sw.settings.downmix_display]);
 
     // Set up display properties
     CComboBox modes{ GetDlgItem(IDC_DISPLAYMODE) };
-    for (int i = 0;
-         i < sizeof(config::strings::display_mode) / sizeof(wchar_t const*);
-         ++i) {
-        modes.SetItemData(modes.AddString(config::strings::display_mode[i]),
-                          (config::display_mode)i);
+    for (int i = 0; i < sizeof(config::strings::display_mode) / sizeof(wchar_t const*); ++i) {
+        modes.SetItemData(modes.AddString(config::strings::display_mode[i]), (config::display_mode)i);
     }
-    modes.SelectString(0,
-                       config::strings::display_mode[sw.settings.display_mode]);
+    modes.SelectString(0, config::strings::display_mode[sw.settings.display_mode]);
 
     // Set up channel listings
     buttons.up = (HWND)GetDlgItem(IDC_CHANNEL_UP);
@@ -102,8 +121,7 @@ seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus,
     };
 
     for (auto& pair : sw.settings.channel_order) {
-        append(
-          config::strings::channel_names[pair.first], pair.first, pair.second);
+        append(config::strings::channel_names[pair.first], pair.first, pair.second);
     }
     initializing = false;
 
@@ -117,9 +135,7 @@ seekbar_window::configuration_dialog::on_wm_close()
 }
 
 void
-seekbar_window::configuration_dialog::on_frontend_select(UINT code,
-                                                         int id,
-                                                         CWindow control)
+seekbar_window::configuration_dialog::on_frontend_select(UINT code, int id, CWindow control)
 {
     CComboBox cb{ control };
     config::frontend fe = static_cast<config::frontend>(cb.GetItemData(cb.GetCurSel()));
@@ -141,9 +157,7 @@ seekbar_window::configuration_dialog::on_frontend_select(UINT code,
 }
 
 void
-seekbar_window::configuration_dialog::on_no_border_click(UINT code,
-                                                         int id,
-                                                         CWindow control)
+seekbar_window::configuration_dialog::on_no_border_click(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -151,9 +165,7 @@ seekbar_window::configuration_dialog::on_no_border_click(UINT code,
 }
 
 void
-seekbar_window::configuration_dialog::on_shade_played_click(UINT code,
-                                                            int id,
-                                                            CWindow control)
+seekbar_window::configuration_dialog::on_shade_played_click(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -161,8 +173,7 @@ seekbar_window::configuration_dialog::on_shade_played_click(UINT code,
 }
 
 HBRUSH
-seekbar_window::configuration_dialog::on_wm_ctl_color_static(WTL::CDCHandle dc,
-                                                             ATL::CWindow wnd)
+seekbar_window::configuration_dialog::on_wm_ctl_color_static(WTL::CDCHandle dc, ATL::CWindow wnd)
 {
     if (initializing)
         return nullptr;
@@ -170,16 +181,13 @@ seekbar_window::configuration_dialog::on_wm_ctl_color_static(WTL::CDCHandle dc,
         if (wnd == colors[i].box) {
             bool enabled = !!colors[i].box.IsWindowEnabled();
             dc.SetDCBrushColor(colors[i].color_ref);
-            return enabled ? static_cast<HBRUSH>(GetStockObject(DC_BRUSH))
-                           : GetSysColorBrush(COLOR_BTNFACE);
+            return enabled ? static_cast<HBRUSH>(GetStockObject(DC_BRUSH)) : GetSysColorBrush(COLOR_BTNFACE);
         }
     return nullptr;
 }
 
 void
-seekbar_window::configuration_dialog::on_color_click(UINT code,
-                                                     int id,
-                                                     CWindow control)
+seekbar_window::configuration_dialog::on_color_click(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -204,12 +212,7 @@ seekbar_window::configuration_dialog::on_color_click(UINT code,
 
     COLORREF c = color_to_xbgr(ci.color);
     COLORREF arr[16] = {};
-    CHOOSECOLOR cc = { sizeof(CHOOSECOLOR),
-                       *this,
-                       nullptr,
-                       c,
-                       arr,
-                       CC_ANYCOLOR | CC_FULLOPEN | CC_RGBINIT };
+    CHOOSECOLOR cc = { sizeof(CHOOSECOLOR), *this, nullptr, c, arr, CC_ANYCOLOR | CC_FULLOPEN | CC_RGBINIT };
 
     if (ChooseColor(&cc)) {
         ci.color = xbgr_to_color(cc.rgbResult);
@@ -220,9 +223,7 @@ seekbar_window::configuration_dialog::on_color_click(UINT code,
 }
 
 void
-seekbar_window::configuration_dialog::on_use_color_click(UINT code,
-                                                         int id,
-                                                         CWindow control)
+seekbar_window::configuration_dialog::on_use_color_click(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -250,24 +251,19 @@ seekbar_window::configuration_dialog::on_use_color_click(UINT code,
 }
 
 void
-seekbar_window::configuration_dialog::on_display_select(UINT code,
-                                                        int id,
-                                                        CWindow control)
+seekbar_window::configuration_dialog::on_display_select(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
     CComboBox cb{ control };
-    config::display_mode mode =
-      static_cast<config::display_mode>(cb.GetItemData(cb.GetCurSel()));
+    config::display_mode mode = static_cast<config::display_mode>(cb.GetItemData(cb.GetCurSel()));
     if (mode != sw.settings.display_mode) {
         sw.set_display_mode(mode);
     }
 }
 
 void
-seekbar_window::configuration_dialog::on_downmix_select(UINT code,
-                                                        int id,
-                                                        CWindow control)
+seekbar_window::configuration_dialog::on_downmix_select(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -279,9 +275,7 @@ seekbar_window::configuration_dialog::on_downmix_select(UINT code,
 }
 
 void
-seekbar_window::configuration_dialog::on_flip_click(UINT code,
-                                                    int id,
-                                                    CWindow control)
+seekbar_window::configuration_dialog::on_flip_click(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -297,8 +291,7 @@ seekbar_window::configuration_dialog::on_channel_changed(NMHDR* hdr)
     if (nm->uChanged & LVIF_STATE) {
         if (nm->uNewState & LVIS_SELECTED) {
             buttons.up.EnableWindow(nm->iItem > 0 ? TRUE : FALSE);
-            buttons.down.EnableWindow(
-              nm->iItem + 1 < channels.GetItemCount() ? TRUE : FALSE);
+            buttons.down.EnableWindow(nm->iItem + 1 < channels.GetItemCount() ? TRUE : FALSE);
         }
         if (int state = (nm->uNewState >> 12 & 0xF)) // has checkbox state
         {
@@ -345,9 +338,7 @@ seekbar_window::configuration_dialog::swap_channels(int i1, int i2)
 }
 
 void
-seekbar_window::configuration_dialog::on_channel_up(UINT code,
-                                                    int id,
-                                                    CWindow control)
+seekbar_window::configuration_dialog::on_channel_up(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -362,9 +353,7 @@ seekbar_window::configuration_dialog::on_channel_up(UINT code,
 }
 
 void
-seekbar_window::configuration_dialog::on_channel_down(UINT code,
-                                                      int id,
-                                                      CWindow control)
+seekbar_window::configuration_dialog::on_channel_down(UINT code, int id, CWindow control)
 {
     if (initializing)
         return;
@@ -380,9 +369,7 @@ seekbar_window::configuration_dialog::on_channel_down(UINT code,
 }
 
 void
-seekbar_window::configuration_dialog::on_configure_click(UINT code,
-                                                         int id,
-                                                         CWindow control)
+seekbar_window::configuration_dialog::on_configure_click(UINT code, int id, CWindow control)
 {
     if (sw.fe && sw.fe->frontend) {
         sw.fe->frontend->show_configuration(sw);
@@ -401,9 +388,7 @@ seekbar_window::configuration_dialog::OnFinalMessage(HWND wnd)
 }
 
 void
-seekbar_window::configuration_dialog::mk_color_info(config::color what,
-                                                    UINT display_id,
-                                                    UINT use_id)
+seekbar_window::configuration_dialog::mk_color_info(config::color what, UINT display_id, UINT use_id)
 {
     color c = sw.settings.colors[what];
     color_info& ci = colors[what];
@@ -416,8 +401,7 @@ seekbar_window::configuration_dialog::mk_color_info(config::color what,
 }
 
 void
-seekbar_window::configuration_dialog::add_item(channel_info const& info,
-                                               CListBox& box)
+seekbar_window::configuration_dialog::add_item(channel_info const& info, CListBox& box)
 {
     box.SetItemData(box.AddString(info.text.c_str()), info.data);
 }

@@ -18,8 +18,7 @@ try_module_call(F f) -> decltype(f())
     return_type ret = return_type();
     __try {
         ret = f();
-    } __except (GetExceptionCode() ==
-                    VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND)
+    } __except (GetExceptionCode() == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND)
                   ? EXCEPTION_EXECUTE_HANDLER
                   : EXCEPTION_CONTINUE_SEARCH) {
     }
@@ -48,10 +47,7 @@ SetThreadName(DWORD dwThreadID, char const* threadName)
     info.dwFlags = 0;
 
     __try {
-        RaiseException(MS_VC_EXCEPTION,
-                       0,
-                       sizeof(info) / sizeof(ULONG_PTR),
-                       (ULONG_PTR*)&info);
+        RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
     }
 }
@@ -70,8 +66,7 @@ in_main_thread(F f)
         F f;
     };
 
-    static_api_ptr_t<main_thread_callback_manager>()->add_callback(
-      new service_impl_t<in_main>(f));
+    static_api_ptr_t<main_thread_callback_manager>()->add_callback(new service_impl_t<in_main>(f));
 }
 
 template<typename T>
@@ -90,8 +85,7 @@ less_guid(GUID const& a, GUID const& b)
 inline DWORD
 xbgr_to_argb(COLORREF c, BYTE a = 0xFFU)
 {
-    return (a << 24) | (GetRValue(c) << 16) | (GetGValue(c) << 8) |
-           (GetBValue(c));
+    return (a << 24) | (GetRValue(c) << 16) | (GetGValue(c) << 8) | (GetBValue(c));
 }
 
 template<typename Cont, typename Pred>
@@ -118,15 +112,14 @@ get_program_directory()
     char* filename;
     _get_pgmptr(&filename);
     pfc::string exe_name = static_cast<const char*>(filename);
-    return pfc::string("file://") +
-           exe_name.subString(0, exe_name.lastIndexOf('\\'));
+    return pfc::string("file://") + exe_name.subString(0, exe_name.lastIndexOf('\\'));
 }
 
 inline unsigned
 count_bits_set(unsigned v)
 {
-    v = v - ((v >> 1) & 0x55555555);                // reuse input as temporary
-    v = (v & 0x33333333) + ((v >> 2) & 0x33333333); // temp
+    v = v - ((v >> 1) & 0x55555555);                       // reuse input as temporary
+    v = (v & 0x33333333) + ((v >> 2) & 0x33333333);        // temp
     return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
 }
 

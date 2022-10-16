@@ -15,22 +15,21 @@ extern "C"
 
     typedef struct _CLzmaEncProps
     {
-        int level;       /*  0 <= level <= 9 */
-        UInt32 dictSize; /* (1 << 12) <= dictSize <= (1 << 27) for 32-bit
-                            version (1 << 12) <= dictSize <= (1 << 30) for
-                            64-bit version default = (1 << 24) */
-        int lc;          /* 0 <= lc <= 8, default = 3 */
-        int lp;          /* 0 <= lp <= 4, default = 0 */
-        int pb;          /* 0 <= pb <= 4, default = 2 */
-        int algo;        /* 0 - fast, 1 - normal, default = 1 */
-        int fb;          /* 5 <= fb <= 273, default = 32 */
-        int btMode; /* 0 - hashChain Mode, 1 - binTree mode - normal, default =
-                       1 */
-        int numHashBytes; /* 2, 3 or 4, default = 4 */
-        UInt32 mc;        /* 1 <= mc <= (1 << 30), default = 32 */
-        unsigned
-          writeEndMark; /* 0 - do not write EOPM, 1 - write EOPM, default = 0 */
-        int numThreads; /* 1 or 2, default = 2 */
+        int level;             /*  0 <= level <= 9 */
+        UInt32 dictSize;       /* (1 << 12) <= dictSize <= (1 << 27) for 32-bit
+                                  version (1 << 12) <= dictSize <= (1 << 30) for
+                                  64-bit version default = (1 << 24) */
+        int lc;                /* 0 <= lc <= 8, default = 3 */
+        int lp;                /* 0 <= lp <= 4, default = 0 */
+        int pb;                /* 0 <= pb <= 4, default = 2 */
+        int algo;              /* 0 - fast, 1 - normal, default = 1 */
+        int fb;                /* 5 <= fb <= 273, default = 32 */
+        int btMode;            /* 0 - hashChain Mode, 1 - binTree mode - normal, default =
+                                  1 */
+        int numHashBytes;      /* 2, 3 or 4, default = 4 */
+        UInt32 mc;             /* 1 <= mc <= (1 << 30), default = 32 */
+        unsigned writeEndMark; /* 0 - do not write EOPM, 1 - write EOPM, default = 0 */
+        int numThreads;        /* 1 or 2, default = 2 */
     } CLzmaEncProps;
 
     void LzmaEncProps_Init(CLzmaEncProps* p);
@@ -54,9 +53,7 @@ extern "C"
     CLzmaEncHandle LzmaEnc_Create(ISzAlloc* alloc);
     void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAlloc* alloc, ISzAlloc* allocBig);
     SRes LzmaEnc_SetProps(CLzmaEncHandle p, const CLzmaEncProps* props);
-    SRes LzmaEnc_WriteProperties(CLzmaEncHandle p,
-                                 Byte* properties,
-                                 SizeT* size);
+    SRes LzmaEnc_WriteProperties(CLzmaEncHandle p, Byte* properties, SizeT* size);
     SRes LzmaEnc_Encode(CLzmaEncHandle p,
                         ISeqOutStream* outStream,
                         ISeqInStream* inStream,

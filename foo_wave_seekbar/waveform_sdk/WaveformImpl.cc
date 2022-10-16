@@ -8,9 +8,7 @@
 
 namespace wave {
 bool
-waveform_impl::get_field(char const* what,
-                         unsigned index,
-                         array_sink<float> const& out)
+waveform_impl::get_field(char const* what, unsigned index, array_sink<float> const& out)
 {
     auto I = fields.find(what);
     if (!I.is_valid())

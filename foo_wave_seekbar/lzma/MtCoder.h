@@ -73,13 +73,7 @@ typedef struct
 
 typedef struct
 {
-    SRes (*Code)(void* p,
-                 unsigned index,
-                 Byte* dest,
-                 size_t* destSize,
-                 const Byte* src,
-                 size_t srcSize,
-                 int finished);
+    SRes (*Code)(void* p, unsigned index, Byte* dest, size_t* destSize, const Byte* src, size_t srcSize, int finished);
 } IMtCoderCallback;
 
 typedef struct _CMtCoder

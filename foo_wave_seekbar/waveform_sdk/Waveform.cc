@@ -42,17 +42,13 @@ downmix_waveform(ref_ptr<waveform> w, size_t target_channels)
 
         float frame[audio_chunk::defined_channel_count];
 
-        for (unsigned channel_idx = 0; channel_idx < channel_count;
-             ++channel_idx) {
+        for (unsigned channel_idx = 0; channel_idx < channel_count; ++channel_idx) {
             w->get_field(
-              name,
-              channel_idx,
-              pointer_array_sink<float>(src + static_cast<size_t>(channel_idx) * 2048, 2048));
+              name, channel_idx, pointer_array_sink<float>(src + static_cast<size_t>(channel_idx) * 2048, 2048));
         }
 
         for (size_t sample_index = 0; sample_index < 2048; ++sample_index) {
-            for (size_t channel_idx = 0; channel_idx < channel_count;
-                 ++channel_idx) {
+            for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx) {
                 frame[channel_idx] = src[channel_idx * 2048 + sample_index];
             }
             switch (target_channels) {
@@ -68,8 +64,7 @@ downmix_waveform(ref_ptr<waveform> w, size_t target_channels)
             }
         }
         pfc::list_t<t_channel> mix;
-        for (size_t channel_idx = 0; channel_idx < target_channels;
-             ++channel_idx) {
+        for (size_t channel_idx = 0; channel_idx < target_channels; ++channel_idx) {
             t_channel ch;
             ch.add_items_fromptr(dst + channel_idx * 2048, 2048);
             mix.add_item(ch);
@@ -93,9 +88,7 @@ struct waveform_placeholder : waveform
         }
     }
 
-    virtual bool get_field(char const* what,
-                           unsigned index,
-                           array_sink<float> const& out)
+    virtual bool get_field(char const* what, unsigned index, array_sink<float> const& out)
     {
         if (index >= get_channel_count())
             return false;
@@ -108,10 +101,7 @@ struct waveform_placeholder : waveform
         return false;
     }
 
-    virtual unsigned get_channel_count() const
-    {
-        return audio_chunk::defined_channel_count;
-    }
+    virtual unsigned get_channel_count() const { return audio_chunk::defined_channel_count; }
     virtual unsigned get_channel_map() const
     {
         return (1 << audio_chunk::defined_channel_count) - 1;

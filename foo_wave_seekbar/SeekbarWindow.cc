@@ -18,29 +18,24 @@
 namespace pt = boost::property_tree;
 
 // {EBEABA3F-7A8E-4A54-A902-3DCF716E6A97}
-static constexpr GUID guid_seekbar_branch = {
-    0xebeaba3f,
-    0x7a8e,
-    0x4a54,
-    { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 }
-};
+static constexpr GUID guid_seekbar_branch = { 0xebeaba3f,
+                                              0x7a8e,
+                                              0x4a54,
+                                              { 0xa9, 0x2, 0x3d, 0xcf, 0x71, 0x6e, 0x6a, 0x97 } };
 
 // {F76A694E-CB85-45A6-A9C6-269877A0AAA4}
-static const GUID guid_presentation_scale = {
-    0xf76a694e,
-    0xcb85,
-    0x45a6,
-    { 0xa9, 0xc6, 0x26, 0x98, 0x77, 0xa0, 0xaa, 0xa4 }
-};
+static const GUID guid_presentation_scale = { 0xf76a694e,
+                                              0xcb85,
+                                              0x45a6,
+                                              { 0xa9, 0xc6, 0x26, 0x98, 0x77, 0xa0, 0xaa, 0xa4 } };
 
-static advconfig_integer_factory g_presentation_scale(
-  "Percentage of base display rate to display at (1-400%)",
-  guid_presentation_scale,
-  guid_seekbar_branch,
-  0.0,
-  100,
-  1,
-  400);
+static advconfig_integer_factory g_presentation_scale("Percentage of base display rate to display at (1-400%)",
+                                                      guid_presentation_scale,
+                                                      guid_seekbar_branch,
+                                                      0.0,
+                                                      100,
+                                                      1,
+                                                      400);
 
 namespace wave {
 seekbar_window::seekbar_window()
@@ -50,14 +45,12 @@ seekbar_window::seekbar_window()
   , drag_state(MouseDragNone)
   , possible_next_enqueued(false)
   , repaint_timer_id(0)
-{
-}
+{}
 
 seekbar_window::~seekbar_window() {}
 
 void
-seekbar_window::toggle_orientation(frontend_callback_impl& cb,
-                                   persistent_settings& s)
+seekbar_window::toggle_orientation(frontend_callback_impl& cb, persistent_settings& s)
 {
     config::orientation o = config::orientation_horizontal;
     if (cb.get_orientation() == o)
@@ -72,8 +65,7 @@ seekbar_window::apply_settings()
     auto& cb = *fe->callback;
     for (size_t i = 0; i < config::color_count; ++i) {
         cb.set_color(static_cast<config::color>(i),
-                     settings.override_colors[i] ? settings.colors[i]
-                                                 : global_colors[i]);
+                     settings.override_colors[i] ? settings.colors[i] : global_colors[i]);
     }
     cb.set_shade_played(settings.shade_played);
     cb.set_display_mode(settings.display_mode);
@@ -109,8 +101,7 @@ seekbar_window::create_frontend(config::frontend id)
     auto modules = list_frontend_modules();
     for (auto I = modules.begin(); I != modules.end(); ++I) {
         auto module = *I;
-        ret = module->instantiate(
-          id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf);
+        ret = module->instantiate(id, *this, wave::size(sz.cx, sz.cy), *fe->callback, *fe->conf);
         if (ret)
             return ret;
     }
@@ -121,8 +112,7 @@ void
 seekbar_window::initialize_frontend()
 {
     std::unique_lock<std::recursive_mutex> lk(fe->mutex);
-    present_scale =
-      g_presentation_scale.get() / 100.0; // ugly, but more explanatory
+    present_scale = g_presentation_scale.get() / 100.0; // ugly, but more explanatory
     present_interval = 100;
     try {
         OSVERSIONINFOEX osv = {};
@@ -131,12 +121,8 @@ seekbar_window::initialize_frontend()
 #pragma warning(disable : 4996)
         GetVersionEx((OSVERSIONINFO*)&osv);
 #pragma warning(pop)
-        bool vista_least_sp1 =
-          (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0 &&
-           osv.wServicePackMajor >= 1);
-        bool seven_and_up =
-          (osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1) ||
-          (osv.dwMajorVersion >= 7);
+        bool vista_least_sp1 = (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0 && osv.wServicePackMajor >= 1);
+        bool seven_and_up = (osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1) || (osv.dwMajorVersion >= 7);
 
         apply_settings();
 
@@ -187,9 +173,7 @@ seekbar_window::initialize_frontend()
         fe->frontend->on_state_changed(static_cast<visual_frontend::state>(~0));
         static_api_ptr_t<playback_control> pc;
         if (pc->is_playing()) {
-            repaint_timer_id =
-              SetTimer(REPAINT_TIMER_ID,
-                       static_cast<DWORD>(present_interval / present_scale));
+            repaint_timer_id = SetTimer(REPAINT_TIMER_ID, static_cast<DWORD>(present_interval / present_scale));
         }
     }
 }
@@ -218,11 +202,9 @@ seekbar_window::compute_position(CPoint point)
 {
     std::unique_lock<std::recursive_mutex> lk(fe->mutex);
     double track_length = fe->callback->get_track_length();
-    bool horizontal =
-      fe->callback->get_orientation() == config::orientation_horizontal;
-    double position = horizontal
-                        ? point.x * track_length / client_rect.Width()
-                        : point.y * track_length / client_rect.Height();
+    bool horizontal = fe->callback->get_orientation() == config::orientation_horizontal;
+    double position =
+      horizontal ? point.x * track_length / client_rect.Width() : point.y * track_length / client_rect.Height();
     if (fe->callback->get_flip_display())
         position = track_length - position;
 
@@ -254,9 +236,7 @@ seekbar_window::set_playback_time(double t)
 }
 
 void
-waveform_completion_handler(std::shared_ptr<frontend_data> fe,
-                            service_ptr_t<waveform_query> q,
-                            uint32_t serial)
+waveform_completion_handler(std::shared_ptr<frontend_data> fe, service_ptr_t<waveform_query> q, uint32_t serial)
 {
     // TODO(zao): Migrate these to new query interface.
     /*
@@ -312,8 +292,7 @@ seekbar_window::try_get_data()
 }
 
 void
-seekbar_window::save_settings(persistent_settings const& settings,
-                              std::vector<char>& out)
+seekbar_window::save_settings(persistent_settings const& settings, std::vector<char>& out)
 {
     out.clear();
     std::ostringstream os;
@@ -328,20 +307,13 @@ seekbar_window::save_settings(persistent_settings const& settings,
 }
 
 void
-seekbar_window::load_settings(persistent_settings& settings,
-                              std::vector<char> const& in)
+seekbar_window::load_settings(persistent_settings& settings, std::vector<char> const& in)
 {
     std::string s(in.begin(), in.end());
-
-    if (!s.empty() && s[0] == '<') // parsing legacy information
-    {
-        read_s11n_xml(s, settings);
-    } else {
-        pt::ptree config_tree;
-        std::istringstream is(s);
-        pt::read_info(is, config_tree);
-        settings.from_ptree(config_tree);
-    }
+    pt::ptree config_tree;
+    std::istringstream is(s);
+    pt::read_info(is, config_tree);
+    settings.from_ptree(config_tree);
 }
 
 void
@@ -373,8 +345,7 @@ void
 seekbar_window::set_color(config::color which, color what, bool override)
 {
     if (!m_hWnd) {
-        deferred_init.push_back(
-          std::bind(&seekbar_window::set_color, this, which, what, override));
+        deferred_init.push_back(std::bind(&seekbar_window::set_color, this, which, what, override));
         return;
     }
     if (override)
@@ -394,8 +365,7 @@ seekbar_window::set_color_override(config::color which, bool override)
 {
     std::unique_lock<std::recursive_mutex> lk(fe->mutex);
     settings.override_colors[which] = override;
-    fe->callback->set_color(
-      which, override ? settings.colors[which] : global_colors[which]);
+    fe->callback->set_color(which, override ? settings.colors[which] : global_colors[which]);
     if (fe->frontend)
         fe->frontend->on_state_changed(visual_frontend::state_color);
 }
@@ -450,8 +420,7 @@ seekbar_window::set_downmix_display(config::downmix downmix)
     if (fe->callback->get_downmix_display() != downmix) {
         fe->callback->set_downmix_display(downmix);
         if (fe->frontend)
-            fe->frontend->on_state_changed(
-              visual_frontend::state_downmix_display);
+            fe->frontend->on_state_changed(visual_frontend::state_downmix_display);
     }
 }
 
@@ -473,15 +442,12 @@ seekbar_window::set_channel_enabled(int ch, bool state)
     std::unique_lock<std::recursive_mutex> lk(fe->mutex);
     auto& order = settings.channel_order;
     typedef decltype(order[0]) value_type;
-    auto I = std::find_if(order.begin(),
-                          order.end(),
-                          [ch](value_type const& a) { return a.first == ch; });
+    auto I = std::find_if(order.begin(), order.end(), [ch](value_type const& a) { return a.first == ch; });
     if (I != order.end()) {
         I->second = state;
         apply_settings();
         if (fe->frontend)
-            fe->frontend->on_state_changed(
-              visual_frontend::state_channel_order);
+            fe->frontend->on_state_changed(visual_frontend::state_channel_order);
     }
 }
 
@@ -493,20 +459,13 @@ seekbar_window::swap_channel_order(int ch1, int ch2)
     std::unique_lock<std::recursive_mutex> lk(fe->mutex);
     auto& order = settings.channel_order;
     typedef decltype(order[0]) value_type;
-    auto I1 =
-      std::find_if(order.begin(), order.end(), [ch1](value_type const& a) {
-          return a.first == ch1;
-      });
-    auto I2 =
-      std::find_if(order.begin(), order.end(), [ch2](value_type const& a) {
-          return a.first == ch2;
-      });
+    auto I1 = std::find_if(order.begin(), order.end(), [ch1](value_type const& a) { return a.first == ch1; });
+    auto I2 = std::find_if(order.begin(), order.end(), [ch2](value_type const& a) { return a.first == ch2; });
     if (I1 != order.end() && I2 != order.end()) {
         std::swap(*I1, *I2);
         apply_settings();
         if (fe->frontend)
-            fe->frontend->on_state_changed(
-              visual_frontend::state_channel_order);
+            fe->frontend->on_state_changed(visual_frontend::state_channel_order);
     }
 }
 }

@@ -63,14 +63,8 @@ struct frontend_callback_impl
     virtual size get_size() const { return this->size; }
     virtual config::orientation get_orientation() const { return orientation; }
     virtual bool get_shade_played() const { return shade_played; }
-    virtual config::display_mode get_display_mode() const
-    {
-        return display_mode;
-    }
-    virtual config::downmix get_downmix_display() const
-    {
-        return downmix_display;
-    }
+    virtual config::display_mode get_display_mode() const { return display_mode; }
+    virtual config::downmix get_downmix_display() const { return downmix_display; }
     virtual bool get_flip_display() const { return flip_display; }
     virtual void get_channel_infos(array_sink<channel_info> const& out) const
     {
@@ -126,14 +120,8 @@ struct frontend_callback_impl
     virtual void set_size(size s) { this->size = s; }
     virtual void set_orientation(config::orientation o) { orientation = o; }
     virtual void set_shade_played(bool b) { shade_played = b; }
-    virtual void set_display_mode(config::display_mode mode)
-    {
-        display_mode = mode;
-    }
-    virtual void set_downmix_display(config::downmix mix)
-    {
-        downmix_display = mix;
-    }
+    virtual void set_display_mode(config::display_mode mode) { display_mode = mode; }
+    virtual void set_downmix_display(config::downmix mix) { downmix_display = mix; }
     virtual void set_flip_display(bool b) { flip_display = b; }
     virtual void set_channel_infos(channel_info const* in, size_t count)
     {
@@ -141,10 +129,7 @@ struct frontend_callback_impl
         channel_infos.add_items_fromptr(in, count);
     }
 
-    virtual void run_in_main_thread(std::function<void()> f) const
-    {
-        in_main_thread(f);
-    }
+    virtual void run_in_main_thread(std::function<void()> f) const { in_main_thread(f); }
 
     double track_length;
     double playback_position;

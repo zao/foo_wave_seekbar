@@ -8,12 +8,9 @@
 
 template<typename T>
 void
-get_downmix_coefficients(t_size n,
-                         pfc::list_hybrid_t<T, 18>& left,
-                         pfc::list_hybrid_t<T, 18>& right)
+get_downmix_coefficients(t_size n, pfc::list_hybrid_t<T, 18>& left, pfc::list_hybrid_t<T, 18>& right)
 {
-    T zero = T(0.0), one = T(1.0),
-      sqrt_half = T(0.70710678118654752440084436210485), half = T(0.5);
+    T zero = T(0.0), one = T(1.0), sqrt_half = T(0.70710678118654752440084436210485), half = T(0.5);
     switch (n) {
         case 1: { //      { center }
             T l[] = { one };
@@ -54,11 +51,9 @@ get_downmix_coefficients(t_size n,
         }
         case 8: { //      { left , right , center    , LFE  , surr-left ,
                   //      surr-right , back-left , back-right }
-            T l[] = { one,       zero, sqrt_half, half,
-                      sqrt_half, zero, sqrt_half, zero };
+            T l[] = { one, zero, sqrt_half, half, sqrt_half, zero, sqrt_half, zero };
             left = l;
-            T r[] = { zero, one,       sqrt_half, half,
-                      zero, sqrt_half, zero,      sqrt_half };
+            T r[] = { zero, one, sqrt_half, half, zero, sqrt_half, zero, sqrt_half };
             right = r;
             break;
         }

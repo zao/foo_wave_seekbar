@@ -16,8 +16,7 @@ CrcGenerateTable(void);
 
 #define CRC_INIT_VAL 0xFFFFFFFF
 #define CRC_GET_DIGEST(crc) ((crc) ^ CRC_INIT_VAL)
-#define CRC_UPDATE_BYTE(crc, b)                                                \
-    (g_CrcTable[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
+#define CRC_UPDATE_BYTE(crc, b) (g_CrcTable[((crc) ^ (b)) & 0xFF] ^ ((crc) >> 8))
 
 UInt32 MY_FAST_CALL
 CrcUpdate(UInt32 crc, const void* data, size_t size);

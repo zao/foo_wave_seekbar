@@ -50,9 +50,8 @@ properties of platform.
 #define MY_CPU_LE_UNALIGN
 #endif
 
-#if defined(MY_CPU_X86_OR_AMD64) || defined(MY_CPU_ARM_LE) ||                  \
-  defined(MY_CPU_IA64_LE) || defined(__ARMEL__) || defined(__MIPSEL__) ||      \
-  defined(__LITTLE_ENDIAN__)
+#if defined(MY_CPU_X86_OR_AMD64) || defined(MY_CPU_ARM_LE) || defined(MY_CPU_IA64_LE) || defined(__ARMEL__) ||         \
+  defined(__MIPSEL__) || defined(__LITTLE_ENDIAN__)
 #define MY_CPU_LE
 #endif
 
@@ -75,38 +74,35 @@ Stop_Compiling_Bad_Endian
 
 #else
 
-#define GetUi16(p)                                                             \
-    (((const Byte*)(p))[0] | ((UInt16)((const Byte*)(p))[1] << 8))
+#define GetUi16(p) (((const Byte*)(p))[0] | ((UInt16)((const Byte*)(p))[1] << 8))
 
-#define GetUi32(p)                                                             \
-    (((const Byte*)(p))[0] | ((UInt32)((const Byte*)(p))[1] << 8) |            \
-     ((UInt32)((const Byte*)(p))[2] << 16) |                                   \
+#define GetUi32(p)                                                                                                     \
+    (((const Byte*)(p))[0] | ((UInt32)((const Byte*)(p))[1] << 8) | ((UInt32)((const Byte*)(p))[2] << 16) |            \
      ((UInt32)((const Byte*)(p))[3] << 24))
 
-#define GetUi64(p)                                                             \
-    (GetUi32(p) | ((UInt64)GetUi32(((const Byte*)(p)) + 4) << 32))
+#define GetUi64(p) (GetUi32(p) | ((UInt64)GetUi32(((const Byte*)(p)) + 4) << 32))
 
-#define SetUi16(p, d)                                                          \
-    {                                                                          \
-        UInt32 _x_ = (d);                                                      \
-        ((Byte*)(p))[0] = (Byte)_x_;                                           \
-        ((Byte*)(p))[1] = (Byte)(_x_ >> 8);                                    \
+#define SetUi16(p, d)                                                                                                  \
+    {                                                                                                                  \
+        UInt32 _x_ = (d);                                                                                              \
+        ((Byte*)(p))[0] = (Byte)_x_;                                                                                   \
+        ((Byte*)(p))[1] = (Byte)(_x_ >> 8);                                                                            \
     }
 
-#define SetUi32(p, d)                                                          \
-    {                                                                          \
-        UInt32 _x_ = (d);                                                      \
-        ((Byte*)(p))[0] = (Byte)_x_;                                           \
-        ((Byte*)(p))[1] = (Byte)(_x_ >> 8);                                    \
-        ((Byte*)(p))[2] = (Byte)(_x_ >> 16);                                   \
-        ((Byte*)(p))[3] = (Byte)(_x_ >> 24);                                   \
+#define SetUi32(p, d)                                                                                                  \
+    {                                                                                                                  \
+        UInt32 _x_ = (d);                                                                                              \
+        ((Byte*)(p))[0] = (Byte)_x_;                                                                                   \
+        ((Byte*)(p))[1] = (Byte)(_x_ >> 8);                                                                            \
+        ((Byte*)(p))[2] = (Byte)(_x_ >> 16);                                                                           \
+        ((Byte*)(p))[3] = (Byte)(_x_ >> 24);                                                                           \
     }
 
-#define SetUi64(p, d)                                                          \
-    {                                                                          \
-        UInt64 _x64_ = (d);                                                    \
-        SetUi32(p, (UInt32)_x64_);                                             \
-        SetUi32(((Byte*)(p)) + 4, (UInt32)(_x64_ >> 32));                      \
+#define SetUi64(p, d)                                                                                                  \
+    {                                                                                                                  \
+        UInt64 _x64_ = (d);                                                                                            \
+        SetUi32(p, (UInt32)_x64_);                                                                                     \
+        SetUi32(((Byte*)(p)) + 4, (UInt32)(_x64_ >> 32));                                                              \
     }
 
 #endif
@@ -120,18 +116,15 @@ Stop_Compiling_Bad_Endian
 
 #else
 
-#define GetBe32(p)                                                             \
-    (((UInt32)((const Byte*)(p))[0] << 24) |                                   \
-     ((UInt32)((const Byte*)(p))[1] << 16) |                                   \
+#define GetBe32(p)                                                                                                     \
+    (((UInt32)((const Byte*)(p))[0] << 24) | ((UInt32)((const Byte*)(p))[1] << 16) |                                   \
      ((UInt32)((const Byte*)(p))[2] << 8) | ((const Byte*)(p))[3])
 
-#define GetBe64(p)                                                             \
-    (((UInt64)GetBe32(p) << 32) | GetBe32(((const Byte*)(p)) + 4))
+#define GetBe64(p) (((UInt64)GetBe32(p) << 32) | GetBe32(((const Byte*)(p)) + 4))
 
 #endif
 
-#define GetBe16(p)                                                             \
-    (((UInt16)((const Byte*)(p))[0] << 8) | ((const Byte*)(p))[1])
+#define GetBe16(p) (((UInt16)((const Byte*)(p))[0] << 8) | ((const Byte*)(p))[1])
 
 #ifdef MY_CPU_X86_OR_AMD64
 

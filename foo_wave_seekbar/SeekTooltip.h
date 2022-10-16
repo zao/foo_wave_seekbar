@@ -15,8 +15,7 @@ struct seek_tooltip : seek_callback
     {
         tooltip.Create(nullptr);
         toolinfo.cbSize = sizeof(toolinfo);
-        toolinfo.uFlags =
-          TTF_TRACK | TTF_IDISHWND | TTF_ABSOLUTE | TTF_TRANSPARENT;
+        toolinfo.uFlags = TTF_TRACK | TTF_IDISHWND | TTF_ABSOLUTE | TTF_TRANSPARENT;
         toolinfo.hwnd = parent;
         toolinfo.uId = 0;
         static wchar_t empty_label[1] = L"";
@@ -72,8 +71,7 @@ struct seek_tooltip : seek_callback
 
     std::wstring format_time(double time)
     {
-        auto str = pfc::stringcvt::string_os_from_utf8(
-          pfc::format_time(pfc::rint64(time)));
+        auto str = pfc::stringcvt::string_os_from_utf8(pfc::format_time(pfc::rint64(time)));
         std::wstring out = str.get_ptr();
         return out;
     }

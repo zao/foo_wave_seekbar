@@ -56,10 +56,7 @@ typedef struct
 SRes
 XzBlock_Parse(CXzBlock* p, const Byte* header);
 SRes
-XzBlock_ReadHeader(CXzBlock* p,
-                   ISeqInStream* inStream,
-                   Bool* isIndex,
-                   UInt32* headerSizeRes);
+XzBlock_ReadHeader(CXzBlock* p, ISeqInStream* inStream, Bool* isIndex, UInt32* headerSizeRes);
 
 /* ---------- xz stream ---------- */
 
@@ -72,10 +69,8 @@ extern Byte XZ_FOOTER_SIG[XZ_FOOTER_SIG_SIZE];
 #define XZ_STREAM_FLAGS_SIZE 2
 #define XZ_STREAM_CRC_SIZE 4
 
-#define XZ_STREAM_HEADER_SIZE                                                  \
-    (XZ_SIG_SIZE + XZ_STREAM_FLAGS_SIZE + XZ_STREAM_CRC_SIZE)
-#define XZ_STREAM_FOOTER_SIZE                                                  \
-    (XZ_FOOTER_SIG_SIZE + XZ_STREAM_FLAGS_SIZE + XZ_STREAM_CRC_SIZE + 4)
+#define XZ_STREAM_HEADER_SIZE (XZ_SIG_SIZE + XZ_STREAM_FLAGS_SIZE + XZ_STREAM_CRC_SIZE)
+#define XZ_STREAM_FOOTER_SIZE (XZ_FOOTER_SIG_SIZE + XZ_STREAM_FLAGS_SIZE + XZ_STREAM_CRC_SIZE + 4)
 
 #define XZ_CHECK_MASK 0xF
 #define XZ_CHECK_NO 0
@@ -150,11 +145,7 @@ Xzs_Construct(CXzs* p);
 void
 Xzs_Free(CXzs* p, ISzAlloc* alloc);
 SRes
-Xzs_ReadBackward(CXzs* p,
-                 ILookInStream* inStream,
-                 Int64* startOffset,
-                 ICompressProgress* progress,
-                 ISzAlloc* alloc);
+Xzs_ReadBackward(CXzs* p, ILookInStream* inStream, Int64* startOffset, ICompressProgress* progress, ISzAlloc* alloc);
 
 UInt64
 Xzs_GetNumBlocks(const CXzs* p);
@@ -179,10 +170,7 @@ typedef struct _IStateCoder
 {
     void* p;
     void (*Free)(void* p, ISzAlloc* alloc);
-    SRes (*SetProps)(void* p,
-                     const Byte* props,
-                     size_t propSize,
-                     ISzAlloc* alloc);
+    SRes (*SetProps)(void* p, const Byte* props, size_t propSize, ISzAlloc* alloc);
     void (*Init)(void* p);
     SRes (*Code)(void* p,
                  Byte* dest,

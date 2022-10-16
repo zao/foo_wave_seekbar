@@ -15,10 +15,9 @@ struct container_atl_window
 {
     window_host_ptr host;
 
-    HWND create_or_transfer_window(
-      HWND parent,
-      const window_host_ptr& new_host,
-      const ui_helpers::window_position_t& position)
+    HWND create_or_transfer_window(HWND parent,
+                                   const window_host_ptr& new_host,
+                                   const ui_helpers::window_position_t& position)
     {
         if (static_cast<HWND>(*this)) {
             this->ShowWindow(SW_HIDE);
@@ -26,21 +25,12 @@ struct container_atl_window
             host->relinquish_ownership(*this);
             host = new_host;
 
-            this->SetWindowPos(0,
-                               position.x,
-                               position.y,
-                               position.cx,
-                               position.cy,
-                               SWP_NOZORDER);
+            this->SetWindowPos(0, position.x, position.y, position.cx, position.cy, SWP_NOZORDER);
         } else {
             host = new_host;
             CRect r;
             position.convert_to_rect(r);
-            this->Create(parent,
-                         r,
-                         0,
-                         WS_CHILD,
-                         this->settings.has_border ? WS_EX_STATICEDGE : 0);
+            this->Create(parent, r, 0, WS_CHILD, this->settings.has_border ? WS_EX_STATICEDGE : 0);
         }
 
         return *this;
@@ -66,11 +56,8 @@ struct seekbar_uie_base : uie::container_atl_window<seekbar_window>
     seekbar_uie_base();
     ~seekbar_uie_base();
 
-    virtual void set_config(stream_reader* p_reader,
-                            t_size p_size,
-                            abort_callback& p_abort);
-    virtual void get_config(stream_writer* p_writer,
-                            abort_callback& p_abort) const;
+    virtual void set_config(stream_reader* p_reader, t_size p_size, abort_callback& p_abort);
+    virtual void get_config(stream_writer* p_writer, abort_callback& p_abort) const;
 
     virtual void get_name(pfc::string_base& out) const;
 

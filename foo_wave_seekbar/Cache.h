@@ -40,18 +40,16 @@ struct get_response
 {
     get_response()
       : valid_bucket_count(2048)
-    {
-    }
+    {}
     ref_ptr<waveform> waveform;
     size_t valid_bucket_count;
 };
 
 struct cache : service_base
 {
-    virtual service_ptr_t<waveform_query> create_query(
-      playable_location const& loc,
-      waveform_query::query_urgency urgency,
-      waveform_query::query_force forced) = 0;
+    virtual service_ptr_t<waveform_query> create_query(playable_location const& loc,
+                                                       waveform_query::query_urgency urgency,
+                                                       waveform_query::query_force forced) = 0;
     virtual service_ptr_t<waveform_query> create_callback_query(
       playable_location const& loc,
       waveform_query::query_urgency urgency,
@@ -68,25 +66,20 @@ struct cache : service_base
     virtual void defer_action(std::function<void()> fun) = 0;
 
     virtual bool is_location_forbidden(playable_location const& loc) = 0;
-    virtual bool get_waveform_sync(playable_location const& loc,
-                                   ref_ptr<waveform>& out) = 0;
+    virtual bool get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out) = 0;
 
     FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(cache)
 };
 
 // {E2AB1144-58A1-4DED-A2FB-7BBE74B38D5F}
-__declspec(selectany) const GUID waveform_query::class_guid = {
-    0xe2ab1144,
-    0x58a1,
-    0x4ded,
-    { 0xa2, 0xfb, 0x7b, 0xbe, 0x74, 0xb3, 0x8d, 0x5f }
-};
+__declspec(selectany) const GUID waveform_query::class_guid = { 0xe2ab1144,
+                                                                0x58a1,
+                                                                0x4ded,
+                                                                { 0xa2, 0xfb, 0x7b, 0xbe, 0x74, 0xb3, 0x8d, 0x5f } };
 
 // {46844662-C924-402B-A0F9-A062B2074698}
-__declspec(selectany) const GUID cache::class_guid = {
-    0x46844662,
-    0xc924,
-    0x402b,
-    { 0xa0, 0xf9, 0xa0, 0x62, 0xb2, 0x7, 0x46, 0x98 }
-};
+__declspec(selectany) const GUID cache::class_guid = { 0x46844662,
+                                                       0xc924,
+                                                       0x402b,
+                                                       { 0xa0, 0xf9, 0xa0, 0x62, 0xb2, 0x7, 0x46, 0x98 } };
 }

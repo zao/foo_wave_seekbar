@@ -87,10 +87,7 @@ struct ref_ptr
     bool is_valid() const { return !!p; }
 
     typedef void (ref_ptr::*operator_bool_type)();
-    operator operator_bool_type() const
-    {
-        return (p ? &ref_ptr::operator_bool_dummy : nullptr);
-    }
+    operator operator_bool_type() const { return (p ? &ref_ptr::operator_bool_dummy : nullptr); }
 
   private:
     void operator_bool_dummy() {}

@@ -31,19 +31,14 @@ gdi_fallback_frontend::clear()
 {}
 
 int
-map_normalized_float_to_unsigned_range(unsigned dst_low,
-                                       unsigned dst_high,
-                                       float value)
+map_normalized_float_to_unsigned_range(unsigned dst_low, unsigned dst_high, float value)
 {
     unsigned dst_delta = dst_high - dst_low;
     return dst_low + (std::min)(dst_delta - 1, static_cast<unsigned>(dst_delta * value));
 }
 
 CRect
-reorient_rect(CRect rect,
-              CSize canvas_size,
-              bool vertical,
-              bool reverse_major_axis)
+reorient_rect(CRect rect, CSize canvas_size, bool vertical, bool reverse_major_axis)
 {
     if (reverse_major_axis) {
         rect.left = canvas_size.cx - rect.left;
@@ -58,10 +53,7 @@ reorient_rect(CRect rect,
 }
 
 CSize
-reorient_size(CSize size,
-              CSize canvas_size,
-              bool vertical,
-              bool reverse_major_axis)
+reorient_size(CSize size, CSize canvas_size, bool vertical, bool reverse_major_axis)
 {
     if (reverse_major_axis) {
         size.cx = canvas_size.cx - size.cx;
@@ -73,10 +65,7 @@ reorient_size(CSize size,
 }
 
 CPoint
-reorient_point(CPoint point,
-               CSize canvas_size,
-               bool vertical,
-               bool reverse_major_axis)
+reorient_point(CPoint point, CSize canvas_size, bool vertical, bool reverse_major_axis)
 {
     if (reverse_major_axis) {
         point.x = canvas_size.cx - point.x;
@@ -91,14 +80,7 @@ void
 unity_blit(HDC dst_dc, CRect rect, HDC src_dc)
 {
     CDCHandle h = dst_dc;
-    h.BitBlt(rect.left,
-             rect.top,
-             rect.Width(),
-             rect.Height(),
-             src_dc,
-             rect.left,
-             rect.top,
-             SRCCOPY);
+    h.BitBlt(rect.left, rect.top, rect.Width(), rect.Height(), src_dc, rect.left, rect.top, SRCCOPY);
 }
 
 std::pair<CRect, CRect>
@@ -121,8 +103,7 @@ make_cursor_info(visual_frontend_callback const& callback)
 {
     auto track_length = callback.get_track_length();
     auto seek_pos = (std::min)(track_length, callback.get_seek_position());
-    auto playback_pos =
-      (std::min)(track_length, callback.get_playback_position());
+    auto playback_pos = (std::min)(track_length, callback.get_playback_position());
     cursor_info info = { static_cast<float>(seek_pos / track_length),
                          static_cast<float>(playback_pos / track_length),
                          callback.is_seeking(),
@@ -140,9 +121,7 @@ enum type
 }
 
 std::vector<std::tuple<unsigned, unsigned, bool>>
-compute_waveform_regions(unsigned major_extent,
-                         float const* position,
-                         float const* seek)
+compute_waveform_regions(unsigned major_extent, float const* position, float const* seek)
 {
     std::vector<std::tuple<unsigned, unsigned, bool>> regions;
     if (major_extent < 1)
@@ -150,13 +129,10 @@ compute_waveform_regions(unsigned major_extent,
     std::map<unsigned, PointKind::type> assembly;
     assembly[major_extent] = PointKind::ENDPOINT;
     if (seek)
-        assembly[map_normalized_float_to_unsigned_range(
-          0, major_extent, *seek)] = PointKind::SEEK;
+        assembly[map_normalized_float_to_unsigned_range(0, major_extent, *seek)] = PointKind::SEEK;
     if (position)
-        assembly[map_normalized_float_to_unsigned_range(
-          0, major_extent, *position)] = PointKind::POSITION;
-    std::vector<std::pair<unsigned, PointKind::type>> points(
-      std::begin(assembly), std::end(assembly));
+        assembly[map_normalized_float_to_unsigned_range(0, major_extent, *position)] = PointKind::POSITION;
+    std::vector<std::pair<unsigned, PointKind::type>> points(std::begin(assembly), std::end(assembly));
     unsigned low_bound = 0u;
     bool shaded = true;
     for (auto I = points.begin(); I != points.end(); ++I) {
@@ -173,12 +149,7 @@ compute_waveform_regions(unsigned major_extent,
 }
 
 CPoint
-derive_point(float x,
-             float y,
-             size_t screen_w,
-             size_t screen_h,
-             bool vertical,
-             bool flip)
+derive_point(float x, float y, size_t screen_w, size_t screen_h, bool vertical, bool flip)
 {
     if (flip)
         x = 1.0f - x;
@@ -222,10 +193,8 @@ gdi_fallback_frontend::draw()
         } else {
             auto major_extent = vertical ? size.cy : size.cx;
             auto minor_extent = vertical ? size.cx : size.cy;
-            auto regions =
-              compute_waveform_regions(major_extent,
-                                       has_cursor ? &position : nullptr,
-                                       is_seeking ? &seek_position : nullptr);
+            auto regions = compute_waveform_regions(
+              major_extent, has_cursor ? &position : nullptr, is_seeking ? &seek_position : nullptr);
             for (auto I = regions.begin(); I != regions.end(); ++I) {
                 auto region = *I;
                 unsigned inc_low, inc_high;
@@ -241,33 +210,18 @@ gdi_fallback_frontend::draw()
                     std::swap(from.x, from.y);
                     std::swap(to.x, to.y);
                 }
-                unity_blit(dc,
-                           CRect(from, to),
-                           (shaded && should_shade) ? *shaded_wave_dc
-                                                    : *wave_dc);
+                unity_blit(dc, CRect(from, to), (shaded && should_shade) ? *shaded_wave_dc : *wave_dc);
             }
         }
 
         if (is_seeking) {
-            auto from = derive_point(seek_position,
-                                     0.0f,
-                                     canvas_size.cx,
-                                     canvas_size.cy,
-                                     vertical,
-                                     flip);
-            auto to = derive_point(seek_position,
-                                   1.0f,
-                                   canvas_size.cx,
-                                   canvas_size.cy,
-                                   vertical,
-                                   flip);
+            auto from = derive_point(seek_position, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+            auto to = derive_point(seek_position, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
             draw_bar(dc, from, to);
         }
         if (has_cursor && (!is_seeking || position != seek_position)) {
-            auto from = derive_point(
-              position, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
-            auto to = derive_point(
-              position, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+            auto from = derive_point(position, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+            auto to = derive_point(position, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
             draw_bar(dc, from, to);
         }
     }
@@ -289,9 +243,8 @@ gdi_fallback_frontend::on_state_changed(state s)
         release_objects();
         create_objects();
     }
-    if (s &
-        (state_data | state_size | state_orientation | state_color |
-         state_channel_order | state_downmix_display | state_flip_display)) {
+    if (s & (state_data | state_size | state_orientation | state_color | state_channel_order | state_downmix_display |
+             state_flip_display)) {
         cached_rects_valid = false;
         update_data();
     }
@@ -308,8 +261,7 @@ gdi_fallback_frontend::create_objects()
         out.reset(new CPen);
         out->CreatePen(PS_SOLID, 0, color_to_xbgr(c));
     };
-    auto solid_brush_from_color = [&](config::color color,
-                                      std::unique_ptr<CBrush>& out) {
+    auto solid_brush_from_color = [&](config::color color, std::unique_ptr<CBrush>& out) {
         auto c = callback.get_color(color);
         out.reset(new CBrush);
         out->CreateSolidBrush(color_to_xbgr(c));
@@ -407,8 +359,7 @@ gdi_fallback_frontend::update_data()
         pfc::list_t<int> channel_indices;
         for (channel_info const& info : infos) {
             if (info.enabled) {
-                auto I = std::find(
-                  channel_numbers.begin(), channel_numbers.end(), info.channel);
+                auto I = std::find(channel_numbers.begin(), channel_numbers.end(), info.channel);
                 decltype(I) first = channel_numbers.begin();
                 if (I != channel_numbers.end()) {
                     channel_indices.add_item(static_cast<int>(std::distance(first, I)));
@@ -423,13 +374,10 @@ gdi_fallback_frontend::update_data()
             size_t channel_height = bitmap_size.cy, channel_y_offset = 0;
             if (vertical) {
                 channel_x_offset = channel_width * quad_index / index_count;
-                channel_width = channel_width * (quad_index + 1) / index_count -
-                                channel_x_offset;
+                channel_width = channel_width * (quad_index + 1) / index_count - channel_x_offset;
             } else {
                 channel_y_offset = channel_height * quad_index / index_count;
-                channel_height =
-                  channel_height * (quad_index + 1) / index_count -
-                  channel_y_offset;
+                channel_height = channel_height * (quad_index + 1) / index_count - channel_y_offset;
             }
             pfc::list_t<float> avg_min, avg_max, avg_rms;
             w->get_field("minimum", index, list_array_sink<float>(avg_min));
@@ -443,8 +391,7 @@ gdi_fallback_frontend::update_data()
             float4 textColor(txt.r, txt.g, txt.b, txt.a);
             float4 hilightColor(hi.r, hi.g, hi.b, hi.a);
 
-            size_t major_extent =
-              static_cast<size_t>(vertical ? bitmap_size.cy : bitmap_size.cx);
+            size_t major_extent = static_cast<size_t>(vertical ? bitmap_size.cy : bitmap_size.cx);
             std::vector<float4> samples(major_extent);
             for (size_t x = 0; x < major_extent; ++x) {
                 size_t ix = (x * 2048ul / major_extent);
@@ -463,19 +410,15 @@ gdi_fallback_frontend::update_data()
             std::vector<DWORD> unshaded_row(channel_width);
             std::vector<DWORD> shaded_row(channel_width);
             for (size_t target_y = 0; target_y < channel_height; ++target_y) {
-                for (size_t target_x = 0; target_x < channel_width;
-                     ++target_x) {
+                for (size_t target_x = 0; target_x < channel_width; ++target_x) {
                     size_t tc_x;
                     float tc_y;
                     if (vertical) {
-                        tc_x =
-                          flip ? (channel_height - target_y - 1) : target_y;
-                        tc_y =
-                          1.0f - 2.0f * target_x / static_cast<float>(channel_width - 1);
+                        tc_x = flip ? (channel_height - target_y - 1) : target_y;
+                        tc_y = 1.0f - 2.0f * target_x / static_cast<float>(channel_width - 1);
                     } else {
                         tc_x = flip ? (channel_width - target_x - 1) : target_x;
-                        tc_y =
-                          1.0f - 2.0f * target_y / static_cast<float>(channel_height - 1);
+                        tc_y = 1.0f - 2.0f * target_y / static_cast<float>(channel_height - 1);
                     }
                     float4 c;
                     auto sample = samples[tc_x];
@@ -540,34 +483,14 @@ gdi_fallback_frontend::update_positions()
     std::optional<CRect> play_rect;
     std::optional<CRect> seek_rect;
     if (cursors.has_position) {
-        auto from = derive_point(cursors.position_fraction,
-                                 0.0f,
-                                 canvas_size.cx,
-                                 canvas_size.cy,
-                                 vertical,
-                                 flip);
-        auto to = derive_point(cursors.position_fraction,
-                               1.0f,
-                               canvas_size.cx,
-                               canvas_size.cy,
-                               vertical,
-                               flip);
+        auto from = derive_point(cursors.position_fraction, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+        auto to = derive_point(cursors.position_fraction, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
         play_rect = CRect(from, to);
         play_rect->InflateRect(0, 0, 1, 1);
     }
     if (cursors.has_seeking) {
-        auto from = derive_point(cursors.seeking_fraction,
-                                 0.0f,
-                                 canvas_size.cx,
-                                 canvas_size.cy,
-                                 vertical,
-                                 flip);
-        auto to = derive_point(cursors.seeking_fraction,
-                               1.0f,
-                               canvas_size.cx,
-                               canvas_size.cy,
-                               vertical,
-                               flip);
+        auto from = derive_point(cursors.seeking_fraction, 0.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
+        auto to = derive_point(cursors.seeking_fraction, 1.0f, canvas_size.cx, canvas_size.cy, vertical, flip);
         seek_rect = CRect(from, to);
         seek_rect->InflateRect(0, 0, 1, 1);
         // CRect r(cursors.seeking_offset, 0, cursors.seeking_offset+1,
@@ -576,10 +499,7 @@ gdi_fallback_frontend::update_positions()
     if (last_play_rect != play_rect) {
         if (shade_played && last_play_rect.has_value()) {
             CRect extent =
-              play_rect.has_value()
-                ? *play_rect
-                : reorient_rect(
-                    CRect(0, 0, 1, size.cy), canvas_size, vertical, flip);
+              play_rect.has_value() ? *play_rect : reorient_rect(CRect(0, 0, 1, size.cy), canvas_size, vertical, flip);
             CRect combined_play_rect;
             combined_play_rect.UnionRect(extent, &*last_play_rect);
             InvalidateRect(wnd, &combined_play_rect, FALSE);

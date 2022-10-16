@@ -29,6 +29,8 @@ set(LZMA_SOURCES
 set(SEEKBAR_SOURCES
 	"Clipboard.cc"
 	"Clipboard.h"
+    "Direct3D11Frontend.cc"
+    "Direct3D11Frontend.h"
 	"FrontendLoader.cc"
 	"FrontendLoader.h"
 	"FrontendCallbackImpl.h"
@@ -97,11 +99,12 @@ target_include_directories(foo_wave_seekbar
 # )
 
 add_subdirectory(frontend_direct2d)
-# add_subdirectory(frontend_direct3d9)
+add_subdirectory(frontend_direct3d9)
 
 target_link_libraries(foo_wave_seekbar
 	PRIVATE
 	frontend_direct2d
+	frontend_direct3d9
 	imgui::imgui
 	waveform_sdk
 	"comdlg32.lib"

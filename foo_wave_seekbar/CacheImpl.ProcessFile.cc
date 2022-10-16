@@ -15,52 +15,42 @@
 #include <sstream>
 
 // {1D06B944-342D-44FF-9566-AAC520F616C2}
-static const GUID guid_downmix_in_analysis = {
-    0x1d06b944,
-    0x342d,
-    0x44ff,
-    { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 }
-};
+static const GUID guid_downmix_in_analysis = { 0x1d06b944,
+                                               0x342d,
+                                               0x44ff,
+                                               { 0x95, 0x66, 0xaa, 0xc5, 0x20, 0xf6, 0x16, 0xc2 } };
 
 // {EC789B1B-23A0-45D7-AB7D-D40B4E3673E5}
-static const GUID guid_analyse_tracks_outside_library = {
-    0xec789b1b,
-    0x23a0,
-    0x45d7,
-    { 0xab, 0x7d, 0xd4, 0xb, 0x4e, 0x36, 0x73, 0xe5 }
-};
+static const GUID guid_analyse_tracks_outside_library = { 0xec789b1b,
+                                                          0x23a0,
+                                                          0x45d7,
+                                                          { 0xab, 0x7d, 0xd4, 0xb, 0x4e, 0x36, 0x73, 0xe5 } };
 
 // {9752AFF1-DF5A-4F80-AB9E-B285AF48CB86}
-static const GUID guid_report_incremental_results = {
-    0x9752aff1,
-    0xdf5a,
-    0x4f80,
-    { 0xab, 0x9e, 0xb2, 0x85, 0xaf, 0x48, 0xcb, 0x86 }
-};
+static const GUID guid_report_incremental_results = { 0x9752aff1,
+                                                      0xdf5a,
+                                                      0x4f80,
+                                                      { 0xab, 0x9e, 0xb2, 0x85, 0xaf, 0x48, 0xcb, 0x86 } };
 
-static advconfig_branch_factory g_seekbar_branch(
-  "Waveform Seekbar",
-  guid_seekbar_branch,
-  advconfig_entry::guid_branch_tools,
-  0.0);
-static advconfig_checkbox_factory g_downmix_in_analysis(
-  "Store analysed tracks in mono",
-  guid_downmix_in_analysis,
-  guid_seekbar_branch,
-  0.0,
-  false);
-static advconfig_checkbox_factory g_analyse_tracks_outside_library(
-  "Analyse tracks not in the media library",
-  guid_analyse_tracks_outside_library,
-  guid_seekbar_branch,
-  0.0,
-  true);
-static advconfig_checkbox_factory g_report_incremental_results(
-  "Incremental update of waveforms being scanned",
-  guid_report_incremental_results,
-  guid_seekbar_branch,
-  0.0,
-  false);
+static advconfig_branch_factory g_seekbar_branch("Waveform Seekbar",
+                                                 guid_seekbar_branch,
+                                                 advconfig_entry::guid_branch_tools,
+                                                 0.0);
+static advconfig_checkbox_factory g_downmix_in_analysis("Store analysed tracks in mono",
+                                                        guid_downmix_in_analysis,
+                                                        guid_seekbar_branch,
+                                                        0.0,
+                                                        false);
+static advconfig_checkbox_factory g_analyse_tracks_outside_library("Analyse tracks not in the media library",
+                                                                   guid_analyse_tracks_outside_library,
+                                                                   guid_seekbar_branch,
+                                                                   0.0,
+                                                                   true);
+static advconfig_checkbox_factory g_report_incremental_results("Incremental update of waveforms being scanned",
+                                                               guid_report_incremental_results,
+                                                               guid_seekbar_branch,
+                                                               0.0,
+                                                               false);
 
 namespace wave {
 t_int64 const bucket_count = 2048;
@@ -157,9 +147,7 @@ class audio_source
     };
 
   public:
-    audio_source(abort_callback& abort_cb,
-                 service_ptr_t<input_decoder>& decoder,
-                 int64_t sample_count)
+    audio_source(abort_callback& abort_cb, service_ptr_t<input_decoder>& decoder, int64_t sample_count)
       : abort_cb(abort_cb)
       , decoder(decoder)
       , exhausted(false)
@@ -170,13 +158,9 @@ class audio_source
     void render(audio_chunk& chunk)
     {
         if (exhausted || !decoder->run(chunk, abort_cb)) {
-            unsigned nch =
-              track_channel_count.has_value() ? *track_channel_count : 1;
+            unsigned nch = track_channel_count.has_value() ? *track_channel_count : 1;
             chunk.set_channels(nch);
-            int64_t n =
-              (std::max)(0LL,
-                         std::min<int64_t>(sample_count - generated_samples,
-                                           SilenceChunkFrames));
+            int64_t n = (std::max)(0LL, std::min<int64_t>(sample_count - generated_samples, SilenceChunkFrames));
             chunk.set_silence(static_cast<t_size>(n));
             exhausted = true;
         }
@@ -237,11 +221,10 @@ struct waveform_builder : analysis_pass
     unsigned last_update_bucket;
     double const update_interval;
 
-    waveform_builder(
-      t_int64 sample_count,
-      bool should_downmix,
-      abort_callback& abort_cb,
-      std::shared_ptr<cache_impl::incremental_result_sink> incremental_output)
+    waveform_builder(t_int64 sample_count,
+                     bool should_downmix,
+                     abort_callback& abort_cb,
+                     std::shared_ptr<cache_impl::incremental_result_sink> incremental_output)
       : analysis_pass(sample_count)
       , bucket(0)
       , bucket_begins(0)
@@ -260,15 +243,9 @@ struct waveform_builder : analysis_pass
 
     virtual bool finished() const override { return !valid_bucket(); }
 
-    t_int64 samples_remaining() const
-    {
-        return sample_count - samples_processed;
-    }
+    t_int64 samples_remaining() const { return sample_count - samples_processed; }
 
-    t_int64 bucket_ends() const
-    {
-        return ((bucket + 1) * sample_count) / bucket_count;
-    }
+    t_int64 bucket_ends() const { return ((bucket + 1) * sample_count) / bucket_count; }
 
     t_int64 chunk_size() const { return bucket_ends() - bucket_begins; }
 
@@ -287,19 +264,16 @@ struct waveform_builder : analysis_pass
 
     virtual void consume_input(audio_chunk const& chunk) override
     {
-        t_int64 n =
-          (std::min)(samples_remaining(), static_cast<t_int64>(chunk.get_sample_count()));
+        t_int64 n = (std::min)(samples_remaining(), static_cast<t_int64>(chunk.get_sample_count()));
         audio_sample const* data = chunk.get_data();
         for (t_int64 i = 0; i < n;) {
-            t_int64 const to_process =
-              (std::min)(bucket_ends() - samples_processed, n - i);
+            t_int64 const to_process = (std::min)(bucket_ends() - samples_processed, n - i);
             process(data + i * channel_count, to_process);
             i += to_process;
             if (bucket_boundary()) {
                 finalize_bucket(to_process);
                 double now = dur.get_elapsed();
-                if (g_report_incremental_results.get() && incremental_output &&
-                    last_update + update_interval <= now &&
+                if (g_report_incremental_results.get() && incremental_output && last_update + update_interval <= now &&
                     last_update_bucket != bucket) {
                     last_update += update_interval;
                     auto intermediary = finalize_waveform();
@@ -312,8 +286,7 @@ struct waveform_builder : analysis_pass
     void process(audio_sample const* data, t_int64 frames)
     {
         for (unsigned k = 0; k < frames * channel_count; ++k) {
-            auto const target_offset =
-              bucket * channel_count + (k % channel_count);
+            auto const target_offset = bucket * channel_count + (k % channel_count);
             audio_sample& min = minimum[target_offset];
             audio_sample& max = maximum[target_offset];
             audio_sample sample = *data++;
@@ -394,11 +367,9 @@ bool
 is_of_forbidden_protocol(playable_location const& loc)
 {
     auto match_pi = [&](char const* pat) {
-        return std::regex_match(loc.get_path(),
-                                std::regex(pat, std::regex_constants::icase));
+        return std::regex_match(loc.get_path(), std::regex(pat, std::regex_constants::icase));
     };
-    return match_pi("(random|record):.*") ||
-           match_pi("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*") ||
+    return match_pi("(random|record):.*") || match_pi("(http|https|mms|lastfm|foo_lastfm_radio|tone)://.*") ||
            match_pi("(cdda)://.*");
 }
 
@@ -422,20 +393,16 @@ destroy_process_state(process_state* state)
 }
 
 process_result::type
-cache_impl::process_file(service_ptr_t<waveform_query> q,
-                         std::shared_ptr<process_state>& state)
+cache_impl::process_file(service_ptr_t<waveform_query> q, std::shared_ptr<process_state>& state)
 {
     playable_location_impl loc = q->get_location();
     try {
         if (!state) {
-            bool user_requested =
-              q->get_forced() == waveform_query::forced_query;
-            std::shared_ptr<incremental_result_sink> incremental_output =
-              std::shared_ptr<incremental_result_sink>();
+            bool user_requested = q->get_forced() == waveform_query::forced_query;
+            std::shared_ptr<incremental_result_sink> incremental_output = std::shared_ptr<incremental_result_sink>();
 
             if (is_of_forbidden_protocol(loc) && !user_requested) {
-                FB2K_console_formatter()
-                  << "Wave cache: skipping location " << loc;
+                FB2K_console_formatter() << "Wave cache: skipping location " << loc;
                 return process_result::elided;
             }
 
@@ -445,8 +412,7 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
                     return process_result::aborted;
                 }
                 if (!user_requested && store->has(loc)) {
-                    FB2K_console_formatter()
-                      << "Wave cache: redundant request for " << loc;
+                    FB2K_console_formatter() << "Wave cache: redundant request for " << loc;
                     if (store->has(loc)) {
                         return process_result::elided;
                     }
@@ -480,8 +446,7 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
             std::string location_string;
             {
                 std::ostringstream oss;
-                oss << "\"" << loc.get_path()
-                    << "\" / index: " << loc.get_subsong_index();
+                oss << "\"" << loc.get_path() << "\" / index: " << loc.get_subsong_index();
                 location_string = oss.str();
             }
 
@@ -495,36 +460,27 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
             if (!input_entry::g_is_supported_path(loc.get_path()))
                 return process_result::failed;
 
-            input_entry::g_open_for_decoding(
-              state->decoder, nullptr, loc.get_path(), *state->abort_cb);
+            input_entry::g_open_for_decoding(state->decoder, nullptr, loc.get_path(), *state->abort_cb);
 
             t_uint32 subsong = loc.get_subsong();
             {
-                state->decoder->initialize(
-                  subsong, input_flag_simpledecode, *state->abort_cb);
+                state->decoder->initialize(subsong, input_flag_simpledecode, *state->abort_cb);
                 if (!state->decoder->can_seek())
                     return process_result::failed;
 
                 t_int64 sample_rate = 0;
                 t_int64 sample_count = 0;
-                if (!try_determine_song_parameters(state->decoder,
-                                                   subsong,
-                                                   sample_rate,
-                                                   sample_count,
-                                                   *state->abort_cb))
+                if (!try_determine_song_parameters(
+                      state->decoder, subsong, sample_rate, sample_count, *state->abort_cb))
                     return process_result::failed;
 
                 // around a month ought to be enough for anyone
-                if (sample_count <= 0 ||
-                    sample_count > sample_rate * 60 * 60 * 24 * 31)
+                if (sample_count <= 0 || sample_count > sample_rate * 60 * 60 * 24 * 31)
                     return process_result::failed;
 
-                state->builder.reset(new waveform_builder(sample_count,
-                                                          should_downmix,
-                                                          *state->abort_cb,
-                                                          incremental_output));
-                state->source.reset(new audio_source(
-                  *state->abort_cb, state->decoder, sample_count));
+                state->builder.reset(
+                  new waveform_builder(sample_count, should_downmix, *state->abort_cb, incremental_output));
+                state->source.reset(new audio_source(*state->abort_cb, state->decoder, sample_count));
             }
             return process_result::not_done;
         } else {
@@ -533,8 +489,7 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
                 throw_if_aborting(*state->abort_cb);
                 state->source->render(chunk);
                 if (state->builder->uninitialized()) {
-                    state->builder->initialize(chunk.get_channels(),
-                                               chunk.get_channel_config());
+                    state->builder->initialize(chunk.get_channels(), chunk.get_channel_config());
                 }
                 state->builder->consume_input(chunk);
                 state->buckets_filled = state->builder->bucket;
@@ -542,17 +497,15 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
             } else {
                 state->wf = state->builder->finalize_waveform();
 
-                FB2K_console_formatter()
-                  << "Wave cache: finished analysis of " << loc;
+                FB2K_console_formatter() << "Wave cache: finished analysis of " << loc;
                 std::lock_guard<std::mutex> lk(cache_mutex);
                 open_store();
                 if (store)
                     store->put(state->wf, loc);
                 else
-                    FB2K_console_formatter()
-                      << "Wave cache: could not open backend "
-                         "database, losing new data for "
-                      << loc;
+                    FB2K_console_formatter() << "Wave cache: could not open backend "
+                                                "database, losing new data for "
+                                             << loc;
                 return process_result::done;
             }
         }
@@ -560,18 +513,13 @@ cache_impl::process_file(service_ptr_t<waveform_query> q,
         // NOTE(zao): Abort state is detected in caller.
         return process_result::aborted;
     } catch (foobar2000_io::exception_io_not_found& e) {
-        FB2K_console_formatter()
-          << "Wave cache: could not open/find " << loc << ", " << e.what();
+        FB2K_console_formatter() << "Wave cache: could not open/find " << loc << ", " << e.what();
     } catch (foobar2000_io::exception_io& ex) {
-        FB2K_console_formatter() << "Wave cache: generic IO exception ("
-                                 << ex.what() << ") for " << loc;
+        FB2K_console_formatter() << "Wave cache: generic IO exception (" << ex.what() << ") for " << loc;
     } catch (channel_mismatch_exception&) {
-        FB2K_console_formatter()
-          << "Wave cache: track with mismatching channels, bailing out on "
-          << loc;
+        FB2K_console_formatter() << "Wave cache: track with mismatching channels, bailing out on " << loc;
     } catch (std::exception& ex) {
-        FB2K_console_formatter()
-          << "Wave cache: generic exception (" << ex.what() << ") for " << loc;
+        FB2K_console_formatter() << "Wave cache: generic exception (" << ex.what() << ") for " << loc;
     }
     return process_result::failed;
 }
@@ -596,8 +544,7 @@ cache_impl::is_refresh_due(process_state* state)
     }
     uint64_t time_count;
     QueryPerformanceCounter((LARGE_INTEGER*)&time_count);
-    if (static_cast<float>(time_count - state->last_update_time_count) /
-          static_cast<float>(state->time_frequency) >
+    if (static_cast<float>(time_count - state->last_update_time_count) / static_cast<float>(state->time_frequency) >
         0.1f) {
         state->last_update_time_count = time_count;
         return true;

@@ -36,11 +36,10 @@ has_direct2d1();
 struct d2d_api
 {
     HMODULE d2d_module = nullptr;
-    using D2D1CreateFactoryFP =
-      HRESULT(WINAPI*)(D2D1_FACTORY_TYPE factoryType,
-                       REFIID riid,
-                       CONST D2D1_FACTORY_OPTIONS* pFactoryOptions,
-                       void** ppIFactory);
+    using D2D1CreateFactoryFP = HRESULT(WINAPI*)(D2D1_FACTORY_TYPE factoryType,
+                                                 REFIID riid,
+                                                 CONST D2D1_FACTORY_OPTIONS* pFactoryOptions,
+                                                 void** ppIFactory);
     D2D1CreateFactoryFP D2D1CreateFactory = nullptr;
 
     ~d2d_api()
@@ -53,8 +52,7 @@ struct d2d_api
 
 struct brush_set
 {
-    CComPtr<ID2D1SolidColorBrush> background_brush, foreground_brush,
-      highlight_brush, selection_brush;
+    CComPtr<ID2D1SolidColorBrush> background_brush, foreground_brush, highlight_brush, selection_brush;
 };
 
 struct palette
@@ -106,10 +104,7 @@ struct image_cache
 
 struct direct2d1_frontend : visual_frontend
 {
-    direct2d1_frontend(HWND wnd,
-                       wave::size size,
-                       visual_frontend_callback& callback,
-                       visual_frontend_config&);
+    direct2d1_frontend(HWND wnd, wave::size size, visual_frontend_callback& callback, visual_frontend_config&);
     ~direct2d1_frontend();
 
     void clear();

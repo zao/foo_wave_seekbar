@@ -31,10 +31,7 @@ struct mem_dc : WTL::CDC
 
 struct gdi_fallback_frontend : visual_frontend
 {
-    gdi_fallback_frontend(HWND wnd,
-                          wave::size,
-                          visual_frontend_callback& callback,
-                          visual_frontend_config& conf);
+    gdi_fallback_frontend(HWND wnd, wave::size, visual_frontend_callback& callback, visual_frontend_config& conf);
     ~gdi_fallback_frontend();
 
     void clear();

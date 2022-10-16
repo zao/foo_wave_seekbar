@@ -30,8 +30,7 @@ struct player_impl : player
         _listeners.erase(p);
     }
 
-    virtual void enumerate_listeners(
-      std::function<void(waveform_listener*)> f) const override
+    virtual void enumerate_listeners(std::function<void(waveform_listener*)> f) const override
     {
         std::unique_lock<std::mutex> lk(_m);
         for (auto I = _listeners.begin(); I != _listeners.end(); ++I) {
@@ -49,18 +48,13 @@ struct callbacks
 {
     callbacks()
       : play_callback_impl_base(play_callback::flag_on_playback_all)
-      , playlist_callback_impl_base(
-          playlist_callback::flag_on_playback_order_changed)
+      , playlist_callback_impl_base(playlist_callback::flag_on_playback_order_changed)
     {}
 
     service_ptr_t<waveform_query> current_playing_request;
     service_ptr_t<waveform_query> current_selected_request;
 
-    static void invoke_on_waveform(waveform_listener* listener,
-                                   ref_ptr<waveform> wf)
-    {
-        listener->on_waveform(wf);
-    }
+    static void invoke_on_waveform(waveform_listener* listener, ref_ptr<waveform> wf) { listener->on_waveform(wf); }
 
     void on_waveform_result(playable_location_impl loc, ref_ptr<waveform> wf)
     {
@@ -69,14 +63,12 @@ struct callbacks
             static_api_ptr_t<playback_control_v2> pc;
             service_ptr_t<metadb_handle> meta;
             if (pc->get_now_playing(meta) && meta->get_location() == loc) {
-                p->enumerate_listeners(
-                  std::bind(&invoke_on_waveform, std::placeholders::_1, wf));
+                p->enumerate_listeners(std::bind(&invoke_on_waveform, std::placeholders::_1, wf));
             }
         });
     }
 
-    void on_query_result(playable_location_impl loc,
-                         service_ptr_t<waveform_query> q)
+    void on_query_result(playable_location_impl loc, service_ptr_t<waveform_query> q)
     {
         on_waveform_result(loc, q->get_waveform());
     }
@@ -91,21 +83,15 @@ struct callbacks
         static_api_ptr_t<cache> c;
         if (!c->get_waveform_sync(loc, wf) && !c->is_location_forbidden(loc)) {
             // if not, schedule a scan
-            if (current_playing_request.is_valid() &&
-                loc != current_playing_request->get_location()) {
+            if (current_playing_request.is_valid() && loc != current_playing_request->get_location()) {
                 current_playing_request->abort();
                 current_playing_request.release();
             }
             if (current_playing_request.is_empty()) {
-                auto cb = std::bind(&callbacks::on_query_result,
-                                    this,
-                                    playable_location_impl(loc),
-                                    std::placeholders::_1);
+                auto cb =
+                  std::bind(&callbacks::on_query_result, this, playable_location_impl(loc), std::placeholders::_1);
                 auto req =
-                  c->create_callback_query(loc,
-                                           waveform_query::needed_urgency,
-                                           waveform_query::unforced_query,
-                                           cb);
+                  c->create_callback_query(loc, waveform_query::needed_urgency, waveform_query::unforced_query, cb);
                 current_playing_request = req;
                 c->get_waveform(req);
             }
@@ -137,9 +123,7 @@ struct callbacks
     virtual void on_playback_time(double t) override { update_time(t); }
 
     // uninteresting callbacks
-    virtual void on_playback_starting(playback_control::t_track_command,
-                                      bool) override
-    {}
+    virtual void on_playback_starting(playback_control::t_track_command, bool) override {}
     virtual void on_playback_pause(bool) override {}
     virtual void on_playback_dynamic_info(const file_info&) override {}
     virtual void on_playback_dynamic_info_track(const file_info&) override {}
@@ -155,10 +139,7 @@ static callbacks* g_callbacks = nullptr;
 
 struct callbacks_iq : initquit
 {
-    virtual void on_init() override
-    {
-        wave::g_callbacks = new wave::callbacks();
-    }
+    virtual void on_init() override { wave::g_callbacks = new wave::callbacks(); }
 
     virtual void on_quit() override { delete wave::g_callbacks; }
 };

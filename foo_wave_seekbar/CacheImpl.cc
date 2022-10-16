@@ -17,20 +17,16 @@
 #include "util/Barrier.h"
 
 // {1E01E2F7-79CE-4F3F-95FE-86986236670C}
-static GUID const guid_max_concurrent_jobs = {
-    0x1e01e2f7,
-    0x79ce,
-    0x4f3f,
-    { 0x95, 0xfe, 0x86, 0x98, 0x62, 0x36, 0x67, 0xc }
-};
+static GUID const guid_max_concurrent_jobs = { 0x1e01e2f7,
+                                               0x79ce,
+                                               0x4f3f,
+                                               { 0x95, 0xfe, 0x86, 0x98, 0x62, 0x36, 0x67, 0xc } };
 
 // {44AA5DAB-F35E-4E21-8033-80087B2550FD}
-static GUID constexpr guid_always_rescan_user = {
-    0x44aa5dab,
-    0xf35e,
-    0x4e21,
-    { 0x80, 0x33, 0x80, 0x8, 0x7b, 0x25, 0x50, 0xfd }
-};
+static GUID constexpr guid_always_rescan_user = { 0x44aa5dab,
+                                                  0xf35e,
+                                                  0x4e21,
+                                                  { 0x80, 0x33, 0x80, 0x8, 0x7b, 0x25, 0x50, 0xfd } };
 
 static advconfig_integer_factory g_max_concurrent_jobs(
   "Number of concurrent scanning threads (capped by virtual processor count)",
@@ -40,12 +36,11 @@ static advconfig_integer_factory g_max_concurrent_jobs(
   3,
   1,
   16);
-static advconfig_checkbox_factory g_always_rescan_user(
-  "Always rescan track if requested by user",
-  guid_always_rescan_user,
-  guid_seekbar_branch,
-  0.0,
-  false);
+static advconfig_checkbox_factory g_always_rescan_user("Always rescan track if requested by user",
+                                                       guid_always_rescan_user,
+                                                       guid_seekbar_branch,
+                                                       0.0,
+                                                       false);
 
 extern "C"
 {
@@ -86,13 +81,9 @@ struct waveform_query_shared : waveform_query
     waveform_query_shared()
       : progress(0)
       , aborted(false)
-    {
-    }
+    {}
 
-    virtual playable_location const& get_location() const override
-    {
-        return loc;
-    }
+    virtual playable_location const& get_location() const override { return loc; }
     virtual query_urgency get_urgency() const override { return urgency; }
     virtual query_force get_forced() const override { return forced; }
     virtual float get_progress() const override { return progress; }
@@ -110,8 +101,7 @@ struct waveform_query_shared : waveform_query
 
 struct plain_query : waveform_query_shared
 {
-    virtual void set_waveform(ref_ptr<waveform> new_waveform,
-                              float new_progress) override
+    virtual void set_waveform(ref_ptr<waveform> new_waveform, float new_progress) override
     {
         this->wf = new_waveform;
         this->progress = new_progress;
@@ -120,8 +110,7 @@ struct plain_query : waveform_query_shared
 
 struct callback_query : waveform_query_shared
 {
-    virtual void set_waveform(ref_ptr<waveform> new_waveform,
-                              float new_progress) override
+    virtual void set_waveform(ref_ptr<waveform> new_waveform, float new_progress) override
     {
         this->wf = new_waveform;
         this->progress = new_progress;
@@ -146,11 +135,10 @@ cache_impl::create_query(playable_location const& loc,
 }
 
 service_ptr_t<waveform_query>
-cache_impl::create_callback_query(
-  playable_location const& loc,
-  waveform_query::query_urgency urgency,
-  waveform_query::query_force forced,
-  std::function<void(service_ptr_t<waveform_query>)> callback)
+cache_impl::create_callback_query(playable_location const& loc,
+                                  waveform_query::query_urgency urgency,
+                                  waveform_query::query_force forced,
+                                  std::function<void(service_ptr_t<waveform_query>)> callback)
 {
     service_ptr_t<callback_query> q = new service_impl_t<callback_query>();
     q->loc = loc;
@@ -165,8 +153,7 @@ struct with_idle_priority
     typedef std::function<void()> function_type;
     with_idle_priority(function_type func)
       : func(func)
-    {
-    }
+    {}
 
     void operator()()
     {
@@ -188,8 +175,7 @@ cache_impl::load_data()
     if (store) {
         store->get_jobs(jobs);
         for (auto I = jobs.begin(); I != jobs.end(); ++I) {
-            auto forced = I->user ? waveform_query::forced_query
-                                  : waveform_query::unforced_query;
+            auto forced = I->user ? waveform_query::forced_query : waveform_query::unforced_query;
             auto q = create_query(I->loc, waveform_query::bulk_urgency, forced);
             get_waveform(q);
         }
@@ -210,10 +196,9 @@ cache_impl::open_store()
 }
 
 void
-dispatch_partial_response(
-  std::function<void(std::shared_ptr<get_response>)> completion_handler,
-  ref_ptr<waveform> waveform,
-  size_t buckets_filled)
+dispatch_partial_response(std::function<void(std::shared_ptr<get_response>)> completion_handler,
+                          ref_ptr<waveform> waveform,
+                          size_t buckets_filled)
 {
     auto response = std::make_shared<get_response>();
     response->waveform = waveform;
@@ -222,8 +207,7 @@ dispatch_partial_response(
 }
 
 bool
-cache_impl::get_waveform_sync(playable_location const& loc,
-                              ref_ptr<waveform>& out)
+cache_impl::get_waveform_sync(playable_location const& loc, ref_ptr<waveform>& out)
 {
     if (has_waveform(loc))
         return store->get(out, loc);
@@ -251,8 +235,7 @@ cache_impl::get_waveform(service_ptr_t<waveform_query> request)
         std::unique_lock<std::mutex> lk(worker_mutex);
         switch (request->get_urgency()) {
             case waveform_query::needed_urgency: {
-                requests_by_urgency[waveform_query::needed_urgency].push_front(
-                  request);
+                requests_by_urgency[waveform_query::needed_urgency].push_front(request);
             } break;
             case waveform_query::desired_urgency:
             case waveform_query::bulk_urgency: {
@@ -287,9 +270,7 @@ cache_impl::rescan_waveforms()
             pfc::list_t<playable_location_impl> locations;
             store->get_all(locations);
             for (size_t i = 0; i < locations.get_size(); ++i) {
-                auto q = create_query(locations[i],
-                                      waveform_query::bulk_urgency,
-                                      waveform_query::forced_query);
+                auto q = create_query(locations[i], waveform_query::bulk_urgency, waveform_query::forced_query);
                 get_waveform(q);
             }
         });
@@ -328,8 +309,7 @@ cache_impl::remove_waveform(playable_location const& loc)
 
 void
 cache_initquit::on_init()
-{
-}
+{}
 
 void
 cache_initquit::on_quit()
@@ -348,8 +328,7 @@ void
 cache_impl::start()
 {
     OutputDebugStringA("Starting cache.\n");
-    run_state.thread =
-      new std::thread(std::bind(&cache_impl::cache_main, this));
+    run_state.thread = new std::thread(std::bind(&cache_impl::cache_main, this));
     run_state.init_sync.wait();
 }
 
@@ -379,11 +358,8 @@ cache_impl::worker_main(size_t i, size_t n)
     service_ptr_t<waveform_query> jobs[3];
     std::shared_ptr<process_state> states[3] = {};
     auto is_ready = [&]() -> bool {
-        return should_workers_terminate || jobs[0].is_valid() ||
-               jobs[1].is_valid() || jobs[2].is_valid() ||
-               !requests_by_urgency[0].empty() ||
-               !requests_by_urgency[1].empty() ||
-               !requests_by_urgency[2].empty();
+        return should_workers_terminate || jobs[0].is_valid() || jobs[1].is_valid() || jobs[2].is_valid() ||
+               !requests_by_urgency[0].empty() || !requests_by_urgency[1].empty() || !requests_by_urgency[2].empty();
     };
     while (1) {
         {
@@ -471,32 +447,25 @@ cache_impl::cache_main()
     size_t n = (std::min)(n_cores, n_cap);
 
     for (size_t i = 0; i < n; ++i) {
-        std::thread* t = new std::thread(
-          with_idle_priority(std::bind(&cache_impl::worker_main, this, i, n)));
+        std::thread* t = new std::thread(with_idle_priority(std::bind(&cache_impl::worker_main, this, i, n)));
         worker_threads.push_back(t);
     }
 
     OutputDebugStringA("Cache ready.\n");
     {
         std::unique_lock<std::mutex> lk(run_state.mutex);
-        auto is_ready = [&]() -> bool {
-            return run_state.should_shutdown || worker_results.size();
-        };
+        auto is_ready = [&]() -> bool { return run_state.should_shutdown || worker_results.size(); };
         while (1) {
             run_state.bump.wait(lk, is_ready);
             if (run_state.should_shutdown) {
                 break;
             }
-            for (auto I = worker_results.begin(); I != worker_results.end();
-                 ++I) {
+            for (auto I = worker_results.begin(); I != worker_results.end(); ++I) {
                 if (I->buckets_filled == 2048) {
                     OutputDebugStringA("Got a final result from worker.\n");
                 } else {
                     char buf[128] = {};
-                    sprintf_s(
-                      buf,
-                      "Got a partial result from worker, %d/2048 buckets.\n",
-                      I->buckets_filled);
+                    sprintf_s(buf, "Got a partial result from worker, %d/2048 buckets.\n", I->buckets_filled);
                     OutputDebugStringA(buf);
                 }
             }

@@ -39,9 +39,7 @@ extern "C"
         UInt32 numProcessedBlocks;
     } CMtSync;
 
-    typedef UInt32* (*Mf_Mix_Matches)(void* p,
-                                      UInt32 matchMinPos,
-                                      UInt32* distances);
+    typedef UInt32* (*Mf_Mix_Matches)(void* p, UInt32 matchMinPos, UInt32* distances);
 
 /* kMtCacheLineDummy must be >= size_of_CPU_cache_line */
 #define kMtCacheLineDummy 128

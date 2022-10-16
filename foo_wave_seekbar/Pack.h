@@ -28,8 +28,7 @@ zstd_pack(std::span<std::byte const> src, OutputIterator I)
     ZSTD_initCStream(cctx.get(), 5);
 
     while (true) {
-        auto n =
-          ZSTD_compressStream2(cctx.get(), &out_buf, &in_buf, ZSTD_e_end);
+        auto n = ZSTD_compressStream2(cctx.get(), &out_buf, &in_buf, ZSTD_e_end);
         if (ZSTD_isError(n)) {
             return false;
         }
@@ -306,8 +305,7 @@ lzma_unpack(std::span<std::byte const> src, Iterator I)
         uint32_t cb_i;
         sz = 4;
         is.Read(&is, &cb_i, &sz);
-        if (sz != 4 ||
-            cb_i >= (1 << 20)) // needs more clever setup for streaming
+        if (sz != 4 || cb_i >= (1 << 20)) // needs more clever setup for streaming
             return false;
         dst_len = cb_i;
     }
@@ -317,13 +315,8 @@ lzma_unpack(std::span<std::byte const> src, Iterator I)
     detail::decoder dec(b);
     ELzmaStatus status = LZMA_STATUS_NOT_SPECIFIED;
     cb -= 5;
-    SRes res = Lzma2Dec_DecodeToBuf(&dec.dec,
-                                    &buf[0],
-                                    &dst_len,
-                                    (Byte const*)src.data() + 5,
-                                    &cb,
-                                    LZMA_FINISH_END,
-                                    &status);
+    SRes res =
+      Lzma2Dec_DecodeToBuf(&dec.dec, &buf[0], &dst_len, (Byte const*)src.data() + 5, &cb, LZMA_FINISH_END, &status);
     if (res == SZ_OK && status == LZMA_STATUS_FINISHED_WITH_MARK) {
         os.Write(&os, &buf[0], dst_len);
         return true;

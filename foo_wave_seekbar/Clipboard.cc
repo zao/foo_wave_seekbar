@@ -25,8 +25,7 @@ struct data_chunk
 {
     data_chunk()
       : cb(0)
-    {
-    }
+    {}
     size_t cb;
 };
 
@@ -51,10 +50,7 @@ template<>
 struct chunk_traits<data_chunk>
 {
     static char const* tag() { return "data"; }
-    static uint32_t size(data_chunk const& t)
-    {
-        return self_size(t) + static_cast<uint32_t>(t.cb);
-    }
+    static uint32_t size(data_chunk const& t) { return self_size(t) + static_cast<uint32_t>(t.cb); }
 
     static uint32_t self_size(data_chunk const&) { return 0; }
 };
@@ -65,8 +61,7 @@ struct chunk_traits<riff_chunk>
     static char const* tag() { return "RIFF"; }
     static uint32_t size(riff_chunk const& t)
     {
-        return self_size(t) + 8 + chunk_traits<fmt_chunk>::size(t.fmt) + 8 +
-               chunk_traits<data_chunk>::size(t.data);
+        return self_size(t) + 8 + chunk_traits<fmt_chunk>::size(t.fmt) + 8 + chunk_traits<data_chunk>::size(t.data);
     }
 
     static uint32_t self_size(riff_chunk const&) { return 4; }
@@ -83,8 +78,7 @@ struct storage
     storage()
       : mem(nullptr)
       , frames_written(0)
-    {
-    }
+    {}
 
     ~storage()
     {
@@ -98,12 +92,9 @@ struct storage
             return false;
         const auto nch = framing.fmt.wfex.Format.nChannels;
 
-        char* dst = static_cast<char*>(GlobalLock(mem)) + data_offset +
-                    frames_written * nch * sizeof(float);
+        char* dst = static_cast<char*>(GlobalLock(mem)) + data_offset + frames_written * nch * sizeof(float);
         audio_sample const* src = chunk.get_data();
-        const size_t n =
-          (std::min)(chunk.get_sample_count(),
-                     static_cast<size_t>(frame_count - frames_written));
+        const size_t n = (std::min)(chunk.get_sample_count(), static_cast<size_t>(frame_count - frames_written));
         for (const auto sample : std::span(src, n * nch)) {
             auto val = static_cast<float>(sample);
             std::memcpy(dst, &val, sizeof(float));
@@ -143,17 +134,13 @@ write_chunk(Chunk const& chunk, void* dst)
 }
 
 std::shared_ptr<storage>
-make_storage(unsigned channel_count,
-             unsigned channel_config,
-             unsigned sample_rate,
-             double sample_length)
+make_storage(unsigned channel_count, unsigned channel_config, unsigned sample_rate, double sample_length)
 {
     auto ret = std::make_shared<storage>();
     ret->frame_count = static_cast<t_int64>(sample_rate * sample_length);
     ret->data_offset = 8 + chunk_traits<riff_chunk>::size(ret->framing);
 
-    ret->framing.data.cb =
-      static_cast<size_t>(ret->frame_count * 4 * channel_count);
+    ret->framing.data.cb = static_cast<size_t>(ret->frame_count * 4 * channel_count);
     const size_t total_bytes = chunk_traits<riff_chunk>::size(ret->framing);
     WAVEFORMATEXTENSIBLE& wf = ret->framing.fmt.wfex;
     wf.Samples.wValidBitsPerSample = 32;
@@ -186,20 +173,17 @@ bool
 render_audio(metadb_handle_ptr source, double beginning, double end)
 {
     if (end - beginning > MaxCopyDuration) {
-        console::warning(
-          "Seekbar: Cowardly refusing to copy more than 10 minutes.");
+        console::warning("Seekbar: Cowardly refusing to copy more than 10 minutes.");
         return false;
     }
 
     service_ptr_t<input_decoder> decoder;
     abort_callback_impl abort_cb;
 
-    input_entry::g_open_for_decoding(
-      decoder, nullptr, source->get_path(), abort_cb);
+    input_entry::g_open_for_decoding(decoder, nullptr, source->get_path(), abort_cb);
 
     {
-        decoder->initialize(
-          source->get_subsong_index(), input_flag_simpledecode, abort_cb);
+        decoder->initialize(source->get_subsong_index(), input_flag_simpledecode, abort_cb);
         if (!decoder->can_seek())
             return false;
 
@@ -220,8 +204,7 @@ render_audio(metadb_handle_ptr source, double beginning, double end)
                 const auto channel_count = chunk.get_channels();
                 const auto channel_config = chunk.get_channel_config();
                 const auto sample_rate = chunk.get_sample_rate();
-                clip_storage = make_storage(
-                  channel_count, channel_config, sample_rate, end - beginning);
+                clip_storage = make_storage(channel_count, channel_config, sample_rate, end - beginning);
             }
             if (!clip_storage->append(chunk))
                 break;

@@ -63,20 +63,17 @@ backing_store::backing_store(pfc::string const& cache_filename)
                  nullptr,
                  nullptr);
 
-    sqlite3_exec(
-      backing_db.get(), "ALTER TABLE wave ADD channels INT", nullptr, nullptr, nullptr);
+    sqlite3_exec(backing_db.get(), "ALTER TABLE wave ADD channels INT", nullptr, nullptr, nullptr);
 
-    sqlite3_exec(
-      backing_db.get(), "ALTER TABLE wave ADD compression INT", nullptr, nullptr, nullptr);
+    sqlite3_exec(backing_db.get(), "ALTER TABLE wave ADD compression INT", nullptr, nullptr, nullptr);
 }
 
 bool
 backing_store::has(playable_location const& file)
 {
-    auto stmt = prepare_statement(
-      "SELECT 1 "
-      "FROM file as f, wave AS w "
-      "WHERE f.location = ? AND f.subsong = ? AND f.fid = w.fid");
+    auto stmt = prepare_statement("SELECT 1 "
+                                  "FROM file as f, wave AS w "
+                                  "WHERE f.location = ? AND f.subsong = ? AND f.fid = w.fid");
 
     sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt.get(), 2, static_cast<int>(file.get_subsong()));
@@ -90,8 +87,7 @@ backing_store::has(playable_location const& file)
 void
 backing_store::remove(playable_location const& file)
 {
-    auto stmt = prepare_statement(
-      "DELETE FROM file WHERE file.location = ? AND file.subsong = ?");
+    auto stmt = prepare_statement("DELETE FROM file WHERE file.location = ? AND file.subsong = ?");
     sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt.get(), 2, static_cast<int>(file.get_subsong()));
     sqlite3_step(stmt.get());
@@ -103,10 +99,9 @@ backing_store::get(ref_ptr<waveform>& out, playable_location const& file)
     out.reset();
     std::optional<int> compression;
     {
-        auto stmt = prepare_statement(
-          "SELECT w.min, w.max, w.rms, w.channels, w.compression "
-          "FROM file AS f NATURAL JOIN wave AS w "
-          "WHERE f.location = ? AND f.subsong = ?");
+        auto stmt = prepare_statement("SELECT w.min, w.max, w.rms, w.channels, w.compression "
+                                      "FROM file AS f NATURAL JOIN wave AS w "
+                                      "WHERE f.location = ? AND f.subsong = ?");
 
         sqlite3_bind_text(stmt.get(), 1, file.get_path(), -1, SQLITE_STATIC);
         sqlite3_bind_int(stmt.get(), 2, static_cast<int>(file.get_subsong()));
@@ -125,8 +120,7 @@ backing_store::get(ref_ptr<waveform>& out, playable_location const& file)
         if (compression.has_value() && *compression > 2)
             return false;
 
-        unsigned channel_count =
-          channels.has_value() ? count_bits_set(*channels) : 1;
+        unsigned channel_count = channels.has_value() ? count_bits_set(*channels) : 1;
 
         if ((compression.has_value() && *compression < 0) ||
             (channels.has_value() && *channels < 0 || channel_count > 18)) {
@@ -134,8 +128,7 @@ backing_store::get(ref_ptr<waveform>& out, playable_location const& file)
         }
 
         ref_ptr<waveform_impl> w(new waveform_impl);
-        auto clear_and_set = [&stmt, compression, channel_count, &w](
-                               pfc::string const& name, int col) -> bool {
+        auto clear_and_set = [&stmt, compression, channel_count, &w](pfc::string const& name, int col) -> bool {
             pfc::list_t<waveform_impl::signal> list;
 
             auto const data = static_cast<float const*>(sqlite3_column_blob(stmt.get(), col));
@@ -172,13 +165,10 @@ backing_store::get(ref_ptr<waveform>& out, playable_location const& file)
 
                 for (unsigned c = 0; c < channel_count; ++c) {
                     std::span all_samples(dst);
-                    std::span channel_samples =
-                      all_samples.subspan(c * channel_stride, channel_stride);
+                    std::span channel_samples = all_samples.subspan(c * channel_stride, channel_stride);
                     waveform_impl::signal channel;
                     channel.set_size(2048);
-                    std::ranges::copy(
-                      channel_samples,
-                      reinterpret_cast<char*>(channel.get_ptr()));
+                    std::ranges::copy(channel_samples, reinterpret_cast<char*>(channel.get_ptr()));
                     list.add_item(channel);
                 }
             } else {
@@ -192,11 +182,8 @@ backing_store::get(ref_ptr<waveform>& out, playable_location const& file)
             return true;
         };
 
-        if (clear_and_set("minimum", 0) && clear_and_set("maximum", 1) &&
-            clear_and_set("rms", 2)) {
-            w->channel_map = channels.has_value()
-                               ? *channels
-                               : audio_chunk::channel_config_mono;
+        if (clear_and_set("minimum", 0) && clear_and_set("maximum", 1) && clear_and_set("rms", 2)) {
+            w->channel_map = channels.has_value() ? *channels : audio_chunk::channel_config_mono;
 
             out = w;
         } else {
@@ -219,37 +206,30 @@ backing_store::put(ref_ptr<waveform> const& w, playable_location const& file)
     sqlite3_bind_int(stmt.get(), 2, file.get_subsong());
     sqlite3_step(stmt.get());
 
-    stmt = prepare_statement(
-      "REPLACE INTO wave (fid, min, max, rms, channels, compression) "
-      "SELECT f.fid, ?, ?, ?, ?, ? "
-      "FROM file AS f "
-      "WHERE f.location = ? AND f.subsong = ?");
+    stmt = prepare_statement("REPLACE INTO wave (fid, min, max, rms, channels, compression) "
+                             "SELECT f.fid, ?, ?, ?, ?, ? "
+                             "FROM file AS f "
+                             "WHERE f.location = ? AND f.subsong = ?");
 
     struct bind_list
     {
-        bind_list(ref_ptr<waveform> w,
-                  char const* field_name,
-                  sqlite3_stmt* stmt,
-                  int col)
+        bind_list(ref_ptr<waveform> w, char const* field_name, sqlite3_stmt* stmt, int col)
         {
             std::vector<float> src_buf;
             for (unsigned c = 0; c < w->get_channel_count(); ++c) {
                 pfc::list_t<float> channel;
                 w->get_field(field_name, c, list_array_sink<float>(channel));
                 float* p = (float*)channel.get_ptr();
-                std::copy(
-                  p, p + channel.get_size(), std::back_inserter(src_buf));
+                std::copy(p, p + channel.get_size(), std::back_inserter(src_buf));
             }
             auto data_span = std::as_bytes(std::span(src_buf));
             pack::zstd_pack(data_span, std::back_inserter(storage));
-            sqlite3_bind_blob(
-              stmt, col, &storage[0], static_cast<int>(storage.size()), SQLITE_STATIC);
+            sqlite3_bind_blob(stmt, col, &storage[0], static_cast<int>(storage.size()), SQLITE_STATIC);
         }
 
         std::vector<char> storage;
     };
-#define BIND_LIST(Member, Idx)                                                 \
-    bind_list auto_bind__##Member(w, #Member, stmt.get(), Idx)
+#define BIND_LIST(Member, Idx) bind_list auto_bind__##Member(w, #Member, stmt.get(), Idx)
 
     BIND_LIST(minimum, 1);
     BIND_LIST(maximum, 2);
@@ -269,8 +249,7 @@ backing_store::put(ref_ptr<waveform> const& w, playable_location const& file)
 void
 backing_store::get_jobs(std::deque<job>& out)
 {
-    auto stmt = prepare_statement(
-      "SELECT location, subsong, user_submitted FROM job ORDER BY jid");
+    auto stmt = prepare_statement("SELECT location, subsong, user_submitted FROM job ORDER BY jid");
 
     out.clear();
     while (SQLITE_ROW == sqlite3_step(stmt.get())) {
@@ -286,9 +265,8 @@ backing_store::put_jobs(std::deque<job> const& jobs)
 {
     sqlite3_exec(backing_db.get(), "BEGIN", nullptr, nullptr, nullptr);
     sqlite3_exec(backing_db.get(), "DELETE FROM job", nullptr, nullptr, nullptr);
-    auto stmt =
-      prepare_statement("INSERT INTO job (location, subsong, user_submitted) "
-                        "VALUES (?, ?, ?)");
+    auto stmt = prepare_statement("INSERT INTO job (location, subsong, user_submitted) "
+                                  "VALUES (?, ?, ?)");
 
     for (size_t i = 0; i < jobs.size(); ++i) {
         auto& j = jobs[i];
@@ -321,13 +299,9 @@ file_exists(sqlite3_context* ctx, int argc, sqlite3_value** argv)
 void
 backing_store::remove_dead()
 {
-    sqlite3_create_function(
-      backing_db.get(), "file_exists", 1, SQLITE_UTF8, nullptr, &file_exists, nullptr, nullptr);
-    sqlite3_exec(backing_db.get(),
-                 "DELETE FROM file WHERE file_exists(file.location) IS NULL",
-                 nullptr,
-                 nullptr,
-                 nullptr);
+    sqlite3_create_function(backing_db.get(), "file_exists", 1, SQLITE_UTF8, nullptr, &file_exists, nullptr, nullptr);
+    sqlite3_exec(
+      backing_db.get(), "DELETE FROM file WHERE file_exists(file.location) IS NULL", nullptr, nullptr, nullptr);
     console::info("Waveform cache: removed dead entries from the database.");
 }
 
@@ -341,8 +315,7 @@ backing_store::compact()
 void
 backing_store::get_all(pfc::list_t<playable_location_impl>& out)
 {
-    auto stmt = prepare_statement(
-      "SELECT location, subsong FROM file ORDER BY location, subsong");
+    auto stmt = prepare_statement("SELECT location, subsong FROM file ORDER BY location, subsong");
 
     out.remove_all();
     while (SQLITE_ROW == sqlite3_step(stmt.get())) {
@@ -356,8 +329,7 @@ std::shared_ptr<sqlite3_stmt>
 backing_store::prepare_statement(std::string const& query)
 {
     sqlite3_stmt* p = nullptr;
-    sqlite3_prepare_v2(
-      backing_db.get(), query.c_str(), static_cast<int>(query.size()), &p, nullptr);
+    sqlite3_prepare_v2(backing_db.get(), query.c_str(), static_cast<int>(query.size()), &p, nullptr);
     return std::shared_ptr<sqlite3_stmt>(p, &sqlite3_finalize);
 }
 }

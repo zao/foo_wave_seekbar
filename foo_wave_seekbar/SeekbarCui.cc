@@ -44,18 +44,10 @@ seekbar_uie_base::color_callback::on_colour_changed(uint32_t mask) const
     GUID nil = {};
     helper h = helper(nil);
 
-    sb.set_color(config::color_background,
-                 xbgr_to_color(h.get_colour(colour_background)),
-                 false);
-    sb.set_color(config::color_foreground,
-                 xbgr_to_color(h.get_colour(colour_text)),
-                 false);
-    sb.set_color(config::color_highlight,
-                 xbgr_to_color(h.get_colour(colour_selection_text)),
-                 false);
-    sb.set_color(config::color_selection,
-                 xbgr_to_color(h.get_colour(colour_selection_background)),
-                 false);
+    sb.set_color(config::color_background, xbgr_to_color(h.get_colour(colour_background)), false);
+    sb.set_color(config::color_foreground, xbgr_to_color(h.get_colour(colour_text)), false);
+    sb.set_color(config::color_highlight, xbgr_to_color(h.get_colour(colour_selection_text)), false);
+    sb.set_color(config::color_selection, xbgr_to_color(h.get_colour(colour_selection_background)), false);
 }
 
 void
@@ -63,23 +55,13 @@ seekbar_uie_base::color_callback::on_bool_changed(uint32_t mask) const
 {}
 
 // {95DF3A44-A2FD-4592-9643-73B40FC7AE57}
-const GUID s_panel_guid = { 0x95df3a44,
-                            0xa2fd,
-                            0x4592,
-                            { 0x96, 0x43, 0x73, 0xb4, 0xf, 0xc7, 0xae, 0x57 } };
+const GUID s_panel_guid = { 0x95df3a44, 0xa2fd, 0x4592, { 0x96, 0x43, 0x73, 0xb4, 0xf, 0xc7, 0xae, 0x57 } };
 
 // {104E910A-5483-4B21-A365-E3E349F76B78}
-const GUID s_toolbar_guid = {
-    0x104e910a,
-    0x5483,
-    0x4b21,
-    { 0xa3, 0x65, 0xe3, 0xe3, 0x49, 0xf7, 0x6b, 0x78 }
-};
+const GUID s_toolbar_guid = { 0x104e910a, 0x5483, 0x4b21, { 0xa3, 0x65, 0xe3, 0xe3, 0x49, 0xf7, 0x6b, 0x78 } };
 
 void
-seekbar_uie_base::set_config(stream_reader* p_reader,
-                             t_size p_size,
-                             abort_callback& p_abort)
+seekbar_uie_base::set_config(stream_reader* p_reader, t_size p_size, abort_callback& p_abort)
 {
     try {
         if (p_size) {
@@ -93,8 +75,7 @@ seekbar_uie_base::set_config(stream_reader* p_reader,
 }
 
 void
-seekbar_uie_base::get_config(stream_writer* p_writer,
-                             abort_callback& p_abort) const
+seekbar_uie_base::get_config(stream_writer* p_writer, abort_callback& p_abort) const
 {
     std::vector<char> v;
     save_settings(settings, v);

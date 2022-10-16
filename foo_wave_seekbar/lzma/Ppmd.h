@@ -18,11 +18,9 @@ EXTERN_C_BEGIN
 #define PPMD_PERIOD_BITS 7
 #define PPMD_BIN_SCALE (1 << (PPMD_INT_BITS + PPMD_PERIOD_BITS))
 
-#define PPMD_GET_MEAN_SPEC(summ, shift, round)                                 \
-    (((summ) + (1 << ((shift) - (round)))) >> (shift))
+#define PPMD_GET_MEAN_SPEC(summ, shift, round) (((summ) + (1 << ((shift) - (round)))) >> (shift))
 #define PPMD_GET_MEAN(summ) PPMD_GET_MEAN_SPEC((summ), PPMD_PERIOD_BITS, 2)
-#define PPMD_UPDATE_PROB_0(prob)                                               \
-    ((prob) + (1 << PPMD_INT_BITS) - PPMD_GET_MEAN(prob))
+#define PPMD_UPDATE_PROB_0(prob) ((prob) + (1 << PPMD_INT_BITS) - PPMD_GET_MEAN(prob))
 #define PPMD_UPDATE_PROB_1(prob) ((prob)-PPMD_GET_MEAN(prob))
 
 #define PPMD_N1 4
@@ -39,10 +37,10 @@ typedef struct
     Byte Count;  /* Count to next change of Shift */
 } CPpmd_See;
 
-#define Ppmd_See_Update(p)                                                     \
-    if ((p)->Shift < PPMD_PERIOD_BITS && --(p)->Count == 0) {                  \
-        (p)->Summ <<= 1;                                                       \
-        (p)->Count = (Byte)(3 << (p)->Shift++);                                \
+#define Ppmd_See_Update(p)                                                                                             \
+    if ((p)->Shift < PPMD_PERIOD_BITS && --(p)->Count == 0) {                                                          \
+        (p)->Summ <<= 1;                                                                                               \
+        (p)->Count = (Byte)(3 << (p)->Shift++);                                                                        \
     }
 
 typedef struct
@@ -77,13 +75,12 @@ typedef
 #endif
     CPpmd_Byte_Ref;
 
-#define PPMD_SetAllBitsIn256Bytes(p)                                           \
-    {                                                                          \
-        unsigned i;                                                            \
-        for (i = 0; i < 256 / sizeof(p[0]); i += 8) {                          \
-            p[i + 7] = p[i + 6] = p[i + 5] = p[i + 4] = p[i + 3] = p[i + 2] =  \
-              p[i + 1] = p[i + 0] = ~(size_t)0;                                \
-        }                                                                      \
+#define PPMD_SetAllBitsIn256Bytes(p)                                                                                   \
+    {                                                                                                                  \
+        unsigned i;                                                                                                    \
+        for (i = 0; i < 256 / sizeof(p[0]); i += 8) {                                                                  \
+            p[i + 7] = p[i + 6] = p[i + 5] = p[i + 4] = p[i + 3] = p[i + 2] = p[i + 1] = p[i + 0] = ~(size_t)0;        \
+        }                                                                                                              \
     }
 
 EXTERN_C_END

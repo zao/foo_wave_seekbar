@@ -178,13 +178,9 @@ SzArEx_Init(CSzArEx* p);
 void
 SzArEx_Free(CSzArEx* p, ISzAlloc* alloc);
 UInt64
-SzArEx_GetFolderStreamPos(const CSzArEx* p,
-                          UInt32 folderIndex,
-                          UInt32 indexInFolder);
+SzArEx_GetFolderStreamPos(const CSzArEx* p, UInt32 folderIndex, UInt32 indexInFolder);
 int
-SzArEx_GetFolderFullPackSize(const CSzArEx* p,
-                             UInt32 folderIndex,
-                             UInt64* resSize);
+SzArEx_GetFolderFullPackSize(const CSzArEx* p, UInt32 folderIndex, UInt64* resSize);
 
 /*
 if dest == NULL, the return value specifies the required size of the buffer,
@@ -196,18 +192,17 @@ size_t
 SzArEx_GetFileNameUtf16(const CSzArEx* p, size_t fileIndex, UInt16* dest);
 
 SRes
-SzArEx_Extract(
-  const CSzArEx* db,
-  ILookInStream* inStream,
-  UInt32 fileIndex,      /* index of file */
-  UInt32* blockIndex,    /* index of solid block */
-  Byte** outBuffer,      /* pointer to pointer to output buffer (allocated with
-                            allocMain) */
-  size_t* outBufferSize, /* buffer size for output buffer */
-  size_t* offset,        /* offset of stream for required file in *outBuffer */
-  size_t* outSizeProcessed, /* size of file in *outBuffer */
-  ISzAlloc* allocMain,
-  ISzAlloc* allocTemp);
+SzArEx_Extract(const CSzArEx* db,
+               ILookInStream* inStream,
+               UInt32 fileIndex,         /* index of file */
+               UInt32* blockIndex,       /* index of solid block */
+               Byte** outBuffer,         /* pointer to pointer to output buffer (allocated with
+                                            allocMain) */
+               size_t* outBufferSize,    /* buffer size for output buffer */
+               size_t* offset,           /* offset of stream for required file in *outBuffer */
+               size_t* outSizeProcessed, /* size of file in *outBuffer */
+               ISzAlloc* allocMain,
+               ISzAlloc* allocTemp);
 
 /*
 SzArEx_Open Errors:
@@ -221,10 +216,7 @@ SZ_ERROR_FAIL
 */
 
 SRes
-SzArEx_Open(CSzArEx* p,
-            ILookInStream* inStream,
-            ISzAlloc* allocMain,
-            ISzAlloc* allocTemp);
+SzArEx_Open(CSzArEx* p, ILookInStream* inStream, ISzAlloc* allocMain, ISzAlloc* allocTemp);
 
 EXTERN_C_END
 

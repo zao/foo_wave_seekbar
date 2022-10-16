@@ -12,8 +12,8 @@
 
 #ifndef EXTERN_C_BEGIN
 #ifdef __cplusplus
-#define EXTERN_C_BEGIN                                                         \
-    extern "C"                                                                 \
+#define EXTERN_C_BEGIN                                                                                                 \
+    extern "C"                                                                                                         \
     {
 #define EXTERN_C_END }
 #else
@@ -51,11 +51,11 @@ typedef int WRes;
 #endif
 
 #ifndef RINOK
-#define RINOK(x)                                                               \
-    {                                                                          \
-        int __result__ = (x);                                                  \
-        if (__result__ != 0)                                                   \
-            return __result__;                                                 \
+#define RINOK(x)                                                                                                       \
+    {                                                                                                                  \
+        int __result__ = (x);                                                                                          \
+        if (__result__ != 0)                                                                                           \
+            return __result__;                                                                                         \
     }
 #endif
 
@@ -131,8 +131,7 @@ typedef int Bool;
 
 typedef struct
 {
-    Byte (*Read)(
-      void* p); /* reads one byte, returns 0 in case of EOF or error */
+    Byte (*Read)(void* p); /* reads one byte, returns 0 in case of EOF or error */
 } IByteIn;
 
 typedef struct
@@ -171,9 +170,7 @@ typedef enum
 
 typedef struct
 {
-    SRes (*Read)(void* p,
-                 void* buf,
-                 size_t* size); /* same as ISeqInStream::Read */
+    SRes (*Read)(void* p, void* buf, size_t* size); /* same as ISeqInStream::Read */
     SRes (*Seek)(void* p, Int64* pos, ESzSeek origin);
 } ISeekInStream;
 
@@ -198,10 +195,7 @@ LookInStream_SeekTo(ILookInStream* stream, UInt64 offset);
 
 /* reads via ILookInStream::Read */
 SRes
-LookInStream_Read2(ILookInStream* stream,
-                   void* buf,
-                   size_t size,
-                   SRes errorType);
+LookInStream_Read2(ILookInStream* stream, void* buf, size_t size, SRes errorType);
 SRes
 LookInStream_Read(ILookInStream* stream, void* buf, size_t size);
 

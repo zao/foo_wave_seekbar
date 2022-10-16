@@ -121,10 +121,8 @@ struct seekbar_window
     void set_playback_time(double t);
 
     persistent_settings settings;
-    static void load_settings(persistent_settings& s,
-                              std::vector<char> const& in);
-    static void save_settings(persistent_settings const& s,
-                              std::vector<char>& out);
+    static void load_settings(persistent_settings& s, std::vector<char> const& in);
+    static void save_settings(persistent_settings const& s, std::vector<char>& out);
 
     void toggle_orientation(frontend_callback_impl& cb, persistent_settings& s);
     virtual bool forward_rightclick() { return false; }
@@ -186,10 +184,8 @@ struct seekbar_window
         };
         configuration_dialog();
 
-#define COLOR_CLICK_HANDLER(Name)                                              \
-    COMMAND_HANDLER_EX(Name, STN_CLICKED, on_color_click)
-#define COLOR_USE_HANDLER(Name)                                                \
-    COMMAND_HANDLER_EX(Name, BN_CLICKED, on_use_color_click)
+#define COLOR_CLICK_HANDLER(Name) COMMAND_HANDLER_EX(Name, STN_CLICKED, on_color_click)
+#define COLOR_USE_HANDLER(Name) COMMAND_HANDLER_EX(Name, BN_CLICKED, on_use_color_click)
 
         BEGIN_MSG_MAP_EX(configuration_dialog)
         MSG_WM_INITDIALOG(on_wm_init_dialog)

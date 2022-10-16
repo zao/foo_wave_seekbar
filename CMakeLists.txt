@@ -1,5 +1,6 @@
 project(foo_wave_seekbar)
 cmake_minimum_required(VERSION 3.23)
+set(CMAKE_CXX_STANDARD 20)
 
 # The package boost is compatible with built-in CMake targets:
 # 

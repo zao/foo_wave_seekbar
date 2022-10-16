@@ -14,8 +14,7 @@ processing_contextmenu_item::get_num_items()
 }
 
 void
-processing_contextmenu_item::get_item_name(unsigned p_index,
-                                           pfc::string_base& p_out)
+processing_contextmenu_item::get_item_name(unsigned p_index, pfc::string_base& p_out)
 {
     if (p_index == 0)
         p_out = "Extract waveform signature if missing";
@@ -26,8 +25,7 @@ processing_contextmenu_item::get_item_name(unsigned p_index,
 }
 
 void
-processing_contextmenu_item::get_item_default_path(unsigned p_index,
-                                                   pfc::string_base& p_out)
+processing_contextmenu_item::get_item_default_path(unsigned p_index, pfc::string_base& p_out)
 {}
 
 void
@@ -42,8 +40,7 @@ enqueue(service_ptr_t<cache> cache,
 }
 
 void
-remove(service_ptr_t<cache> cache,
-       std::shared_ptr<std::vector<playable_location_impl>> locs)
+remove(service_ptr_t<cache> cache, std::shared_ptr<std::vector<playable_location_impl>> locs)
 {
     for (auto I = locs->begin(); I != locs->end(); ++I) {
         auto const& loc = *I;
@@ -52,9 +49,7 @@ remove(service_ptr_t<cache> cache,
 }
 
 void
-processing_contextmenu_item::context_command(unsigned p_index,
-                                             metadb_handle_list_cref p_data,
-                                             const GUID& p_caller)
+processing_contextmenu_item::context_command(unsigned p_index, metadb_handle_list_cref p_data, const GUID& p_caller)
 {
     auto infoCache = standard_api_create_t<cache>();
     auto locs = std::make_shared<std::vector<playable_location_impl>>();
@@ -63,11 +58,9 @@ processing_contextmenu_item::context_command(unsigned p_index,
         locs->push_back(p->get_location());
     }
     if (p_index == 0)
-        infoCache->defer_action(
-          std::bind(&enqueue, infoCache, locs, waveform_query::unforced_query));
+        infoCache->defer_action(std::bind(&enqueue, infoCache, locs, waveform_query::unforced_query));
     if (p_index == 1)
-        infoCache->defer_action(
-          std::bind(&enqueue, infoCache, locs, waveform_query::forced_query));
+        infoCache->defer_action(std::bind(&enqueue, infoCache, locs, waveform_query::forced_query));
     if (p_index == 2)
         infoCache->defer_action(std::bind(&remove, infoCache, locs));
 }
@@ -86,8 +79,7 @@ processing_contextmenu_item::get_item_guid(unsigned p_index)
 }
 
 bool
-processing_contextmenu_item::get_item_description(unsigned p_index,
-                                                  pfc::string_base& p_out)
+processing_contextmenu_item::get_item_description(unsigned p_index, pfc::string_base& p_out)
 {
     if (p_index == 0)
         p_out = "Extracts a signature suitable for consumption by the waveform "
@@ -101,28 +93,22 @@ processing_contextmenu_item::get_item_description(unsigned p_index,
 }
 
 // {3950A2FA-7FCB-4680-829F-7FC51EC159A0}
-const GUID processing_contextmenu_item::extract_guid = {
-    0x3950a2fa,
-    0x7fcb,
-    0x4680,
-    { 0x82, 0x9f, 0x7f, 0xc5, 0x1e, 0xc1, 0x59, 0xa0 }
-};
+const GUID processing_contextmenu_item::extract_guid = { 0x3950a2fa,
+                                                         0x7fcb,
+                                                         0x4680,
+                                                         { 0x82, 0x9f, 0x7f, 0xc5, 0x1e, 0xc1, 0x59, 0xa0 } };
 
 // {CAD45EBC-B6FD-4AC5-A734-23E491054AC6}
-const GUID processing_contextmenu_item::force_extract_guid = {
-    0xcad45ebc,
-    0xb6fd,
-    0x4ac5,
-    { 0xa7, 0x34, 0x23, 0xe4, 0x91, 0x5, 0x4a, 0xc6 }
-};
+const GUID processing_contextmenu_item::force_extract_guid = { 0xcad45ebc,
+                                                               0xb6fd,
+                                                               0x4ac5,
+                                                               { 0xa7, 0x34, 0x23, 0xe4, 0x91, 0x5, 0x4a, 0xc6 } };
 
 // {AF04D9DF-6C2B-4E70-AC05-0E3691B83224}
-const GUID processing_contextmenu_item::remove_guid = {
-    0xaf04d9df,
-    0x6c2b,
-    0x4e70,
-    { 0xac, 0x5, 0xe, 0x36, 0x91, 0xb8, 0x32, 0x24 }
-};
+const GUID processing_contextmenu_item::remove_guid = { 0xaf04d9df,
+                                                        0x6c2b,
+                                                        0x4e70,
+                                                        { 0xac, 0x5, 0xe, 0x36, 0x91, 0xb8, 0x32, 0x24 } };
 
 GUID
 processing_contextmenu_item::get_parent()

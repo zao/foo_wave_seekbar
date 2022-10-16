@@ -67,10 +67,10 @@ extern "C"
         Byte tempBuf[LZMA_REQUIRED_INPUT_MAX];
     } CLzmaDec;
 
-#define LzmaDec_Construct(p)                                                   \
-    {                                                                          \
-        (p)->dic = 0;                                                          \
-        (p)->probs = 0;                                                        \
+#define LzmaDec_Construct(p)                                                                                           \
+    {                                                                                                                  \
+        (p)->dic = 0;                                                                                                  \
+        (p)->probs = 0;                                                                                                \
     }
 
     void LzmaDec_Init(CLzmaDec* p);
@@ -104,10 +104,10 @@ extern "C"
 
     typedef enum
     {
-        LZMA_STATUS_NOT_SPECIFIED,      /* use main error code instead */
-        LZMA_STATUS_FINISHED_WITH_MARK, /* stream was finished with end mark. */
-        LZMA_STATUS_NOT_FINISHED,       /* stream was not finished */
-        LZMA_STATUS_NEEDS_MORE_INPUT,   /* you must provide more input bytes */
+        LZMA_STATUS_NOT_SPECIFIED,              /* use main error code instead */
+        LZMA_STATUS_FINISHED_WITH_MARK,         /* stream was finished with end mark. */
+        LZMA_STATUS_NOT_FINISHED,               /* stream was not finished */
+        LZMA_STATUS_NEEDS_MORE_INPUT,           /* you must provide more input bytes */
         LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK /* there is probability that
                                                    stream was finished without
                                                    end mark */
@@ -136,16 +136,10 @@ extern "C"
       SZ_ERROR_UNSUPPORTED - Unsupported properties
     */
 
-    SRes LzmaDec_AllocateProbs(CLzmaDec* p,
-                               const Byte* props,
-                               unsigned propsSize,
-                               ISzAlloc* alloc);
+    SRes LzmaDec_AllocateProbs(CLzmaDec* p, const Byte* props, unsigned propsSize, ISzAlloc* alloc);
     void LzmaDec_FreeProbs(CLzmaDec* p, ISzAlloc* alloc);
 
-    SRes LzmaDec_Allocate(CLzmaDec* state,
-                          const Byte* prop,
-                          unsigned propsSize,
-                          ISzAlloc* alloc);
+    SRes LzmaDec_Allocate(CLzmaDec* state, const Byte* prop, unsigned propsSize, ISzAlloc* alloc);
     void LzmaDec_Free(CLzmaDec* state, ISzAlloc* alloc);
 
     /* ---------- Dictionary Interface ---------- */

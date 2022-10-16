@@ -51,23 +51,13 @@ enum downmix
     downmix_stereo
 };
 
-__declspec(selectany) bool frontend_has_configuration[] = { true,
-                                                            false,
-                                                            false,
-                                                            false };
+__declspec(selectany) bool frontend_has_configuration[] = { true, false, false, false };
 
 namespace strings {
-__declspec(selectany) wchar_t const* frontend[] = { L"Direct3D 9.0c",
-                                                    L"Direct3D 10.0",
-                                                    L"Direct2D 1.0",
-                                                    L"GDI" };
-__declspec(selectany) wchar_t const* display_mode[] = {
-    L"Normal",         L"Only + half",    L"Only - half",
-    L"Average of +/-", L"Minimum of +/-", L"Maximum of +/-"
-};
-__declspec(selectany) wchar_t const* downmix[] = { L"Keep as-is",
-                                                   L"Mix-down to mono",
-                                                   L"Mix-down to stereo" };
+__declspec(selectany) wchar_t const* frontend[] = { L"Direct3D 9.0c", L"Direct3D 10.0", L"Direct2D 1.0", L"GDI" };
+__declspec(selectany) wchar_t const* display_mode[] = { L"Normal",         L"Only + half",    L"Only - half",
+                                                        L"Average of +/-", L"Minimum of +/-", L"Maximum of +/-" };
+__declspec(selectany) wchar_t const* downmix[] = { L"Keep as-is", L"Mix-down to mono", L"Mix-down to stereo" };
 inline std::map<int, wchar_t const*>
 make_channel_names()
 {
@@ -75,33 +65,26 @@ make_channel_names()
 #define CHANNEL_NAME_INSERT(Tag, Name) o[Tag] = Name;
     CHANNEL_NAME_INSERT(audio_chunk::channel_front_left, L"Front left");
     CHANNEL_NAME_INSERT(audio_chunk::channel_front_right, L"Front right");
-    CHANNEL_NAME_INSERT(audio_chunk::channel_front_center,
-                        L"Front center (mono)");
+    CHANNEL_NAME_INSERT(audio_chunk::channel_front_center, L"Front center (mono)");
     CHANNEL_NAME_INSERT(audio_chunk::channel_lfe, L"LFE");
     CHANNEL_NAME_INSERT(audio_chunk::channel_back_left, L"Rear left");
     CHANNEL_NAME_INSERT(audio_chunk::channel_back_right, L"Rear right");
-    CHANNEL_NAME_INSERT(audio_chunk::channel_front_center_left,
-                        L"Front center left");
-    CHANNEL_NAME_INSERT(audio_chunk::channel_front_center_right,
-                        L"Front center right");
+    CHANNEL_NAME_INSERT(audio_chunk::channel_front_center_left, L"Front center left");
+    CHANNEL_NAME_INSERT(audio_chunk::channel_front_center_right, L"Front center right");
     CHANNEL_NAME_INSERT(audio_chunk::channel_back_center, L"Back center");
     CHANNEL_NAME_INSERT(audio_chunk::channel_side_left, L"Side left");
     CHANNEL_NAME_INSERT(audio_chunk::channel_side_right, L"Side right");
     CHANNEL_NAME_INSERT(audio_chunk::channel_top_center, L"Top center");
     CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_left, L"Top front left");
-    CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_center,
-                        L"Top front center");
-    CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_right,
-                        L"Top front right");
+    CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_center, L"Top front center");
+    CHANNEL_NAME_INSERT(audio_chunk::channel_top_front_right, L"Top front right");
     CHANNEL_NAME_INSERT(audio_chunk::channel_top_back_left, L"Top back left");
-    CHANNEL_NAME_INSERT(audio_chunk::channel_top_back_center,
-                        L"Top back center");
+    CHANNEL_NAME_INSERT(audio_chunk::channel_top_back_center, L"Top back center");
     CHANNEL_NAME_INSERT(audio_chunk::channel_top_back_right, L"Top back right");
 #undef CHANNEL_NAME_INSERT
     return o;
 }
-__declspec(selectany) std::map<int, wchar_t const*> channel_names =
-  make_channel_names();
+__declspec(selectany) std::map<int, wchar_t const*> channel_names = make_channel_names();
 }
 }
 
@@ -118,8 +101,8 @@ struct color
     template<typename Archive>
     void serialize(Archive& ar, const unsigned version)
     {
-        ar& BOOST_SERIALIZATION_NVP(r) & BOOST_SERIALIZATION_NVP(g) &
-          BOOST_SERIALIZATION_NVP(b) & BOOST_SERIALIZATION_NVP(a);
+        ar& BOOST_SERIALIZATION_NVP(r) & BOOST_SERIALIZATION_NVP(g) & BOOST_SERIALIZATION_NVP(b) &
+          BOOST_SERIALIZATION_NVP(a);
     }
 };
 
@@ -135,25 +118,22 @@ struct size
 inline color
 xbgr_to_color(DWORD c, BYTE a = 0xFFU)
 {
-    float r = GetRValue(c) / 255.f, g = GetGValue(c) / 255.f,
-          b = GetBValue(c) / 255.f;
+    float r = GetRValue(c) / 255.f, g = GetGValue(c) / 255.f, b = GetBValue(c) / 255.f;
     return color(r, g, b, a / 255.f);
 }
 
 inline COLORREF
 color_to_xrgb(color c)
 {
-    return RGB(static_cast<BYTE>(c.a * c.b * 255),
-               static_cast<BYTE>(c.a * c.g * 255),
-               static_cast<BYTE>(c.a * c.r * 255));
+    return RGB(
+      static_cast<BYTE>(c.a * c.b * 255), static_cast<BYTE>(c.a * c.g * 255), static_cast<BYTE>(c.a * c.r * 255));
 }
 
 inline COLORREF
 color_to_xbgr(color c)
 {
-    return RGB(static_cast<BYTE>(c.a * c.r * 255),
-               static_cast<BYTE>(c.a * c.g * 255),
-               static_cast<BYTE>(c.a * c.b * 255));
+    return RGB(
+      static_cast<BYTE>(c.a * c.r * 255), static_cast<BYTE>(c.a * c.g * 255), static_cast<BYTE>(c.a * c.b * 255));
 }
 
 inline COLORREF
@@ -172,7 +152,7 @@ struct channel_info
 struct screenshot_settings
 {
     void* context;
-    void (*write_screenshot)(void* context, BYTE const* rgba);
+    void (*write_screenshot)(void* context, BYTE const* rgba, size_t row_pitch);
     int32_t width, height;
     uint32_t flags;
 };
@@ -245,8 +225,7 @@ struct visual_frontend_callback_setter
     virtual void set_cursor_visible(bool t) = 0;
     virtual void set_seeking(bool t) = 0;
     virtual void set_seek_position(double v) = 0;
-    virtual void set_replaygain(visual_frontend_callback::replaygain_value e,
-                                float v) = 0;
+    virtual void set_replaygain(visual_frontend_callback::replaygain_value e, float v) = 0;
     virtual void set_playable_location(playable_location const& loc) = 0;
     virtual void set_waveform(ref_ptr<waveform> const& w) = 0;
     virtual void set_color(config::color e, color c) = 0;
@@ -277,8 +256,7 @@ struct visual_frontend_config
 {
     virtual ~visual_frontend_config() {}
 
-    virtual bool get_configuration_string(GUID key,
-                                          text_sink const& out) const = 0;
+    virtual bool get_configuration_string(GUID key, text_sink const& out) const = 0;
     virtual void set_configuration_string(GUID key, char const* value) = 0;
 };
 }
@@ -286,11 +264,10 @@ struct visual_frontend_config
 struct frontend_entrypoint
 {
     virtual unsigned id() = 0;
-    virtual ref_ptr<wave::visual_frontend> create(
-      HWND,
-      wave::size,
-      wave::visual_frontend_callback&,
-      wave::visual_frontend_config&) = 0;
+    virtual ref_ptr<wave::visual_frontend> create(HWND,
+                                                  wave::size,
+                                                  wave::visual_frontend_callback&,
+                                                  wave::visual_frontend_config&) = 0;
 };
 
 extern "C"
@@ -298,46 +275,40 @@ extern "C"
     typedef frontend_entrypoint*(_cdecl* frontend_entrypoint_t)();
 }
 
-#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(                \
-  Name, Id, Class, Hook)                                                       \
-    namespace {                                                                \
-    struct entrypoint_impl : frontend_entrypoint                               \
-    {                                                                          \
-        virtual unsigned id() { return Id; }                                   \
-        virtual ref_ptr<wave::visual_frontend> create(                         \
-          HWND wnd,                                                            \
-          wave::size size,                                                     \
-          wave::visual_frontend_callback& callback,                            \
-          wave::visual_frontend_config& config) override                       \
-        {                                                                      \
-            return ref_ptr<wave::visual_frontend>(                             \
-              new Class(wnd, size, callback, config));                         \
-        }                                                                      \
-    } g_frontend_entrypoint_impl;                                              \
-    }                                                                          \
-    extern "C" frontend_entrypoint* _cdecl Name()        \
-    {                                                                          \
-        {                                                                      \
-            Hook();                                                            \
-        }                                                                      \
-        return &g_frontend_entrypoint_impl;                                    \
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(Name, Id, Class, Hook)                                  \
+    namespace {                                                                                                        \
+    struct entrypoint_impl : frontend_entrypoint                                                                       \
+    {                                                                                                                  \
+        virtual unsigned id() { return Id; }                                                                           \
+        virtual ref_ptr<wave::visual_frontend> create(HWND wnd,                                                        \
+                                                      wave::size size,                                                 \
+                                                      wave::visual_frontend_callback& callback,                        \
+                                                      wave::visual_frontend_config& config) override                   \
+        {                                                                                                              \
+            return ref_ptr<wave::visual_frontend>(new Class(wnd, size, callback, config));                             \
+        }                                                                                                              \
+    } g_frontend_entrypoint_impl;                                                                                      \
+    }                                                                                                                  \
+    extern "C" frontend_entrypoint* _cdecl Name()                                                                      \
+    {                                                                                                                  \
+        {                                                                                                              \
+            Hook();                                                                                                    \
+        }                                                                                                              \
+        return &g_frontend_entrypoint_impl;                                                                            \
     }
 //
 
-#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_DECL(Name)           \
-    extern "C" frontend_entrypoint* _cdecl Name()
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_DECL(Name) extern "C" frontend_entrypoint* _cdecl Name()
 //
 
-#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT(Name, Id, Class)     \
-    FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(                    \
-      Name, Id, Class, [] {})
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT(Name, Id, Class)                                             \
+    FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(Name, Id, Class, [] {})
 //
 
-#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, Hook)      \
-    FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(                    \
-      g_seekbar_frontend_entrypoint, Id, Class, Hook)
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, Hook)                                              \
+    FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(g_seekbar_frontend_entrypoint, Id, Class, Hook)
 //
 
-#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT(Id, Class)                 \
+#define FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT(Id, Class)                                                         \
     FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_ENTRYPOINT_HOOK(Id, Class, [] {})
 //

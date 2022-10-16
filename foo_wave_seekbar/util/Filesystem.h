@@ -32,8 +32,7 @@ file_location_to_wide_path(char const* fb2k_file)
     native.replace_byte('/', '\\');
 
     auto first = native.get_ptr();
-    auto w =
-      pfc::stringcvt::string_wide_from_utf8_t<>(first, native.get_length());
+    auto w = pfc::stringcvt::string_wide_from_utf8_t<>(first, native.get_length());
     if (w.length() >= 2 && w[0] == L'\\' && w[1] == L'\\') {
         return w.get_ptr();
     }

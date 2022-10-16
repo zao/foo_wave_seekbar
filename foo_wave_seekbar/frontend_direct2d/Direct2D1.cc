@@ -47,15 +47,8 @@ image_cache::image_cache(d2d_api const& api)
   , should_terminate(false)
   , bitmap_serial(0)
 {
-    api.D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED,
-                          __uuidof(ID2D1Factory),
-                          &opts,
-                          (void**)&factory);
-    CoCreateInstance(CLSID_WICImagingFactory,
-                     nullptr,
-                     CLSCTX_ALL,
-                     __uuidof(IWICImagingFactory),
-                     (void**)&wic_factory);
+    api.D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory), &opts, (void**)&factory);
+    CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_ALL, __uuidof(IWICImagingFactory), (void**)&wic_factory);
 }
 
 image_cache::~image_cache()
@@ -105,8 +98,7 @@ image_cache::thread_func(void* data)
                 best = &t;
         }
         task_data t = *best;
-        self->update_texture_target(
-          t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
+        self->update_texture_target(t.waveform, t.infos, t.size, t.vertical, t.flipped, t.serial);
     }
 }
 
@@ -119,9 +111,7 @@ direct2d1_frontend::direct2d1_frontend(HWND wnd,
   , bitmap_serial(0)
   , last_serial_issued(0)
 {
-    in_main_thread = std::bind(&visual_frontend_callback::run_in_main_thread,
-                               &callback,
-                               std::placeholders::_1);
+    in_main_thread = std::bind(&visual_frontend_callback::run_in_main_thread, &callback, std::placeholders::_1);
 
     api.d2d_module = LoadLibraryA("d2d1.dll");
     if (!api.d2d_module) {
@@ -130,18 +120,13 @@ direct2d1_frontend::direct2d1_frontend(HWND wnd,
                                  "the Platform Update pack.");
     }
 
-    api.D2D1CreateFactory = (d2d_api::D2D1CreateFactoryFP)GetProcAddress(
-      api.d2d_module, "D2D1CreateFactory");
+    api.D2D1CreateFactory = (d2d_api::D2D1CreateFactoryFP)GetProcAddress(api.d2d_module, "D2D1CreateFactory");
     if (!api.D2D1CreateFactory) {
-        throw std::runtime_error(
-          "Direct2D not found. Ensure you're running Vista "
-          "SP2 or later with the Platform Update pack.");
+        throw std::runtime_error("Direct2D not found. Ensure you're running Vista "
+                                 "SP2 or later with the Platform Update pack.");
     }
 
-    api.D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED,
-                          __uuidof(ID2D1Factory),
-                          &opts,
-                          (void**)&factory);
+    api.D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory), &opts, (void**)&factory);
     factory->GetDesktopDpi(&dpi[0], &dpi[1]);
 
     cache.reset(new image_cache(api));
@@ -164,14 +149,11 @@ direct2d1_frontend::draw()
     while (!SUCCEEDED(hr)) {
         if (!rt) {
             auto sz = callback.get_size();
-            D2D1_RENDER_TARGET_PROPERTIES rt_props =
-              D2D1::RenderTargetProperties();
+            D2D1_RENDER_TARGET_PROPERTIES rt_props = D2D1::RenderTargetProperties();
             rt_props.dpiX = dpi[0];
             rt_props.dpiY = dpi[1];
             factory->CreateHwndRenderTarget(
-              rt_props,
-              D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(sz.cx, sz.cy)),
-              &rt);
+              rt_props, D2D1::HwndRenderTargetProperties(wnd, D2D1::SizeU(sz.cx, sz.cy)), &rt);
             brushes = create_brush_set(rt, colors);
         }
 
@@ -182,10 +164,8 @@ direct2d1_frontend::draw()
 
         rt->BeginDraw();
         rt->Clear(color_to_d2d1_color(colors.background));
-        float seek_x = static_cast<float>(size.width * callback.get_seek_position() /
-                                          callback.get_track_length());
-        float play_x = static_cast<float>(size.width * callback.get_playback_position() /
-                                          callback.get_track_length());
+        float seek_x = static_cast<float>(size.width * callback.get_seek_position() / callback.get_track_length());
+        float play_x = static_cast<float>(size.width * callback.get_playback_position() / callback.get_track_length());
 
         if (flip) {
             seek_x = size.width - seek_x;
@@ -203,8 +183,7 @@ direct2d1_frontend::draw()
                 D2D1_BITMAP_PROPERTIES bitmap_props = D2D1::BitmapProperties();
                 bitmap_props.dpiX = dpi[0];
                 bitmap_props.dpiY = dpi[1];
-                rt->CreateBitmapFromWicBitmap(
-                  cache->last_bitmap, &bitmap_props, &wave_bitmap);
+                rt->CreateBitmapFromWicBitmap(cache->last_bitmap, &bitmap_props, &wave_bitmap);
             }
             if (wave_bitmap) {
                 rt->DrawBitmap(wave_bitmap);
@@ -212,30 +191,20 @@ direct2d1_frontend::draw()
         }
 
         if (callback.is_seeking()) {
-            rt->DrawLine(D2D1::Point2F(seek_x),
-                         D2D1::Point2F(seek_x, size.height),
-                         brushes.selection_brush,
-                         2.5f);
+            rt->DrawLine(D2D1::Point2F(seek_x), D2D1::Point2F(seek_x, size.height), brushes.selection_brush, 2.5f);
         }
 
         if (callback.get_shade_played()) {
             D2D1_COLOR_F hi = brushes.highlight_brush->GetColor();
             CComPtr<ID2D1SolidColorBrush> overlay_brush;
-            rt->CreateSolidColorBrush(
-              hi, D2D1::BrushProperties(0.3f), &overlay_brush);
+            rt->CreateSolidColorBrush(hi, D2D1::BrushProperties(0.3f), &overlay_brush);
             if (flip)
-                rt->FillRectangle(
-                  D2D1::RectF(play_x, 0, size.width, size.height),
-                  overlay_brush);
+                rt->FillRectangle(D2D1::RectF(play_x, 0, size.width, size.height), overlay_brush);
             else
-                rt->FillRectangle(D2D1::RectF(0, 0, play_x, size.height),
-                                  overlay_brush);
+                rt->FillRectangle(D2D1::RectF(0, 0, play_x, size.height), overlay_brush);
         }
 
-        rt->DrawLine(D2D1::Point2F(play_x),
-                     D2D1::Point2F(play_x, size.height),
-                     brushes.selection_brush,
-                     2.5f);
+        rt->DrawLine(D2D1::Point2F(play_x), D2D1::Point2F(play_x, size.height), brushes.selection_brush, 2.5f);
         rt->SetTransform(D2D1::Matrix3x2F::Identity());
         hr = rt->EndDraw();
 
@@ -266,8 +235,7 @@ direct2d1_frontend::update_size()
 }
 
 void
-direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf,
-                                           wave::size size)
+direct2d1_frontend::trigger_texture_update(ref_ptr<waveform> wf, wave::size size)
 {
     std::unique_lock<std::mutex> lk(cache->mutex);
     switch (callback.get_downmix_display()) {
@@ -301,8 +269,7 @@ direct2d1_frontend::on_state_changed(state s)
         update_size();
     if (s & state_color)
         regenerate_brushes();
-    if (s & (state_data | state_color | state_channel_order |
-             state_downmix_display | state_flip_display))
+    if (s & (state_data | state_color | state_channel_order | state_downmix_display | state_flip_display))
         update_data();
     InvalidateRect(wnd, nullptr, FALSE);
 }
@@ -310,8 +277,7 @@ direct2d1_frontend::on_state_changed(state s)
 static float
 round(float v)
 {
-    return v < 0 ? static_cast<float>(ceil(v - 0.5f))
-                 : static_cast<float>(floor(v + 0.5f));
+    return v < 0 ? static_cast<float>(ceil(v - 0.5f)) : static_cast<float>(floor(v + 0.5f));
 }
 
 D2D1_POINT_2F
@@ -338,8 +304,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
     pfc::list_t<int> channel_indices;
     for (channel_info const& info : infos) {
         if (info.enabled) {
-            auto I = std::find(
-              channel_numbers.begin(), channel_numbers.end(), info.channel);
+            auto I = std::find(channel_numbers.begin(), channel_numbers.end(), info.channel);
             decltype(I) first = channel_numbers.begin();
             if (I != channel_numbers.end()) {
                 channel_indices.add_item(static_cast<int>(std::distance(first, I)));
@@ -349,12 +314,10 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
 
     FLOAT dpi[2] = {};
     factory->GetDesktopDpi(&dpi[0], &dpi[1]);
-    D2D1_SIZE_F size = D2D1::SizeF(target_size.width * 96 / dpi[0],
-                                   target_size.height * 96 / dpi[1]);
+    D2D1_SIZE_F size = D2D1::SizeF(target_size.width * 96 / dpi[0], target_size.height * 96 / dpi[1]);
 
     auto index_count = channel_indices.get_count();
-    D2D1::Matrix3x2F scale =
-      D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.5f / static_cast<float>(index_count));
+    D2D1::Matrix3x2F scale = D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.5f / static_cast<float>(index_count));
 
     CComPtr<IWICBitmap> bm;
     wic_factory->CreateBitmap(static_cast<UINT>(target_size.width),
@@ -366,14 +329,13 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
 
     while (!SUCCEEDED(hr)) {
         CComPtr<ID2D1RenderTarget> temp_target;
-        D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-          D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(), dpi[0], dpi[1]);
+        D2D1_RENDER_TARGET_PROPERTIES props =
+          D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(), dpi[0], dpi[1]);
         factory->CreateWicBitmapRenderTarget(bm, props, &temp_target);
 
         brush_set brushes = create_brush_set(temp_target, colors);
 
-        pfc::list_t<pfc::com_ptr_t<ID2D1PathGeometry>> wave_geometries,
-          rms_geometries;
+        pfc::list_t<pfc::com_ptr_t<ID2D1PathGeometry>> wave_geometries, rms_geometries;
         auto& fac = factory;
 
         for (int index : channel_indices) {
@@ -453,8 +415,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
         int x = 0;
         for (pfc::com_ptr_t<ID2D1PathGeometry> const& geom : wave_geometries) {
             float offset = static_cast<float>(2 * x + 1) / static_cast<float>(2 * index_count);
-            D2D1::Matrix3x2F centered =
-              D2D1::Matrix3x2F::Translation(0.0f, round(offset * size.height));
+            D2D1::Matrix3x2F centered = D2D1::Matrix3x2F::Translation(0.0f, round(offset * size.height));
             ++x;
 
             rt->SetTransform(centered);
@@ -509,12 +470,10 @@ brush_set
 create_brush_set(ID2D1RenderTarget* target, palette pal)
 {
     brush_set set;
-#define RECREATE(Name)                                                         \
-    {                                                                          \
-        color c = pal.Name;                                                    \
-        target->CreateSolidColorBrush(D2D1::ColorF(c.r, c.g, c.b, c.a),        \
-                                      D2D1::BrushProperties(),                 \
-                                      &set.Name##_brush);                      \
+#define RECREATE(Name)                                                                                                 \
+    {                                                                                                                  \
+        color c = pal.Name;                                                                                            \
+        target->CreateSolidColorBrush(D2D1::ColorF(c.r, c.g, c.b, c.a), D2D1::BrushProperties(), &set.Name##_brush);   \
     }
     RECREATE(background)
     RECREATE(foreground)

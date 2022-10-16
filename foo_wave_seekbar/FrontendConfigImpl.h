@@ -25,10 +25,7 @@ struct frontend_config_impl : visual_frontend_config
         return false;
     }
 
-    virtual void set_configuration_string(GUID key, char const* value)
-    {
-        settings.generic_strings[key] = value;
-    }
+    virtual void set_configuration_string(GUID key, char const* value) { settings.generic_strings[key] = value; }
 
   private:
     persistent_settings& settings;

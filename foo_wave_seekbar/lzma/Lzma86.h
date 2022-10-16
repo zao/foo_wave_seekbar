@@ -69,13 +69,7 @@ enum ESzFilterMode
 };
 
 SRes
-Lzma86_Encode(Byte* dest,
-              size_t* destLen,
-              const Byte* src,
-              size_t srcLen,
-              int level,
-              UInt32 dictSize,
-              int filterMode);
+Lzma86_Encode(Byte* dest, size_t* destLen, const Byte* src, size_t srcLen, int level, UInt32 dictSize, int filterMode);
 
 /*
 Lzma86_GetUnpackSize:
