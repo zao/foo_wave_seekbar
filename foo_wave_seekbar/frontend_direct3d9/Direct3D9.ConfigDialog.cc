@@ -15,8 +15,8 @@ namespace direct3d9 {
 void
 config_dialog::scintilla_func::init(HWND wnd)
 {
-    int (*fn)(void*, int, int, int);
-    void* ptr;
+    int (*fn)(sptr_t, unsigned int, uptr_t, sptr_t);
+    sptr_t ptr;
 
     fn = (decltype(fn))SendMessage(wnd, SCI_GETDIRECTFUNCTION, 0, 0);
     ptr = (decltype(ptr))SendMessage(wnd, SCI_GETDIRECTPOINTER, 0, 0);
@@ -74,9 +74,7 @@ config_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM param)
     on_effect_reset_click(BN_CLICKED, IDC_EFFECT_RESET, reset_button);
 
     // compile effect
-    PostMessage(WM_COMMAND,
-                MAKEWPARAM(9001, EN_CHANGE),
-                (LPARAM)(HWND)GetDlgItem(IDC_EFFECT_SOURCE));
+    PostMessage(WM_COMMAND, MAKEWPARAM(9001, EN_CHANGE), (LPARAM)(HWND)GetDlgItem(IDC_EFFECT_SOURCE));
 
     return TRUE;
 }
@@ -118,8 +116,7 @@ config_dialog::on_effect_reset_click(UINT code, int id, CWindow control)
     if (auto front = fe) {
         // read up effect contents
         std::string fx_data;
-        front->conf.get_configuration_string(guid_fx_string,
-                                             std_string_sink(fx_data));
+        front->conf.get_configuration_string(guid_fx_string, std_string_sink(fx_data));
 
         // set effect box text
         code_box.reset(fx_data);
@@ -134,9 +131,7 @@ config_dialog::on_effect_source_modified(NMHDR* hdr)
     SCNotification* n = (SCNotification*)hdr;
 
     if (n->modificationType & (SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT))
-        PostMessage(WM_COMMAND,
-                    MAKEWPARAM(9001, EN_CHANGE),
-                    (LPARAM)(HWND)GetDlgItem(IDC_EFFECT_SOURCE));
+        PostMessage(WM_COMMAND, MAKEWPARAM(9001, EN_CHANGE), (LPARAM)(HWND)GetDlgItem(IDC_EFFECT_SOURCE));
 
     return 0;
 }
@@ -144,7 +139,7 @@ config_dialog::on_effect_source_modified(NMHDR* hdr)
 void
 config_dialog::on_effect_source_change(UINT code, int id, CEdit)
 {
-    CEdit error_box = GetDlgItem(IDC_EFFECT_ERRORS);
+    CEdit error_box{GetDlgItem(IDC_EFFECT_ERRORS)};
     std::string source;
     code_box.get_all(source);
 
@@ -153,18 +148,14 @@ config_dialog::on_effect_source_change(UINT code, int id, CEdit)
 
     code_box.clear_annotations();
     std::deque<diagnostic_collector::entry> output;
-    bool success = compiler->compile_fragment(
-      fx, diagnostic_collector(output), source.c_str(), source.size());
+    bool success = compiler->compile_fragment(fx, diagnostic_collector(output), source, layer_triangle_input_descs);
     if (success) {
         error_box.SetWindowTextW(L"No errors.\n");
     } else {
         std::ostringstream errors;
         std::for_each(
-          begin(output), end(output), [&](diagnostic_collector::entry e) {
-              errors << e.line << std::endl;
-          });
-        error_box.SetWindowTextW(
-          pfc::stringcvt::string_wide_from_utf8(errors.str().c_str()));
+          begin(output), end(output), [&](diagnostic_collector::entry e) { errors << e.line << std::endl; });
+        error_box.SetWindowTextW(pfc::stringcvt::string_wide_from_utf8(errors.str().c_str()));
     }
     error_box.SetSelNone(FALSE);
 

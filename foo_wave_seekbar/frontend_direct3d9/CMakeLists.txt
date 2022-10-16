@@ -12,13 +12,12 @@ set(D3D9_SOURCES
 	"Scintilla.h"
 )
 
-add_library(frontend_direct3d9 SHARED
+add_library(frontend_direct3d9 STATIC
 	${D3D9_SOURCES}
 )
 
 target_include_directories(frontend_direct3d9
 	PRIVATE
-	"${MICROHTTPD_INCLUDE_DIRS}"
 	"${WTL_INCLUDE_DIRS}"
 )
 # set_target_properties(frontend_direct3d9 PROPERTIES LINK_FLAGS "/DELAYLOAD:d3dx9_42.dll")
@@ -29,5 +28,8 @@ target_link_libraries(frontend_direct3d9
 	# pfc
 	waveform_sdk
 	"d3d9.lib"
-	"d3dx9.lib"
+	"d3d11.lib"
+	"dxgi.lib"
+	Microsoft::DirectXTK
+	Microsoft::Effects11
 )

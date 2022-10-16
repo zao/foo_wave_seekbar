@@ -22,5 +22,5 @@ using std::min;
 #include <atlctrls.h>
 #include <atlstr.h>
 
-#include <d3d9.h>
-#include <d3dx9.h>
+#include <d3d11.h>
+#include <d3dx11effect.h>

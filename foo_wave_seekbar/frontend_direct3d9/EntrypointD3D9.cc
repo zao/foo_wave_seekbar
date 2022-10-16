@@ -33,9 +33,7 @@ replace_filename(std::vector<wchar_t>& v, std::wstring const& new_name)
         }
     }
     if (v.size() > last_component + new_name.size() + 1) {
-        memcpy(&v[last_component],
-               new_name.c_str(),
-               (1 + new_name.size()) * sizeof(wchar_t));
+        memcpy(&v[last_component], new_name.c_str(), (1 + new_name.size()) * sizeof(wchar_t));
     }
 }
 
@@ -44,19 +42,16 @@ init_scintilla()
 {
     std::vector<wchar_t> path(9001);
     HMODULE self;
-    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                      (LPCWSTR)&f,
-                      &self);
-    GetModuleFileName(self, &path[0], path.size() - 1);
+    GetModuleHandleEx(
+      GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&f, &self);
+    GetModuleFileName(self, &path[0], (DWORD)(path.size() - 1));
     if (!scintilla) {
         replace_filename(path, L"SciLexer.dll");
         scintilla.reset(LoadLibraryW(path.data()), &FreeLibrary);
     }
 }
 
-FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(
-  g_direct3d9_entrypoint,
-  wave::config::frontend_direct3d9,
-  wave::direct3d9::frontend_impl,
-  init_scintilla)
+FOO_WAVE_SEEKBAR_VISUAL_FRONTEND_NAMED_ENTRYPOINT_HOOK(g_direct3d9_entrypoint,
+                                                       wave::config::frontend_direct3d9,
+                                                       wave::direct3d9::frontend_impl,
+                                                       init_scintilla)

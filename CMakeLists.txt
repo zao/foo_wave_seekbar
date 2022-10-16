@@ -7,6 +7,16 @@ set(CMAKE_CXX_STANDARD 20)
 #     find_package(Boost REQUIRED [COMPONENTS <libs>...])
 #     target_link_libraries(main PRIVATE Boost::boost Boost::<lib1> Boost::<lib2> ...)
 #
+#     # this is heuristically generated, and may not be correct
+#     find_package(effects11 CONFIG REQUIRED)
+#     target_link_libraries(main PRIVATE Microsoft::Effects11)
+#
+# directxtk provides CMake targets:
+# 
+#     # this is heuristically generated, and may not be correct
+#     find_package(directxtk CONFIG REQUIRED)
+#     target_link_libraries(main PRIVATE Microsoft::DirectXTK)
+#
 # The package fmt provides CMake targets:
 # 
 #     find_package(fmt CONFIG REQUIRED)
@@ -80,6 +90,12 @@ find_package(Boost REQUIRED COMPONENTS serialization)
 
 # Columns UI
 find_package(unofficial-columns-ui-sdk CONFIG REQUIRED)
+
+# DirectXTK
+find_package(directxtk CONFIG REQUIRED)
+
+# FX11
+find_package(effects11 CONFIG REQUIRED)
 
 # fmt
 find_package(fmt CONFIG REQUIRED)

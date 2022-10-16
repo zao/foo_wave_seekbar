@@ -6,6 +6,8 @@
     "boost-property-tree",
     "boost-serialization",
     "columns-ui-sdk",
+    "directxtk",
+    "effects11",
     "fmt",
     "foobar2000-sdk",
     {

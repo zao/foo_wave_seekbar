@@ -6,11 +6,13 @@
 #include "PchDirect3D9.h"
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
+#include <dxgi.h>
 #include "../frontend_sdk/FrontendHelpers.h"
-#include "resource.h"
+#include "../resource.h"
 
 #include <sstream>
 #include <comdef.h>
+#include <span>
 
 namespace wave {
 template<typename T>
@@ -20,33 +22,14 @@ lerp(T a, T b, float n)
     return (1.0f - n) * a + n * b;
 }
 
-struct create_d3d9_func
-{
-    IDirect3D9* operator()() const
-    {
-        IDirect3D9* p = Direct3DCreate9(D3D_SDK_VERSION);
-        return p;
-    }
-};
-
-struct test_d3dx9_func
-{
-    bool operator()() const
-    {
-        D3DXGetDriverLevel(nullptr);
-        return true;
-    }
-};
-
 std::string
 narrow_string(std::wstring const& s)
 {
-    auto cb = WideCharToMultiByte(
-      CP_UTF8, 0, s.c_str(), s.size() + 1, nullptr, 0, nullptr, nullptr);
+    auto cch = (int)(s.size() + 1);
+    auto cb = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), cch, nullptr, 0, nullptr, nullptr);
     auto buf = std::make_unique<char[]>(cb);
     buf[0] = '\0';
-    WideCharToMultiByte(
-      CP_UTF8, 0, s.c_str(), s.size() + 1, buf.get(), cb, nullptr, nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, s.c_str(), cch, buf.get(), cb, nullptr, nullptr);
     return buf.get();
 }
 
@@ -58,102 +41,52 @@ frontend_impl::frontend_impl(HWND wnd,
   : mip_count(4)
   , callback(callback)
   , conf(conf)
+  , client_size(client_size)
 {
     HRESULT hr = S_OK;
 
-    api.d3d9_module = LoadLibraryA("d3d9.dll");
-    api.d3dx9_module = LoadLibraryA("d3dx9_42.dll");
-    api.d3dcompiler_module = LoadLibraryA("D3DCompiler_42.dll");
-    if (!api.d3d9_module || !api.d3dx9_module || !api.d3dcompiler_module) {
-        throw std::runtime_error("DirectX 9 DLLs not present on system.");
-    }
+    DXGI_SWAP_CHAIN_DESC scd = {
+        .BufferDesc = {
+            .Width = (UINT)client_size.cx,
+            .Height = (UINT)client_size.cy,
+            .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        },
+        .SampleDesc = {1, 0},
+        .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+        .BufferCount = 2,
+        .OutputWindow = wnd,
+        .Windowed = TRUE,
+        .SwapEffect = DXGI_SWAP_EFFECT_DISCARD,
+        .Flags = 0,
+    };
 
-    api.Direct3DCreate9 = (decltype(api.Direct3DCreate9))GetProcAddress(
-      api.d3d9_module, "Direct3DCreate9");
-    api.D3DXCreateEffect = (decltype(api.D3DXCreateEffect))GetProcAddress(
-      api.d3dx9_module, "D3DXCreateEffect");
-    if (!api.Direct3DCreate9) {
-        throw std::runtime_error("DirectX 9 functions not present on system.");
-    }
+    D3D_FEATURE_LEVEL feature_levels[] = {
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0,
+        D3D_FEATURE_LEVEL_9_3,
+    };
+    UINT flags = D3D11_CREATE_DEVICE_DEBUG;
+    hr = D3D11CreateDeviceAndSwapChain(nullptr,
+                                       D3D_DRIVER_TYPE_HARDWARE,
+                                       nullptr,
+                                       flags,
+                                       std::data(feature_levels),
+                                       (UINT)std::size(feature_levels),
+                                       D3D11_SDK_VERSION,
+                                       &scd,
+                                       &swap_chain,
+                                       &dev,
+                                       &feature_level,
+                                       &ctx);
 
-    d3d.Attach(api.Direct3DCreate9(D3D_SDK_VERSION));
-    if (!d3d) {
-        throw std::runtime_error("DirectX redistributable not found. Run the "
-                                 "DirectX February 2010 web setup or later.");
-    }
-
-    ZeroMemory(&pp, sizeof(pp));
-    pp.BackBufferWidth = client_size.cx;
-    pp.BackBufferHeight = client_size.cy;
-    pp.BackBufferFormat = D3DFMT_A8R8G8B8;
-    pp.BackBufferCount = 1;
-    pp.MultiSampleType = D3DMULTISAMPLE_NONE;
-    pp.MultiSampleQuality = 0;
-    pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    pp.hDeviceWindow = wnd;
-    pp.Windowed = TRUE;
-    pp.EnableAutoDepthStencil = FALSE;
-    pp.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
-    pp.Flags = 0;
-    pp.FullScreen_RefreshRateInHz = 0;
-    pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-
-    DWORD msaa_quality = 0;
-    for (INT x = D3DMULTISAMPLE_16_SAMPLES; x >= 0; --x) {
-        D3DMULTISAMPLE_TYPE msaa_type = (D3DMULTISAMPLE_TYPE)x;
-        if (SUCCEEDED(d3d->CheckDeviceMultiSampleType(0,
-                                                      D3DDEVTYPE_HAL,
-                                                      D3DFMT_A8R8G8B8,
-                                                      TRUE,
-                                                      msaa_type,
-                                                      &msaa_quality))) {
-            pp.MultiSampleType = msaa_type;
-            pp.MultiSampleQuality = msaa_quality - 1;
-            break;
-        }
-    }
-
-    hr = d3d->CreateDevice(0,
-                           D3DDEVTYPE_HAL,
-                           wnd,
-                           D3DCREATE_FPU_PRESERVE |
-                             D3DCREATE_HARDWARE_VERTEXPROCESSING,
-                           &pp,
-                           &dev);
     if (!SUCCEEDED(hr)) {
         std::ostringstream error_stream;
-        error_stream << "Direct3D9: multisampled device create failed: "
-                     << narrow_string(_com_error{ hr }.ErrorMessage()) << ".";
-
-        pp.MultiSampleType = D3DMULTISAMPLE_NONE;
-        pp.MultiSampleQuality = 0;
-        hr = d3d->CreateDevice(0,
-                               D3DDEVTYPE_HAL,
-                               wnd,
-                               D3DCREATE_FPU_PRESERVE |
-                                 D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-                               &pp,
-                               &dev);
-        if (!SUCCEEDED(hr))
-            error_stream << "\nDirect3D9: could not create unsampled device: "
-                         << narrow_string(_com_error{ hr }.ErrorMessage())
-                         << ".";
+        error_stream << "Direct3D9: device create failed: " << narrow_string(_com_error{ hr }.ErrorMessage()) << ".";
         throw std::exception(error_stream.str().c_str());
     }
 
-    auto query_texture_format = [this](D3DFORMAT fmt) -> bool {
-        CComPtr<IDirect3DTexture9> tex;
-        HRESULT hr = dev->CreateTexture(
-          2048, 1, mip_count, 0, fmt, D3DPOOL_MANAGED, &tex, 0);
-        return SUCCEEDED(hr);
-    };
-
-    {
-        if (!query_texture_format(texture_format = D3DFMT_A8R8G8B8))
-            throw std::exception(
-              "Direct3D9: could not find a suitable texture format.");
-    }
-
+    texture_format = DXGI_FORMAT_R32G32B32A32_FLOAT;
     create_vertex_resources();
     create_default_resources();
 }
@@ -161,59 +94,51 @@ frontend_impl::frontend_impl(HWND wnd,
 void
 frontend_impl::clear()
 {
-    if (device_still_lost())
-        return;
     color c = callback.get_color(config::color_background);
-    D3DXCOLOR bg(c.r, c.g, c.b, c.a);
-    dev->Clear(0, 0, D3DCLEAR_TARGET, bg, 1.0f, 0);
+    float clear_color[4] = { c.r, c.g, c.b, c.a };
+    ctx->ClearRenderTargetView(rtv, clear_color);
 }
 
 void
 frontend_impl::draw()
 {
-    draw_to_target(pp.BackBufferWidth, pp.BackBufferHeight, NULL);
+    draw_to_target(client_size.cx, client_size.cy, rtv);
 }
 
 bool
-frontend_impl::draw_to_target(int target_width,
-                              int target_height,
-                              IDirect3DSurface9* render_target)
+frontend_impl::draw_to_target(int target_width, int target_height, ID3D11RenderTargetView* render_target)
 {
-    if (device_still_lost())
-        return false;
+    ctx->OMSetRenderTargets(1, &render_target, nullptr);
 
-    dev->SetRenderTarget(0, render_target);
-    D3DVIEWPORT9 window_viewport;
-    dev->GetViewport(&window_viewport);
+    UINT num_viewports = 1;
+    D3D11_VIEWPORT window_viewport;
+    ctx->RSGetViewports(&num_viewports, &window_viewport);
 
     auto draw_quad = [&, this](int idx, int ch, int n) {
         auto channel_viewport = window_viewport;
-        D3DXVECTOR2 sides((float)n - idx - 1, (float)n - idx);
-        D3DXVECTOR4 viewport =
-          D3DXVECTOR4((float)target_width, (float)target_height, 0.0f, 0.0f);
+        dsm::Vector2 sides((float)n - idx - 1, (float)n - idx);
+        dsm::Vector4 viewport = DirectX::XMFLOAT4((float)target_width, (float)target_height, 0.0f, 0.0f);
         sides /= (float)n;
 
         std::vector<float> buf;
 
         if (callback.get_orientation() == config::orientation_horizontal) {
-            channel_viewport.Y = (int)(sides[0] * target_height);
-            float h = (sides[1] - sides[0]) * target_height;
-            channel_viewport.Height = (int)h;
+            channel_viewport.TopLeftY = floor(sides.x * (float)target_height);
+            float h = (sides.y - sides.x) * (float)target_height;
+            channel_viewport.Height = floor(h);
             viewport.y = floor(h);
             float arr[] = {
                 // position2f, texcoord2f
-                -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 3.0f,
-                -1.0f, 3.0f,  3.0f,  -1.0f, 3.0f,  -1.0f,
+                -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 3.0f, -1.0f, 3.0f, 3.0f, -1.0f, 3.0f, -1.0f,
             };
             buf.insert(buf.end(), std::begin(arr), std::end(arr));
         } else {
-            channel_viewport.X = (int)(sides[0] * target_width);
-            float w = (sides[1] - sides[0]) * target_width;
-            channel_viewport.Width = (int)w;
+            channel_viewport.TopLeftX = floor(sides.x * (float)target_width);
+            float w = (sides.y - sides.x) * target_width;
+            channel_viewport.Width = floor(w);
             viewport.x = floor(w);
             float arr[] = {
-                -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 3.0f,
-                1.0f,  3.0f,  3.0f, -1.0f, -3.0f, -1.0f,
+                -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 3.0f, 1.0f, 3.0f, 3.0f, -1.0f, -3.0f, -1.0f,
             };
             buf.insert(buf.end(), std::begin(arr), std::end(arr));
         }
@@ -221,70 +146,72 @@ frontend_impl::draw_to_target(int target_width,
         effect_params.set(parameters::viewport_size, viewport);
 
         HRESULT hr = S_OK;
-        hr = dev->BeginScene();
         effect_params.set(parameters::waveform_data, channel_textures[ch]);
-        effect_params.set(parameters::channel_magnitude,
-                          channel_magnitudes[ch]);
+        effect_params.set(parameters::channel_magnitude, channel_magnitudes[ch]);
         effect_params.set(parameters::track_magnitude, track_magnitude);
-        effect_params.set(parameters::track_time,
-                          (float)callback.get_playback_position());
-        effect_params.set(parameters::track_duration,
-                          (float)callback.get_track_length());
-        effect_params.set(parameters::real_time,
-                          (float)real_time.get_elapsed());
+        effect_params.set(parameters::track_time, (float)callback.get_playback_position());
+        effect_params.set(parameters::track_duration, (float)callback.get_track_length());
+        effect_params.set(parameters::real_time, (float)real_time.get_elapsed());
 
-        CComPtr<ID3DXEffect> fx = select_effect();
+        auto effect = select_effect();
+        auto fx = effect->get_effect();
         effect_params.apply_to(fx);
 
-        hr = dev->SetTexture(0, channel_textures[ch]);
-        hr = dev->SetVertexDeclaration(decl);
-        hr = dev->SetViewport(&channel_viewport);
+        // ctx->PSSetShaderResources(0, 1, &channel_textures[ch].p);
+        ctx->RSSetViewports(1, &channel_viewport);
 
-        UINT passes = 0;
-        fx->Begin(&passes, 0);
-        for (UINT pass = 0; pass < passes; ++pass) {
-            fx->BeginPass(pass);
-            fx->CommitChanges();
-            hr = dev->DrawPrimitiveUP(
-              D3DPT_TRIANGLESTRIP, 1, &buf[0], sizeof(float) * 4);
-            fx->EndPass();
+        D3DX11_TECHNIQUE_DESC tech_desc;
+        ID3DX11EffectTechnique* tech = fx->GetTechniqueByIndex(0);
+        tech->GetDesc(&tech_desc);
+
+        {
+            D3D11_MAPPED_SUBRESOURCE msr{};
+            ctx->Map(vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+            auto buf_span = std::span(buf);
+            memcpy(msr.pData, buf_span.data(), buf_span.size_bytes());
+            ctx->Unmap(vb, 0);
         }
-        fx->End();
-        hr = dev->EndScene();
+        for (UINT pass_idx = 0; pass_idx < tech_desc.Passes; ++pass_idx) {
+            auto* pass = tech->GetPassByIndex(pass_idx);
+            pass->Apply(0, ctx);
+
+            auto il = effect->get_input_layout_for_pass(pass_idx);
+            ctx->IASetInputLayout(il);
+            ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            UINT stride = sizeof(float) * 4;
+            UINT offset = 0;
+            ctx->IASetVertexBuffers(0, 1, &vb.p, &stride, &offset);
+            ctx->Draw(3, 0);
+        }
     };
 
     size_t num = channel_order.size();
     auto I = channel_order.begin();
     for (size_t idx = 0; idx < num; ++idx, ++I) {
-        draw_quad(idx, I->channel, num);
+        draw_quad((int)idx, (int)I->channel, (int)num);
     }
-    dev->SetViewport(&window_viewport);
+    ctx->RSSetViewports(1, &window_viewport);
     return true;
 }
 
 void
 frontend_impl::present()
 {
-    HRESULT hr = dev->Present(0, 0, 0, 0);
-    if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET) {
-        device_lost = true;
-        update_size();
-    }
+    swap_chain->Present(0, 0);
 }
 
-CComPtr<ID3DXEffect>
+ref_ptr<effect_handle>
 frontend_impl::select_effect()
 {
     if (effect_override)
-        return effect_override->get_effect();
-    return effect_stack.top()->get_effect();
+        return effect_override;
+    return effect_stack.top();
 }
 
 void
 frontend_impl::on_state_changed(state s)
 {
-    if (device_still_lost())
-        return;
     if (s & state_size)
         update_size();
     if (s & state_color)
@@ -301,16 +228,11 @@ frontend_impl::on_state_changed(state s)
         update_flipped();
     if (s & state_shade_played)
         update_shade_played();
-    CWindow wnd = this->pp.hDeviceWindow;
-    wnd.Invalidate(FALSE);
-}
 
-bool
-frontend_impl::device_still_lost()
-{
-    if (device_lost)
-        update_size();
-    return device_lost;
+    DXGI_SWAP_CHAIN_DESC scd{};
+    swap_chain->GetDesc(&scd);
+    CWindow wnd = scd.OutputWindow;
+    wnd.Invalidate(FALSE);
 }
 
 void
@@ -337,32 +259,41 @@ frontend_impl::close_configuration()
 void
 frontend_impl::make_screenshot(screenshot_settings const* settings)
 {
-    CComPtr<IDirect3DSurface9> rt;
-    HRESULT hr = dev->CreateRenderTarget(settings->width,
-                                         settings->height,
-                                         D3DFMT_A8R8G8B8,
-                                         D3DMULTISAMPLE_NONE,
-                                         0,
-                                         TRUE,
-                                         &rt,
-                                         nullptr);
-    if (FAILED(hr))
-        return;
+    HRESULT hr = S_OK;
 
-    IDirect3DSurface9* old_rt = nullptr;
-    dev->GetRenderTarget(0, &old_rt);
-    if (draw_to_target(settings->width, settings->height, rt)) {
-        D3DLOCKED_RECT r = {};
-        rt->LockRect(&r, NULL, 0);
-        settings->write_screenshot(settings->context, (BYTE*)r.pBits);
+    CComPtr<ID3D11Texture2D> tex;
+    CComPtr<ID3D11RenderTargetView> rtv;
+
+    D3D11_TEXTURE2D_DESC tex_desc = {
+        .Width = (UINT)settings->width,
+        .Height = (UINT)settings->height,
+        .MipLevels = 1,
+        .ArraySize = 0,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .SampleDesc = { 1, 0 },
+        .Usage = D3D11_USAGE_DEFAULT,
+        .BindFlags = D3D11_BIND_RENDER_TARGET,
+        .CPUAccessFlags = D3D11_CPU_ACCESS_READ,
+        .MiscFlags = 0,
+    };
+    hr = dev->CreateTexture2D(&tex_desc, nullptr, &tex);
+    hr = dev->CreateRenderTargetView(tex, nullptr, &rtv);
+
+    CComPtr<ID3D11RenderTargetView> old_rtv;
+    CComPtr<ID3D11DepthStencilView> old_dsv;
+    ctx->OMGetRenderTargets(1, &old_rtv, &old_dsv);
+    if (draw_to_target(settings->width, settings->height, rtv)) {
+        D3D11_MAPPED_SUBRESOURCE msr{};
+        hr = ctx->Map(tex, 0, D3D11_MAP_READ, 0, &msr);
+        settings->write_screenshot(settings->context, (BYTE const*)msr.pData, msr.RowPitch);
     }
-    dev->SetRenderTarget(0, old_rt);
+    ctx->OMSetRenderTargets(1, &old_rtv.p, old_dsv);
 }
 
 void
 frontend_impl::get_effect_compiler(ref_ptr<effect_compiler>& out)
 {
-    out.reset(new effect_compiler_impl(api, dev));
+    out.reset(new effect_compiler_impl(dev));
 }
 
 void
@@ -377,44 +308,53 @@ frontend_impl::set_effect(ref_ptr<effect_handle> in, bool permanent)
 }
 
 namespace parameters {
-std::string const background_color = "BACKGROUNDCOLOR",
-                  foreground_color = "TEXTCOLOR",
-                  highlight_color = "HIGHLIGHTCOLOR",
-                  selection_color = "SELECTIONCOLOR",
+std::string const background_color = "BACKGROUNDCOLOR", foreground_color = "TEXTCOLOR",
+                  highlight_color = "HIGHLIGHTCOLOR", selection_color = "SELECTIONCOLOR",
 
-                  cursor_position = "CURSORPOSITION",
-                  cursor_visible = "CURSORVISIBLE",
+                  cursor_position = "CURSORPOSITION", cursor_visible = "CURSORVISIBLE",
 
                   seek_position = "SEEKPOSITION", seeking = "SEEKING",
 
                   viewport_size = "VIEWPORTSIZE", replaygain = "REPLAYGAIN",
 
-                  orientation = "ORIENTATION", flipped = "FLIPPED",
-                  shade_played = "SHADEPLAYED",
+                  orientation = "ORIENTATION", flipped = "FLIPPED", shade_played = "SHADEPLAYED",
 
                   waveform_data = "WAVEFORMDATA",
 
-                  channel_magnitude = "CHANNELMAGNITUDE",
-                  track_magnitude = "TRACKMAGNITUDE",
+                  channel_magnitude = "CHANNELMAGNITUDE", track_magnitude = "TRACKMAGNITUDE",
 
-                  track_time = "TRACKTIME", track_duration = "TRACKDURATION",
-                  real_time = "REALTIME";
+                  track_time = "TRACKTIME", track_duration = "TRACKDURATION", real_time = "REALTIME";
 }
 
 struct attribute_setter
 {
-    CComPtr<ID3DXEffect> const& fx;
+    CComPtr<ID3DX11Effect> const& fx;
     std::string const& key;
-    explicit attribute_setter(CComPtr<ID3DXEffect> const& fx,
-                              std::string const& key)
+    ID3DX11EffectVariable* var{};
+
+    explicit attribute_setter(CComPtr<ID3DX11Effect> const& fx, std::string const& key)
       : fx(fx)
       , key(key)
-    {}
-
-    D3DXHANDLE get() const
     {
-        return fx->GetParameterBySemantic(nullptr, key.c_str());
+        D3DX11_EFFECT_DESC fx_desc{};
+        fx->GetDesc(&fx_desc);
+        for (size_t var_idx = 0; var_idx < fx_desc.GlobalVariables; ++var_idx) {
+            auto* var_cand = fx->GetVariableByIndex((uint32_t)var_idx);
+            D3DX11_EFFECT_VARIABLE_DESC var_desc{};
+            var_cand->GetDesc(&var_desc);
+            if (CSTR_EQUAL == CompareStringA(MAKELCID(LOCALE_INVARIANT, SORT_DEFAULT),
+                                             LINGUISTIC_IGNORECASE,
+                                             key.c_str(),
+                                             (int)key.size(),
+                                             var_desc.Semantic,
+                                             -1)) {
+                var = var_cand;
+                return;
+            }
+        }
     }
+
+    ID3DX11EffectVariable* get() const { return var; }
     typedef effect_parameters::attribute attribute;
 
     void operator()(attribute const& attr) const
@@ -438,49 +378,45 @@ struct attribute_setter
         }
     }
 
-    // <float, bool, D3DXVECTOR4, D3DXMATRIX, IDirect3DTexture9>
+    // <float, bool, Vector4, Matrix, Texture2D>
     void apply(float const& f) const
     {
         if (auto h = get())
-            fx->SetFloat(h, f);
+            h->AsScalar()->SetFloat(f);
     }
 
     void apply(bool const& b) const
     {
         if (auto h = get())
-            fx->SetBool(h, b);
+            h->AsScalar()->SetBool(b);
     }
 
     void apply(std::array<float, 4> const& a) const
     {
-        auto v = D3DXVECTOR4(a.data());
         if (auto h = get())
-            fx->SetVector(h, &v);
+            h->AsVector()->SetFloatVector(a.data());
     }
 
     void apply(std::array<float, 16> const& a) const
     {
-        auto m = D3DXMATRIX(a.data());
         if (auto h = get())
-            fx->SetMatrix(h, &m);
+            h->AsMatrix()->SetMatrix(a.data());
     }
 
-    void apply(IDirect3DTexture9* tex) const
+    void apply(ID3D11ShaderResourceView* tex) const
     {
         if (auto h = get())
-            fx->SetTexture(h, tex);
+            h->AsShaderResource()->SetResource(tex);
     }
 };
 
 void
-effect_parameters::apply_to(CComPtr<ID3DXEffect> fx)
+effect_parameters::apply_to(CComPtr<ID3DX11Effect> fx)
 {
-    std::for_each(attributes.begin(),
-                  attributes.end(),
-                  [fx](std::pair<std::string const, attribute>& value) {
-                      attribute_setter vtor(fx, value.first);
-                      vtor(value.second);
-                  });
+    for (auto& [name, val] : attributes) {
+        attribute_setter vtor(fx, name);
+        vtor(val);
+    }
 }
 }
 }

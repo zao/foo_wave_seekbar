@@ -11,10 +11,15 @@
 #include <memory>
 #include <stack>
 #include <string>
-#include "resource.h"
+#include "../resource.h"
 #include "Scintilla.h"
 
+#include <d3dx11effect.h>
+#include <span>
+#include <directxtk/SimpleMath.h>
+
 namespace wave {
+namespace dsm = DirectX::SimpleMath;
 bool
 has_direct3d9();
 
@@ -39,35 +44,9 @@ struct effect_handle;
 
 extern const GUID guid_fx_string;
 
-struct d3d9_api
-{
-    HMODULE d3d9_module = nullptr;
-    decltype(Direct3DCreate9)* Direct3DCreate9 = nullptr;
-
-    HMODULE d3dx9_module = nullptr;
-    decltype(D3DXCreateEffect)* D3DXCreateEffect = nullptr;
-    decltype(D3DXFloat32To16Array)* D3DXFloat32To16Array = nullptr;
-
-    HMODULE d3dcompiler_module = nullptr;
-
-    ~d3d9_api()
-    {
-        if (d3d9_module) {
-            FreeLibrary(d3d9_module);
-        }
-        if (d3dx9_module) {
-            FreeLibrary(d3dx9_module);
-        }
-        if (d3dcompiler_module) {
-            FreeLibrary(d3dcompiler_module);
-        }
-    }
-};
-
 namespace parameters {
-extern std::string const background_color, foreground_color, highlight_color,
-  selection_color, cursor_position, cursor_visible, seek_position, seeking,
-  viewport_size, replaygain, orientation, flipped, shade_played, waveform_data,
+extern std::string const background_color, foreground_color, highlight_color, selection_color, cursor_position,
+  cursor_visible, seek_position, seeking, viewport_size, replaygain, orientation, flipped, shade_played, waveform_data,
   channel_magnitude, track_magnitude, track_time, track_duration, real_time;
 };
 
@@ -89,7 +68,7 @@ struct effect_parameters
             bool b;
             std::array<float, 4> v;
             std::array<float, 16> m;
-            IDirect3DTexture9* t;
+            ID3D11ShaderResourceView* t;
         };
     };
     std::map<std::string, attribute> attributes;
@@ -104,17 +83,17 @@ struct effect_parameters
         dst.kind = attribute::BOOL;
         dst.b = b;
     }
-    void assign(attribute& dst, D3DXVECTOR4 v)
+    void assign(attribute& dst, dsm::Vector4 v)
     {
         dst.kind = attribute::VECTOR4;
-        memcpy(dst.v.data(), v, sizeof(float) * 4);
+        memcpy(dst.v.data(), &v, sizeof(float) * 4);
     }
-    void assign(attribute& dst, D3DXMATRIX m)
+    void assign(attribute& dst, dsm::Matrix const& m)
     {
         dst.kind = attribute::MATRIX;
-        memcpy(dst.m.data(), m, sizeof(float) * 16);
+        memcpy(dst.m.data(), &m, sizeof(float) * 16);
     }
-    void assign(attribute& dst, IDirect3DTexture9* t)
+    void assign(attribute& dst, ID3D11ShaderResourceView* t)
     {
         dst.kind = attribute::TEXTURE;
         dst.t = t;
@@ -126,31 +105,37 @@ struct effect_parameters
         assign(attributes[what], t);
     }
 
-    void apply_to(CComPtr<ID3DXEffect> fx);
+    void apply_to(CComPtr<ID3DX11Effect> fx);
+};
+
+static std::array<D3D11_INPUT_ELEMENT_DESC, 2> layer_triangle_input_descs{
+    D3D11_INPUT_ELEMENT_DESC{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    D3D11_INPUT_ELEMENT_DESC{ "TEXCOORD",
+                              0,
+                              DXGI_FORMAT_R32G32_FLOAT,
+                              0,
+                              D3D11_APPEND_ALIGNED_ELEMENT,
+                              D3D11_INPUT_PER_VERTEX_DATA,
+                              0 },
 };
 
 struct frontend_impl : visual_frontend
 {
     friend config_dialog;
 
-    frontend_impl(HWND wnd,
-                  wave::size client_size,
-                  visual_frontend_callback& callback,
-                  visual_frontend_config& conf);
+    frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
     virtual void clear();
     virtual void draw();
     virtual void present();
     virtual void on_state_changed(state s);
     virtual void show_configuration(HWND parent);
     virtual void close_configuration();
-    int get_present_interval() const { return 10; } // milliseconds
+    int get_present_interval() const { return 0; } // milliseconds
 
     virtual void make_screenshot(screenshot_settings const* settings);
 
   private: // Update
-    bool draw_to_target(int target_width,
-                        int target_height,
-                        IDirect3DSurface9* render_target = NULL);
+    bool draw_to_target(int target_width, int target_height, ID3D11RenderTargetView* render_target = NULL);
     void update_effect_colors();
     void update_effect_cursor();
     void update_replaygain();
@@ -161,47 +146,45 @@ struct frontend_impl : visual_frontend
     void update_shade_played();
 
   private: // Misc state
-    d3d9_api api;
+    CComPtr<ID3D11Device> dev;
+    CComPtr<ID3D11DeviceContext> ctx;
+    D3D_FEATURE_LEVEL feature_level;
 
-    CComPtr<IDirect3D9> d3d;
-    CComPtr<IDirect3DDevice9> dev;
     duration_query real_time;
+    wave::size client_size;
 
-    std::map<unsigned, CComPtr<IDirect3DTexture9>> channel_textures;
+    std::map<unsigned, CComPtr<ID3D11ShaderResourceView>> channel_textures;
     std::vector<unsigned> channel_numbers;
     std::deque<channel_info> channel_order;
 
     std::stack<ref_ptr<effect_handle>> effect_stack;
     ref_ptr<effect_handle> effect_override;
 
-    CComPtr<IDirect3DVertexBuffer9> vb;
-    CComPtr<IDirect3DVertexDeclaration9> decl;
+    CComPtr<ID3D11Buffer> vb;
 
     effect_parameters effect_params;
 
-    CComPtr<ID3DXEffect> select_effect();
+    ref_ptr<effect_handle> select_effect();
 
-    D3DPRESENT_PARAMETERS pp;
+    CComPtr<IDXGISwapChain> swap_chain;
+    CComPtr<ID3D11RenderTargetView> rtv;
 
-    std::map<unsigned, D3DXVECTOR4> channel_magnitudes;
-    D3DXVECTOR4 track_magnitude;
+    std::map<unsigned, dsm::Vector4> channel_magnitudes;
+    dsm::Vector4 track_magnitude;
 
   private: // Host references
     visual_frontend_callback& callback;
     visual_frontend_config& conf;
 
   private: // Resources
-    CComPtr<IDirect3DTexture9> create_waveform_texture();
+    CComPtr<ID3D11Texture2D> create_waveform_texture();
     void create_vertex_resources();
     void release_vertex_resources();
     void create_default_resources();
     void release_default_resources();
 
-    bool device_still_lost();
-
-    bool device_lost;
     UINT mip_count;
-    D3DFORMAT texture_format;
+    DXGI_FORMAT texture_format;
 
   private: // Configuration
     std::unique_ptr<config_dialog> config;
@@ -224,9 +207,7 @@ struct config_dialog : CDialogImpl<config_dialog>
     COMMAND_HANDLER_EX(IDC_EFFECT_APPLY, BN_CLICKED, on_effect_apply_click)
     COMMAND_HANDLER_EX(IDC_EFFECT_DEFAULT, BN_CLICKED, on_effect_default_click)
     COMMAND_HANDLER_EX(IDC_EFFECT_RESET, BN_CLICKED, on_effect_reset_click)
-    NOTIFY_HANDLER_EX(IDC_EFFECT_SOURCE,
-                      SCN_MODIFIED,
-                      on_effect_source_modified)
+    NOTIFY_HANDLER_EX(IDC_EFFECT_SOURCE, SCN_MODIFIED, on_effect_source_modified)
     COMMAND_HANDLER_EX(9001, EN_CHANGE, on_effect_source_change)
     END_MSG_MAP()
 
@@ -243,21 +224,20 @@ struct config_dialog : CDialogImpl<config_dialog>
 
     struct scintilla_func
     {
-        int send(int cmd, int a1 = 0, int a2 = 0) const
-        {
-            return f(cmd, a1, a2);
-        }
+        sptr_t send(unsigned int cmd, uptr_t a1 = 0, sptr_t a2 = 0) const { return f(cmd, a1, a2); }
 
         template<class A1>
-        int send(int cmd, A1 a1) const
+        sptr_t send(int cmd, A1 a1) const
         {
-            return f(cmd, (int)a1);
+            static_assert(sizeof(A1) <= sizeof(uptr_t));
+            return f(cmd, (uptr_t)a1, 0);
         }
 
         template<class A1, class A2>
-        int send(int cmd, A1 a1, A2 a2) const
+        sptr_t send(int cmd, A1 a1, A2 a2) const
         {
-            return f(cmd, (int)a1, (int)a2);
+            static_assert(sizeof(A1) <= sizeof(uptr_t) && sizeof(A2) <= sizeof(sptr_t));
+            return f(cmd, (uptr_t)a1, (sptr_t)a2);
         }
 
         void get_all(std::string& out)
@@ -334,7 +314,7 @@ struct config_dialog : CDialogImpl<config_dialog>
         std::map<int, std::string> annotations;
 
         void init(HWND wnd);
-        std::function<int(int, int, int)> f;
+        std::function<sptr_t(unsigned int, uptr_t, sptr_t)> f;
     };
 
     ref_ptr<frontend_impl> fe;
@@ -364,8 +344,8 @@ struct NOVTABLE effect_compiler : ref_base
     virtual ~effect_compiler() {}
     virtual bool compile_fragment(ref_ptr<effect_handle>& effect,
                                   diagnostic_sink const& output,
-                                  char const* data,
-                                  size_t data_bytes) = 0;
+                                  std::span<char const> data,
+                                  std::span<D3D11_INPUT_ELEMENT_DESC const> input_descs) = 0;
 };
 
 struct NOVTABLE effect_handle : ref_base
@@ -374,7 +354,9 @@ struct NOVTABLE effect_handle : ref_base
     effect_handle(effect_handle const&);
     effect_handle& operator=(effect_handle const&);
     virtual ~effect_handle() {}
-    virtual CComPtr<ID3DXEffect> get_effect() const = 0;
+    virtual CComPtr<ID3DX11Effect> get_effect() const = 0;
+    virtual CComPtr<ID3D11InputLayout> get_input_layout_for_pass(size_t pass_idx) const = 0;
+    virtual void set_input_layouts(std::span<CComPtr<ID3D11InputLayout> const> input_layouts) = 0;
 };
 
 struct diagnostic_collector : effect_compiler::diagnostic_sink

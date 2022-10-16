@@ -11,26 +11,27 @@ namespace wave {
 namespace direct3d9 {
 struct effect_compiler_impl : effect_compiler
 {
-    explicit effect_compiler_impl(d3d9_api const& api,
-                                  CComPtr<IDirect3DDevice9> dev);
+    explicit effect_compiler_impl(CComPtr<ID3D11Device> dev);
     virtual bool compile_fragment(ref_ptr<effect_handle>& effect,
                                   diagnostic_sink const& output,
-                                  char const* data,
-                                  size_t data_bytes);
+                                  std::span<char const> data,
+                                  std::span<D3D11_INPUT_ELEMENT_DESC const> input_descs);
 
   private:
-    d3d9_api const& api;
-    CComPtr<IDirect3DDevice9> dev;
+    CComPtr<ID3D11Device> dev;
 };
 
 struct effect_impl : effect_handle
 {
-    explicit effect_impl(CComPtr<ID3DXEffect> fx);
+    effect_impl(CComPtr<ID3DX11Effect> fx);
 
-    CComPtr<ID3DXEffect> get_effect() const;
+    CComPtr<ID3DX11Effect> get_effect() const override;
+    CComPtr<ID3D11InputLayout> get_input_layout_for_pass(size_t pass_idx) const override;
+    void set_input_layouts(std::span<CComPtr<ID3D11InputLayout> const> input_layouts) override;
 
   private:
-    CComPtr<ID3DXEffect> fx;
+    CComPtr<ID3DX11Effect> fx;
+    std::vector<CComPtr<ID3D11InputLayout>> pass_layouts;
 };
 }
 }
