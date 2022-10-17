@@ -9,7 +9,6 @@ set(D3D9_SOURCES
 	"Direct3D9.Effects.h"
 	"Direct3D9.h"
 	"PchDirect3D9.h"
-	"Scintilla.h"
 )
 
 add_library(frontend_direct3d9 STATIC
@@ -32,4 +31,5 @@ target_link_libraries(frontend_direct3d9
 	"dxgi.lib"
 	Microsoft::DirectXTK
 	Microsoft::Effects11
+	unofficial::scintilla::scintilla
 )

@@ -12,7 +12,7 @@
 #include <stack>
 #include <string>
 #include "../resource.h"
-#include "Scintilla.h"
+#include "scintilla/Scintilla.h"
 
 #include <d3dx11effect.h>
 #include <span>

@@ -124,6 +124,31 @@ find_package(ZLIB REQUIRED)
 # zstd
 find_package(zstd CONFIG REQUIRED)
 
+# scintilla
+set(CMAKE_IMPORT_FILE_VERSION 1)
+set(_IMPORT_PREFIX "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+add_library(unofficial::scintilla::scintilla SHARED IMPORTED)
+
+set_target_properties(unofficial::scintilla::scintilla PROPERTIES
+#  INTERFACE_COMPILE_DEFINITIONS "SQLITE_API=__declspec(dllimport);SQLITE_OS_WIN=1"
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
+)
+
+set_property(TARGET unofficial::scintilla::scintilla APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(unofficial::scintilla::scintilla PROPERTIES
+	IMPORTED_IMPLIB_RELEASE "${_IMPORT_PREFIX}/lib/SciLexer.lib"
+	IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/bin/SciLexer.dll"
+)
+
+set_property(TARGET unofficial::scintilla::scintilla APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(unofficial::scintilla::scintilla PROPERTIES
+	IMPORTED_IMPLIB_DEBUG "${_IMPORT_PREFIX}/debug/lib/SciLexer.lib"
+	IMPORTED_LOCATION_DEBUG "${_IMPORT_PREFIX}/debug/bin/SciLexer.dll"
+)
+
+unset(_IMPORT_PREFIX)
+set(CMAKE_IMPORT_FILE_VERSION)
+
 add_compile_options(-MP)
 
 add_compile_definitions(UNICODE _UNICODE)

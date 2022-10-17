@@ -7,7 +7,7 @@
 #include "Direct3D9.h"
 #include "Direct3D9.Effects.h"
 #include "../frontend_sdk/FrontendHelpers.h"
-#include "Scintilla.h"
+#include "scintilla/Scintilla.h"
 #include <sstream>
 
 namespace wave {

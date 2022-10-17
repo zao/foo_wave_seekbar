@@ -16,6 +16,7 @@
     },
     "jsoncpp",
     "nlohmann-json",
+    "scintilla",
     "sqlite3",
     "wtl",
     "zstd",

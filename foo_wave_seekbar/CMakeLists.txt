@@ -122,6 +122,7 @@ target_link_libraries(foo_wave_seekbar
 	unofficial::foobar2000-sdk::pfc
 	unofficial::foobar2000-sdk::SDK
 	unofficial::foobar2000-sdk::shared
+	unofficial::scintilla::scintilla
 	unofficial::sqlite3::sqlite3
 	ZLIB::ZLIB
 	$<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
