@@ -76,6 +76,11 @@ struct seekbar_window
     DECLARE_WND_CLASS_EX(L"seekbar_dui", CS_HREDRAW | CS_VREDRAW, 0)
 
     BEGIN_MSG_MAP(seekbar_window)
+    break; }
+    if (fe && fe->frontend && fe->frontend->observe_message(hWnd, uMsg, wParam, lParam)) {
+        return TRUE;
+    }
+    switch(dwMsgMapID) { case 0:
     MSG_WM_CREATE(on_wm_create);
     MSG_WM_DESTROY(on_wm_destroy);
     MSG_WM_ERASEBKGND(on_wm_erasebkgnd)

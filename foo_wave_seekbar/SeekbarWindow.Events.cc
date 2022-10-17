@@ -215,6 +215,9 @@ seekbar_window::on_wm_erasebkgnd(HDC dc)
 void
 seekbar_window::on_wm_lbuttondown(UINT wparam, CPoint point)
 {
+    if (fe && fe->frontend && fe->frontend->ignore_mouse_events()) {
+        return;
+    }
     drag_state = (wparam & MK_CONTROL) ? MouseDragSelection : MouseDragSeeking;
     if (!tooltip) {
         tooltip.reset(new seek_tooltip(*this));
@@ -243,6 +246,9 @@ seekbar_window::on_wm_lbuttondown(UINT wparam, CPoint point)
 void
 seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 {
+    if (fe && fe->frontend && fe->frontend->ignore_mouse_events()) {
+        return;
+    }
     std::unique_lock<std::recursive_mutex> lk(fe->mutex);
     ReleaseCapture();
     if (drag_state == MouseDragSeeking) {
@@ -280,6 +286,9 @@ seekbar_window::on_wm_lbuttonup(UINT wparam, CPoint point)
 void
 seekbar_window::on_wm_mousemove(UINT wparam, CPoint point)
 {
+    if (fe && fe->frontend && fe->frontend->ignore_mouse_events()) {
+        return;
+    }
     if (drag_state != MouseDragNone) {
         if (last_seek_point == point)
             return;
@@ -310,6 +319,9 @@ seekbar_window::on_wm_mousemove(UINT wparam, CPoint point)
 LRESULT
 seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
 {
+    if (fe && fe->frontend && fe->frontend->ignore_mouse_events()) {
+        return 0;
+    }
 #define MAKE_TABLE                                                                                                     \
     BUILD_TABLE_ENTRY(50, 1)                                                                                           \
     BUILD_TABLE_ENTRY(100, 2)                                                                                          \
@@ -355,6 +367,9 @@ seekbar_window::on_wm_mousewheel(UINT, short z_delta, CPoint)
 void
 seekbar_window::on_wm_rbuttonup(UINT wparam, CPoint point)
 {
+    if (fe && fe->frontend && fe->frontend->ignore_mouse_events()) {
+        return;
+    }
     if (forward_rightclick()) {
         SetMsgHandled(FALSE);
         return;

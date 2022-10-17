@@ -13,10 +13,14 @@
 #include <string>
 #include "../resource.h"
 #include "scintilla/Scintilla.h"
+#include <SDK/coreDarkMode.h>
 
 #include <d3dx11effect.h>
 #include <span>
 #include <directxtk/SimpleMath.h>
+
+#include <imgui.h>
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace wave {
 namespace dsm = DirectX::SimpleMath;
@@ -124,15 +128,20 @@ struct frontend_impl : visual_frontend
     friend config_dialog;
 
     frontend_impl(HWND wnd, wave::size client_size, visual_frontend_callback& callback, visual_frontend_config& conf);
-    virtual void clear();
-    virtual void draw();
-    virtual void present();
-    virtual void on_state_changed(state s);
-    virtual void show_configuration(HWND parent);
-    virtual void close_configuration();
-    int get_present_interval() const { return 0; } // milliseconds
+    ~frontend_impl();
+    void clear() override;
+    void draw() override;
+    void present() override;
+    bool observe_message(HWND wnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
+    bool ignore_keyboard_events() const override;
+    bool ignore_mouse_events() const override;
+    
+    void on_state_changed(state s) override;
+    void show_configuration(HWND parent) override;
+    void close_configuration() override;
+    int get_present_interval() const override { return 2; } // milliseconds
 
-    virtual void make_screenshot(screenshot_settings const* settings);
+    void make_screenshot(screenshot_settings const* settings) override;
 
   private: // Update
     bool draw_to_target(int target_width, int target_height, ID3D11RenderTargetView* render_target = NULL);
@@ -146,6 +155,8 @@ struct frontend_impl : visual_frontend
     void update_shade_played();
 
   private: // Misc state
+    service_ptr_t<fb2k::coreDarkModeObj> dark_mode_obj;
+
     CComPtr<ID3D11Device> dev;
     CComPtr<ID3D11DeviceContext> ctx;
     D3D_FEATURE_LEVEL feature_level;
@@ -191,6 +202,11 @@ struct frontend_impl : visual_frontend
 
     void get_effect_compiler(ref_ptr<effect_compiler>& out);
     void set_effect(ref_ptr<effect_handle> effect, bool permanent);
+
+private: // Dear ImGui
+    ImGuiContext* im_ctx{};
+    bool show_demo_window{true};
+    bool in_dark_mode{false};
 };
 
 struct config_dialog : CDialogImpl<config_dialog>

@@ -14,6 +14,13 @@
 #include <comdef.h>
 #include <span>
 
+#include <fmt/format.h>
+
+#include <imgui.h>
+#include <imgui_impl_win32.h>
+#include <imgui_impl_dx11.h>
+#include <imgui_stdlib.h>
+
 namespace wave {
 template<typename T>
 inline T
@@ -32,6 +39,22 @@ narrow_string(std::wstring const& s)
     WideCharToMultiByte(CP_UTF8, 0, s.c_str(), cch, buf.get(), cb, nullptr, nullptr);
     return buf.get();
 }
+
+struct ImGuiContextScopeGuard
+{
+    explicit ImGuiContextScopeGuard(ImGuiContext* ctx)
+      : old_ctx(ImGui::GetCurrentContext())
+    {
+        ImGui::SetCurrentContext(ctx);
+    }
+
+    ~ImGuiContextScopeGuard() { ImGui::SetCurrentContext(old_ctx); }
+    ImGuiContextScopeGuard(ImGuiContextScopeGuard const&) = delete;
+    ImGuiContextScopeGuard& operator=(ImGuiContextScopeGuard const&) = delete;
+
+  private:
+    ImGuiContext* old_ctx;
+};
 
 namespace direct3d9 {
 frontend_impl::frontend_impl(HWND wnd,
@@ -89,6 +112,28 @@ frontend_impl::frontend_impl(HWND wnd,
     texture_format = DXGI_FORMAT_R32G32B32A32_FLOAT;
     create_vertex_resources();
     create_default_resources();
+
+    im_ctx = ImGui::CreateContext();
+    ImGuiContextScopeGuard _(im_ctx);
+
+    static_api_ptr_t<fb2k::coreDarkMode> cdm;
+    dark_mode_obj = cdm->createAuto();
+    in_dark_mode = dark_mode_obj->isDark();
+    if (in_dark_mode) {
+        ImGui::StyleColorsDark();
+    } else {
+        ImGui::StyleColorsLight();
+    }
+    ImGui_ImplWin32_Init(wnd);
+    ImGui_ImplDX11_Init(dev, ctx);
+}
+
+frontend_impl::~frontend_impl()
+{
+    ImGuiContextScopeGuard _(im_ctx);
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void
@@ -102,7 +147,27 @@ frontend_impl::clear()
 void
 frontend_impl::draw()
 {
+    ImGuiContextScopeGuard _(im_ctx);
+    if (dark_mode_obj->isDark() != in_dark_mode) {
+        in_dark_mode = !in_dark_mode;
+        if (in_dark_mode) {
+            ImGui::StyleColorsDark();
+        } else {
+            ImGui::StyleColorsLight();
+        }
+    }
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
     draw_to_target(client_size.cx, client_size.cy, rtv);
+
+    ImGui::SetNextWindowSize({ 300.0f, 300.0f }, ImGuiCond_Appearing);
+    if (show_demo_window) {
+        ImGui::ShowDemoWindow(&show_demo_window);
+    }
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
 bool
@@ -199,6 +264,27 @@ void
 frontend_impl::present()
 {
     swap_chain->Present(0, 0);
+}
+
+bool
+frontend_impl::observe_message(HWND wnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+    ImGuiContextScopeGuard _(im_ctx);
+    return ImGui_ImplWin32_WndProcHandler(wnd, msg, wparam, lparam);
+}
+
+bool
+frontend_impl::ignore_keyboard_events() const
+{
+    ImGuiContextScopeGuard _(im_ctx);
+    return ImGui::GetIO().WantCaptureKeyboard;
+}
+
+bool
+frontend_impl::ignore_mouse_events() const
+{
+    ImGuiContextScopeGuard _(im_ctx);
+    return ImGui::GetIO().WantCaptureMouse;
 }
 
 ref_ptr<effect_handle>

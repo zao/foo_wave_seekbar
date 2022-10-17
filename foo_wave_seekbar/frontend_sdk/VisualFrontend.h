@@ -163,6 +163,9 @@ struct visual_frontend : ref_base
     virtual void clear() = 0;
     virtual void draw() = 0;
     virtual void present() = 0;
+    virtual bool observe_message(HWND wnd, UINT msg, WPARAM wparam, LPARAM lparam) { return false; }
+    virtual bool ignore_keyboard_events() const { return false; }
+    virtual bool ignore_mouse_events() const { return false; }
 
     enum state
     {
