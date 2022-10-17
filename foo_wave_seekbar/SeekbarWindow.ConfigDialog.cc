@@ -11,40 +11,6 @@
 #include <imgui_impl_dx11.h>
 
 namespace wave {
-struct bar_profile_dialog
-{
-    bar_profile_dialog() = default;
-
-    void run() {}
-
-    void ui_proc()
-    {
-        while (true) {
-            MSG msg{};
-            while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
-                if (msg.message == WM_QUIT) {
-                    should_close = true;
-                }
-            }
-            if (should_close) {
-                break;
-            }
-
-            ImGui_ImplWin32_NewFrame();
-            ImGui_ImplDX11_NewFrame();
-            ImGui::NewFrame();
-
-            ImGui::Render();
-
-            // bind/clear RT
-            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        }
-    }
-
-    std::thread ui_proc_thread;
-    std::atomic<bool> should_close{ false };
-};
-
 LRESULT
 seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM lparam)
 {
