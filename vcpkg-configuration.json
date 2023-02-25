@@ -1,0 +1,14 @@
+{
+  "default-registry": {
+    "kind": "builtin",
+    "baseline": "acc3bcf76b84ae5041c86ab55fe138ae7b8255c7"
+  },
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/zao/foobar2000-ports",
+      "baseline": "f473f1c47653793cfb42856e9f5c1525023a380c",
+      "packages": ["columns-ui-sdk", "foobar2000-sdk"]
+    }
+  ]
+}
