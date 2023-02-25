@@ -107,12 +107,13 @@ target_link_libraries(foo_wave_seekbar
 	liblzma::liblzma
 	Microsoft::Effects11
 	unofficial::columns-ui-sdk::columns_ui_sdk
-  unofficial::foobar2000-sdk::foobar2000_component_client
-  unofficial::foobar2000-sdk::helpers
-  unofficial::foobar2000-sdk::libPPUI
-  unofficial::foobar2000-sdk::pfc
-  unofficial::foobar2000-sdk::SDK
-  unofficial::foobar2000-sdk::shared
+    unofficial::foobar2000-sdk::foobar2000_component_client
+    unofficial::foobar2000-sdk::helpers
+    unofficial::foobar2000-sdk::libPPUI
+    unofficial::foobar2000-sdk::pfc
+    unofficial::foobar2000-sdk::SDK
+    unofficial::foobar2000-sdk::shared
 	unofficial::sqlite3::sqlite3
 	ZLIB::ZLIB
 )
+

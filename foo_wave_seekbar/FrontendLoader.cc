@@ -75,6 +75,7 @@ load_frontend_modules()
         std::make_shared<frontend_module>((HMODULE)0, gdi_impl));
     }
 
+    #if WSB_DISABLE_D3D9
     {
       frontend_entrypoint_t d3d9_entrypoint =
         (frontend_entrypoint_t)GetProcAddress(own_module,
@@ -83,6 +84,7 @@ load_frontend_modules()
       frontend_modules.push_back(
         std::make_shared<frontend_module>((HMODULE)0, d3d9_impl));
     }
+    #endif
 
     {
       frontend_entrypoint_t d2d_entrypoint =
