@@ -222,7 +222,7 @@ namespace wave
 namespace wave
 {
 	persistent_settings::persistent_settings()
-		: active_frontend_kind(config::frontend_direct3d9), has_border(true), shade_played(true)
+		: active_frontend_kind(config::frontend_direct3d11), has_border(true), shade_played(true)
 		, display_mode(config::display_normal), flip_display(false), downmix_display(config::downmix_none)
 		, generic_strings(&less_guid)
 	{

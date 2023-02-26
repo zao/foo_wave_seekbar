@@ -5,6 +5,7 @@
 		"boost-property-tree",
 		"boost-serialization",
 		"columns-ui-sdk",
+		"directxtk",
 		"effects11",
 		"foobar2000-sdk",
 		"jsoncpp",

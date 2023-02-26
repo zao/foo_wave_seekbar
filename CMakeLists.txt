@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.23)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(directxtk CONFIG REQUIRED)
 find_package(effects11 CONFIG REQUIRED)
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(liblzma CONFIG REQUIRED)
@@ -62,17 +63,16 @@ set(SOURCES
   foo_wave_seekbar/frontend_direct2d/Direct2D1.cc
   foo_wave_seekbar/frontend_direct2d/EntrypointD2D.cc
   foo_wave_seekbar/frontend_direct2d/Direct2D.h
-  # foo_wave_seekbar/frontend_direct3d9/Direct3D9.cc
-  # foo_wave_seekbar/frontend_direct3d9/Direct3D9.ConfigDialog.cc
-  # foo_wave_seekbar/frontend_direct3d9/Direct3D9.Effects.cc
-  # foo_wave_seekbar/frontend_direct3d9/Direct3D9.Resources.cc
-  # foo_wave_seekbar/frontend_direct3d9/Direct3D9.Update.cc
-  # foo_wave_seekbar/frontend_direct3d9/EntrypointD3D9.cc
-  # foo_wave_seekbar/frontend_direct3d9/PchDirect3D9.cc
-  # foo_wave_seekbar/frontend_direct3d9/Direct3D9.Effects.h
-  # foo_wave_seekbar/frontend_direct3d9/Direct3D9.h
-  # foo_wave_seekbar/frontend_direct3d9/PchDirect3D9.h
-  # foo_wave_seekbar/frontend_direct3d9/Scintilla.h
+  foo_wave_seekbar/frontend_direct3d11/Direct3D11.cc
+  foo_wave_seekbar/frontend_direct3d11/Direct3D11.ConfigDialog.cc
+  foo_wave_seekbar/frontend_direct3d11/Direct3D11.Effects.cc
+  foo_wave_seekbar/frontend_direct3d11/Direct3D11.Resources.cc
+  foo_wave_seekbar/frontend_direct3d11/Direct3D11.Update.cc
+  foo_wave_seekbar/frontend_direct3d11/EntrypointD3D11.cc
+  foo_wave_seekbar/frontend_direct3d11/PchDirect3D11.cc
+  foo_wave_seekbar/frontend_direct3d11/Direct3D11.Effects.h
+  foo_wave_seekbar/frontend_direct3d11/Direct3D11.h
+  foo_wave_seekbar/frontend_direct3d11/PchDirect3D11.h
   foo_wave_seekbar/frontend_sdk/FrontendHelpers.h
   foo_wave_seekbar/frontend_sdk/VisualFrontend.h
   foo_wave_seekbar/util/Asio.h
@@ -98,14 +98,17 @@ target_include_directories(foo_wave_seekbar
 
 target_link_libraries(foo_wave_seekbar
   PRIVATE
+  "d3d11.lib"
+  "d3dcompiler.lib"
   "shlwapi.lib"
   Boost::boost
 	Boost::serialization
-	jsoncpp_lib
+  jsoncpp_lib
 	jsoncpp_object
 	JsonCpp::JsonCpp
 	liblzma::liblzma
-	Microsoft::Effects11
+  Microsoft::DirectXTK
+  Microsoft::Effects11
 	unofficial::columns-ui-sdk::columns_ui_sdk
     unofficial::foobar2000-sdk::foobar2000_component_client
     unofficial::foobar2000-sdk::helpers
@@ -117,3 +120,7 @@ target_link_libraries(foo_wave_seekbar
 	ZLIB::ZLIB
 )
 
+add_custom_command(TARGET foo_wave_seekbar POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/SciLexer.dll"
+        $<TARGET_FILE_DIR:foo_wave_seekbar>)

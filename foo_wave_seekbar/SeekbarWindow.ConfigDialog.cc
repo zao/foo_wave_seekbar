@@ -8,7 +8,7 @@
 
 namespace wave
 {
-	bool has_direct3d9() { return true; } // TODO: implement these
+	bool has_direct3d11() { return true; } // TODO: implement these
 	extern bool has_direct2d1();
 
 	LRESULT seekbar_window::configuration_dialog::on_wm_init_dialog(ATL::CWindow focus, LPARAM lparam)
@@ -24,8 +24,8 @@ namespace wave
 			cb.SetItemData(cb.AddString(config::strings::frontend[frontend]), frontend);
 		};
 
-		if (has_direct3d9())
-			add_frontend_string(config::frontend_direct3d9);
+		if (has_direct3d11())
+			add_frontend_string(config::frontend_direct3d11);
 		if (has_direct2d1())
 			add_frontend_string(config::frontend_direct2d1);
 		add_frontend_string(config::frontend_gdi);

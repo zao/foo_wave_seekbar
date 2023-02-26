@@ -114,8 +114,8 @@ namespace wave
 			bool dynamic_frontend = false;
 			switch (settings.active_frontend_kind)
 			{
-			case config::frontend_direct3d9:
-				console::info("Seekbar: taking Direct3D9 path.");
+			case config::frontend_direct3d11:
+				console::info("Seekbar: taking Direct3D11 path.");
 				dynamic_frontend = true;
 				break;
 			case config::frontend_direct2d1:
