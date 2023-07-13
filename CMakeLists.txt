@@ -1,5 +1,5 @@
-project(foo_wave_seekbar)
 cmake_minimum_required(VERSION 3.23)
+project(foo_wave_seekbar)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(Boost REQUIRED COMPONENTS serialization)

@@ -230,7 +230,7 @@ namespace wave
 				for (size_t c = 0; c < w->get_channel_count(); ++c) \
 				{ \
 					pfc::list_t<float> channel; \
-					w->get_field(#Member, c, list_array_sink<float>(channel)); \
+					w->get_field(#Member, (unsigned)c, list_array_sink<float>(channel)); \
 					float * p = (float *)channel.get_ptr(); \
 					std::copy(p, p + channel.get_size(), std::back_inserter(src_buf)); \
 				} \
