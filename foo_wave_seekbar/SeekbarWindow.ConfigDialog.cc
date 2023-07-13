@@ -274,7 +274,7 @@ namespace wave
 			}
 			if (int state = (nm->uNewState >> 12 & 0xF)) // has checkbox state
 			{
-				int ch = channels.GetItemData(nm->iItem);
+				int ch = (int)channels.GetItemData(nm->iItem);
 				//bool checked = !!channels.GetCheckState(nm->iItem);
 				sw.set_channel_enabled(ch, !!(state >> 1));
 			}
@@ -320,8 +320,8 @@ namespace wave
 		int idx = channels.GetSelectedIndex();
 		if (idx == 0)
 			return;
-		int ch1 = channels.GetItemData(idx - 1);
-		int ch2 = channels.GetItemData(idx);
+		int ch1 = (int)channels.GetItemData(idx - 1);
+		int ch2 = (int)channels.GetItemData(idx);
 		sw.swap_channel_order(ch1, ch2);
 		swap_channels(idx - 1, idx);
 		channels.SelectItem(idx - 1);
@@ -335,8 +335,8 @@ namespace wave
 		int count = channels.GetItemCount();
 		if (idx + 1 == count)
 			return;
-		int ch1 = channels.GetItemData(idx);
-		int ch2 = channels.GetItemData(idx + 1);
+		int ch1 = (int)channels.GetItemData(idx);
+		int ch2 = (int)channels.GetItemData(idx + 1);
 		sw.swap_channel_order(ch1, ch2);
 		swap_channels(idx, idx + 1);
 		channels.SelectItem(idx + 1);
@@ -384,7 +384,7 @@ namespace wave
 	seekbar_window::configuration_dialog::channel_info seekbar_window::configuration_dialog::get_item(int idx, CListBox& box)
 	{
 		channel_info ret;
-		ret.data = box.GetItemData(idx);
+		ret.data = (int)box.GetItemData(idx);
 		CString s;
 		box.GetText(idx, s);
 		ret.text = s;

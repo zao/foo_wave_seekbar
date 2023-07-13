@@ -95,7 +95,7 @@ std::pair<T, T> downmix_to_stereo(T const* frame, size_t n_ch)
 }
 
 template <typename T>
-float downmix(T const* frame, size_t n_ch)
+T downmix(T const* frame, size_t n_ch)
 {
 	return downmix_to_mono(frame, n_ch);
 }

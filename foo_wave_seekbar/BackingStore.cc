@@ -142,8 +142,8 @@ namespace wave
 			{
 				pfc::list_t<waveform_impl::signal> list;
 			
-				float const* data = (float const*)sqlite3_column_blob(stmt.get(), col);
-				t_size count = sqlite3_column_bytes(stmt.get(), col);
+				float const* data = (float const*)sqlite3_column_blob(stmt.get(), (int)col);
+				t_size count = sqlite3_column_bytes(stmt.get(), (int)col);
 
 				if (compression.valid())
 				{
@@ -236,7 +236,7 @@ namespace wave
 				} \
 				pack::z_pack(&src_buf[0], src_buf.size() * sizeof(float), std::back_inserter(Member)); \
 			} \
-			sqlite3_bind_blob(stmt.get(), Idx, &Member[0], Member.size(), SQLITE_STATIC)
+			sqlite3_bind_blob(stmt.get(), Idx, &Member[0], (int)Member.size(), SQLITE_STATIC)
 			
 		BIND_LIST(minimum, 1);
 		BIND_LIST(maximum, 2);
@@ -340,7 +340,7 @@ namespace wave
 		sqlite3_prepare_v2(
 			backing_db.get(),
 			query.c_str(),
-			query.size(), &p, 0);
+			(int)query.size(), &p, 0);
 		return std::shared_ptr<sqlite3_stmt>(p, &sqlite3_finalize);
 	}
 }

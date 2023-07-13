@@ -36,8 +36,8 @@ frontend_impl::create_waveform_texture()
     return { tex, srv };
 }
 
-void
-frontend_impl::create_vertex_resources(std::span<uint8_t const> vs_data)
+frontend_impl::EffectChoice
+frontend_impl::build_effect_choice(ref_ptr<effect_handle> effect)
 {
     HRESULT hr;
 
@@ -46,15 +46,41 @@ frontend_impl::create_vertex_resources(std::span<uint8_t const> vs_data)
         D3D11_INPUT_ELEMENT_DESC{
           "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
-    hr = dev->CreateInputLayout(std::data(ieds), (UINT)std::size(ieds), vs_data.data(), vs_data.size(), &this->decl);
-    if (!SUCCEEDED(hr))
-        throw std::exception("Direct3D9: could not create vertex declaration.");
-}
 
-void
-frontend_impl::release_vertex_resources()
-{
-    decl = 0;
+    EffectChoice choice{ .effect = effect };
+    if (!effect) {
+        return {};
+    }
+    {
+        auto fx = effect->get_effect();
+        D3DX11_EFFECT_DESC fx_desc{};
+        fx->GetDesc(&fx_desc);
+
+        auto tech = fx->GetTechniqueByIndex(0);
+        D3DX11_TECHNIQUE_DESC tech_desc{};
+        tech->GetDesc(&tech_desc);
+
+        for (uint32_t pass_idx = 0; pass_idx < tech_desc.Passes; ++pass_idx) {
+            auto pass = tech->GetPassByIndex(pass_idx);
+            D3DX11_PASS_SHADER_DESC vs_desc{};
+            pass->GetVertexShaderDesc(&vs_desc);
+
+            D3DX11_EFFECT_SHADER_DESC vs_desc2{};
+            vs_desc.pShaderVariable->GetShaderDesc(vs_desc.ShaderIndex, &vs_desc2);
+            std::span<uint8_t const> effect_data(vs_desc2.pBytecode, vs_desc2.BytecodeLength);
+
+            CComPtr<ID3D11InputLayout> il;
+            hr = dev->CreateInputLayout(
+              std::data(ieds), (UINT)std::size(ieds), effect_data.data(), effect_data.size(), &il);
+            if (!SUCCEEDED(hr)) {
+                console::warning("Direct3D11: could not create input layout.");
+                return {};
+            }
+            choice.per_pass_layout.push_back(il);
+        }
+    }
+
+    return choice;
 }
 
 // {55F2D182-2CFF-4C59-81AD-0EF2784E9D0F}
@@ -90,8 +116,10 @@ frontend_impl::create_default_resources()
         get_resource_contents(fx_body, IDR_DEFAULT_FX_BODY);
         std::string stored_body(fx_body.begin(), fx_body.end());
         auto fx = build_effect(stored_body);
-        if (fx)
-            effect_stack.push(fx);
+        if (fx) {
+            auto choice = build_effect_choice(fx);
+            permanent_effects.push(choice);
+        }
     }
 
     // Compile current stored effect
@@ -100,20 +128,22 @@ frontend_impl::create_default_resources()
         if (conf.get_configuration_string(guid_fx_string, std_string_sink(stored_body))) {
             ref_ptr<effect_handle> fx;
             fx = build_effect(stored_body);
-            if (fx)
-                effect_stack.push(fx);
+            if (fx) {
+                auto choice = build_effect_choice(fx);
+                permanent_effects.push(choice);
+            }
         }
     }
 
-    if (effect_stack.empty())
+    if (permanent_effects.empty())
         throw std::exception("Direct3D9: could not create effects.");
 }
 
 void
 frontend_impl::release_default_resources()
 {
-    effect_stack = std::stack<ref_ptr<effect_handle>>();
-    effect_override.reset();
+    permanent_effects = {};
+    preview_effect = {};
 }
 }
 }

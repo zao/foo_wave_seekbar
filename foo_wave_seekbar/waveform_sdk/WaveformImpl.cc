@@ -28,7 +28,7 @@ namespace wave
 	{
 		if (fields.get_count() == 0)
 			throw std::runtime_error("channel count query on empty waveform");
-		return fields.first()->m_value.get_count();
+		return (unsigned)fields.first()->m_value.get_count();
 	}
 
 	unsigned waveform_impl::get_channel_map() const

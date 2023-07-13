@@ -106,7 +106,7 @@ namespace wave
 		};
 	}
 
-	std::vector<std::tuple<unsigned, unsigned, bool>> compute_waveform_regions(size_t major_extent, float const* position, float const* seek)
+	std::vector<std::tuple<unsigned, unsigned, bool>> compute_waveform_regions(uint32_t major_extent, float const* position, float const* seek)
 	{
 		std::vector<std::tuple<unsigned, unsigned, bool>> regions;
 		if (major_extent < 1) return regions;
@@ -138,13 +138,13 @@ namespace wave
 		if (flip) x = 1.0f - x;
 		if (vertical) {
 			return CPoint(
-				(std::min)(screen_w-1, (size_t)(screen_w * y)),
-				(std::min)(screen_h-1, (size_t)(screen_h * x)));
+				(int)(std::min)(screen_w-1, (size_t)(screen_w * y)),
+				(int)(std::min)(screen_h-1, (size_t)(screen_h * x)));
 		}
 		else {
 			return CPoint(
-				(std::min)(screen_w-1, (size_t)(screen_w * x)),
-				(std::min)(screen_h-1, (size_t)(screen_h * y)));
+				(int)(std::min)(screen_w-1, (size_t)(screen_w * x)),
+				(int)(std::min)(screen_h-1, (size_t)(screen_h * y)));
 		}
 	}
 
@@ -372,7 +372,7 @@ namespace wave
 				{
 					auto& h = bmi.bmiHeader;
 					h.biSize = sizeof(h);
-					h.biWidth = channel_width;
+					h.biWidth = (LONG)channel_width;
 					h.biHeight = 1;
 					h.biPlanes = 1;
 					h.biBitCount = 32;
@@ -414,9 +414,9 @@ namespace wave
 						unshaded_row[target_x] = color_to_xrgb(cc);
 						shaded_row[target_x] = color_to_xrgb(ac);
 					}
-					wave_dc->SetDIBitsToDevice(channel_x_offset, target_y + channel_y_offset, unshaded_row.size(), 1, 0, 0, 0, 1,
+					wave_dc->SetDIBitsToDevice((int)channel_x_offset, (int)(target_y + channel_y_offset), (DWORD)unshaded_row.size(), 1, 0, 0, 0, 1,
 						unshaded_row.data(), &bmi, DIB_RGB_COLORS);
-					shaded_wave_dc->SetDIBitsToDevice(channel_x_offset, target_y + channel_y_offset, shaded_row.size(), 1, 0, 0, 0, 1,
+					shaded_wave_dc->SetDIBitsToDevice((int)channel_x_offset, (int)(target_y + channel_y_offset), (DWORD)shaded_row.size(), 1, 0, 0, 0, 1,
 						shaded_row.data(), &bmi, DIB_RGB_COLORS);
 				}
 				++quad_index;

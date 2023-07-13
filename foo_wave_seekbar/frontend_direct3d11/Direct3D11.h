@@ -146,14 +146,18 @@ struct frontend_impl : visual_frontend
     std::vector<unsigned> channel_numbers;
     std::deque<channel_info> channel_order;
 
-    std::stack<ref_ptr<effect_handle>> effect_stack;
-    ref_ptr<effect_handle> effect_override;
+    struct EffectChoice
+    {
+        ref_ptr<effect_handle> effect;
+        std::vector<CComPtr<ID3D11InputLayout>> per_pass_layout;
+    };
 
-    CComPtr<ID3D11InputLayout> decl;
+    std::stack<EffectChoice> permanent_effects;
+    EffectChoice preview_effect;
 
     effect_parameters effect_params;
 
-    CComPtr<ID3DX11Effect> select_effect();
+    frontend_impl::EffectChoice& select_effect();
 
     std::map<unsigned, DirectX::SimpleMath::Vector4> channel_magnitudes;
     DirectX::SimpleMath::Vector4 track_magnitude;
@@ -164,10 +168,9 @@ struct frontend_impl : visual_frontend
 
   private: // Resources
     TexWithSrv create_waveform_texture();
-    void create_vertex_resources(std::span<uint8_t const> vs_data);
-    void release_vertex_resources();
     void create_default_resources();
     void release_default_resources();
+    EffectChoice build_effect_choice(ref_ptr<effect_handle> effect);
 
     bool device_lost;
     UINT mip_count;

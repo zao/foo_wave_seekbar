@@ -19,11 +19,11 @@ namespace pack
 		deflateInit(&zs, Z_DEFAULT_COMPRESSION);
 		
 		zs.next_in = reinterpret_cast<Bytef*>(const_cast<void*>(src));
-		zs.avail_in = cb;
+		zs.avail_in = (uInt)cb;
 		
-		std::vector<char> out_buf(deflateBound(&zs, cb));
+		std::vector<char> out_buf(deflateBound(&zs, (uLong)cb));
 		zs.next_out = reinterpret_cast<Bytef*>(&out_buf[0]);
-		zs.avail_out = out_buf.size();
+		zs.avail_out = (uInt)out_buf.size();
 
 		deflate(&zs, Z_FINISH);
 		deflateEnd(&zs);
@@ -41,7 +41,7 @@ namespace pack
 		zs.opaque = NULL;
 
 		zs.next_in = reinterpret_cast<Bytef*>(const_cast<void*>(src));
-		zs.avail_in = cb;
+		zs.avail_in = (uInt)cb;
 
 		inflateInit(&zs);
 

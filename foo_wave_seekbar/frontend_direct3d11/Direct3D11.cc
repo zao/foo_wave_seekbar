@@ -90,17 +90,6 @@ frontend_impl::frontend_impl(HWND wnd,
     texture_format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
     create_default_resources();
-
-    std::span<uint8_t const> default_effect_data;
-    {
-        auto fx = this->effect_stack.top()->get_effect();
-        D3DX11_PASS_SHADER_DESC vs_desc{};
-        fx->GetTechniqueByIndex(0)->GetPassByIndex(0)->GetVertexShaderDesc(&vs_desc);
-        D3DX11_EFFECT_SHADER_DESC vs_desc2{};
-        vs_desc.pShaderVariable->GetShaderDesc(vs_desc.ShaderIndex, &vs_desc2);
-        default_effect_data = std::span(vs_desc2.pBytecode, vs_desc2.BytecodeLength);
-    }
-    create_vertex_resources(default_effect_data);
 }
 
 void
@@ -188,16 +177,20 @@ frontend_impl::draw_to_target(int target_width, int target_height, ID3D11RenderT
         effect_params.set(parameters::track_duration, (float)callback.get_track_length());
         effect_params.set(parameters::real_time, (float)real_time.get_elapsed());
 
-        CComPtr<ID3DX11Effect> fx = select_effect();
+        auto effect_choice = select_effect();
+        auto& effect = effect_choice.effect;
+
+        auto fx = effect->get_effect();
         effect_params.apply_to(fx);
 
-        ctx->IASetInputLayout(decl);
         ctx->RSSetViewports(1, &channel_viewport);
 
         auto* tech = fx->GetTechniqueByIndex(0);
         D3DX11_TECHNIQUE_DESC tech_desc{};
         tech->GetDesc(&tech_desc);
         for (UINT pass_idx = 0; pass_idx < tech_desc.Passes; ++pass_idx) {
+            auto pass_decl = effect_choice.per_pass_layout[pass_idx];
+            ctx->IASetInputLayout(pass_decl);
             auto* pass = tech->GetPassByIndex(pass_idx);
             pass->Apply(0, ctx);
             ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
@@ -223,12 +216,12 @@ frontend_impl::present()
     HRESULT hr = swap_chain->Present(1, 0);
 }
 
-CComPtr<ID3DX11Effect>
+frontend_impl::EffectChoice&
 frontend_impl::select_effect()
 {
-    if (effect_override)
-        return effect_override->get_effect();
-    return effect_stack.top()->get_effect();
+    if (preview_effect.effect)
+        return preview_effect;
+    return permanent_effects.top();
 }
 
 void
@@ -326,11 +319,14 @@ void
 frontend_impl::set_effect(ref_ptr<effect_handle> in, bool permanent)
 {
     if (permanent) {
-        if (effect_stack.size() > 1) // TODO: dynamic count for the future?
-            effect_stack.pop();
-        effect_stack.push(in);
-    } else
-        effect_override = in;
+        if (permanent_effects.size() > 1) { // TODO: dynamic count for the future?
+            permanent_effects.pop();
+        }
+        EffectChoice choice = build_effect_choice(in);
+        permanent_effects.push(choice);
+    } else {
+        preview_effect = build_effect_choice(in);
+    }
 }
 
 namespace parameters {

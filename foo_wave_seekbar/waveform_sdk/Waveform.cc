@@ -1,4 +1,4 @@
-﻿//          Copyright Lars Viklund 2008 - 2011.
+//          Copyright Lars Viklund 2008 - 2011.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -43,7 +43,7 @@ namespace wave
 
 			for (size_t channel_idx = 0; channel_idx < channel_count; ++channel_idx)
 			{
-				w->get_field(name, channel_idx, pointer_array_sink<float>(src + channel_idx*2048, 2048));
+				w->get_field(name, (unsigned)channel_idx, pointer_array_sink<float>(src + channel_idx*2048, 2048));
 			}
 
 			for (size_t sample_index = 0; sample_index < 2048; ++sample_index)

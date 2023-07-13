@@ -57,7 +57,7 @@ namespace clipboard
 		static char const* tag() { return "data"; }
 		static uint32_t size(data_chunk const& t)
 		{
-			return self_size(t) + t.cb;
+            return (uint32_t)(self_size(t) + t.cb);
 		}
 
 		static uint32_t self_size(data_chunk const&)

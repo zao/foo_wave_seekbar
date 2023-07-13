@@ -349,7 +349,7 @@ image_cache::update_texture_target(ref_ptr<waveform> wf,
   D2D1_SIZE_F size = D2D1::SizeF(target_size.width * 96 / dpi[0],
                                  target_size.height * 96 / dpi[1]);
 
-  int index_count = channel_indices.get_count();
+  int index_count = (int)channel_indices.get_count();
   D2D1::Matrix3x2F scale =
     D2D1::Matrix3x2F::Scale(size.width, -size.height / 2.5f / index_count);
 
