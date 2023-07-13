@@ -1,6 +1,6 @@
 {
   "name": "foo-wave-seekbar",
-  "version": "0.2.45.6",
+  "version-semver": "0.3.0-alpha.1",
 	"dependencies": [
 		"boost-property-tree",
 		"boost-serialization",
